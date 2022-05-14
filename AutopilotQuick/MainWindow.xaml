@@ -1,0 +1,19 @@
+﻿<mah:MetroWindow x:Class="AutopilotQuick.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AutopilotQuick"
+        xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        dialogs:DialogParticipation.Register="{Binding}"
+        Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
+        TitleAlignment="Left"
+        Title="Autopilot quick imaging" Height="450" Width="800">
+    <Grid>
+        <TextBlock Text="{Binding Version}"/>
+    </Grid>
+</mah:MetroWindow>
