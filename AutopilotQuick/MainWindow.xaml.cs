@@ -135,9 +135,11 @@ namespace AutopilotQuick
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) return;
             var selection = await context.DialogCoordinator.ShowMessageAsync(context, "An update is available",
-                $"An update is available for {version.ToString(3)} to {latestVersion.ToString(3)}.",
+                $"We've detected you're using an older version of Autopilot Quick!\nYour version: {version.ToString(3)}\nLatest version: {latestVersion.ToString(3)}",
                 MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings
                 {
+                    AffirmativeButtonText = "Update",
+                    NegativeButtonText = "No thanks",
                     DefaultButtonFocus = MessageDialogResult.Affirmative
                 });
             if (selection != MessageDialogResult.Affirmative) return;
