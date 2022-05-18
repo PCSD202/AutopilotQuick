@@ -71,7 +71,7 @@ namespace AutopilotQuick
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
 
             //TestUsers();
-            if (Updated) this.ShowMessageAsync("Update successful!", "The update was successful. Happy auto-muting");
+            if (Updated) this.ShowMessageAsync("Update successful!", "The update was successful.");
         }
 
 
