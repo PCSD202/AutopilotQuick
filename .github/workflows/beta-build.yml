@@ -40,7 +40,7 @@ jobs:
           mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick-Beta.exe
       - name: Zip
         run: |
-          7z a ..\AutopilotQuick-beta.zip ..\AutopilotQuick-Beta.exe -mx=9    
+          7z a AutopilotQuick-beta.zip ..\AutopilotQuick-Beta.exe -mx=9    
       
       - name: Upload beta zip
         uses: actions/upload-artifact@v2
