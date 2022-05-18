@@ -1,4 +1,5 @@
 ﻿using MahApps.Metro.Controls.Dialogs;
+using NLog;
 using Octokit;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,10 @@ namespace AutopilotQuick
 {
     public class UserDataContext : INotifyPropertyChanged
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public IDialogCoordinator DialogCoordinator { get; set; }
+
+        public string Title { get; set; } = "Autopilot Quick";
         public string Version { get; set; }
         public string LatestVersion { get; set; }
         public string LatestReleaseAssetURL { get; set; }
@@ -37,9 +41,12 @@ namespace AutopilotQuick
                     LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
 
                 LatestVersion = $"{latest.TagName}";
+                Title = $"Autopilot Quick - {Version}";
+                OnPropertyChanged(nameof(Title));
             }
             catch (Exception e)
             {
+                Logger.Error(e.Message);
                 Console.WriteLine(e);
                 LatestVersion = "ERROR";
             }
