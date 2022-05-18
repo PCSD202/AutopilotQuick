@@ -16,8 +16,20 @@
         Title="{Binding Title}" Height="450" Width="800">
     <Grid>
         <StackPanel>
-            <TextBlock Text="{Binding Version}"/>
-            <TextBlock Text="{Binding LatestVersion}"/>
+            <mah:MetroHeader Header="App Version">
+                <TextBox
+                    MinWidth="150"
+                    VerticalAlignment="Center"
+                    IsReadOnly="True"
+                    Text="{Binding Version, Mode=OneWay}" />
+            </mah:MetroHeader>
+            <mah:MetroHeader Header="Latest Version">
+                <TextBox
+                    MinWidth="150"
+                    VerticalAlignment="Center"
+                    IsReadOnly="True"
+                    Text="{Binding LatestVersion, Mode=OneWay}" />
+            </mah:MetroHeader>
         </StackPanel>
         
     </Grid>
