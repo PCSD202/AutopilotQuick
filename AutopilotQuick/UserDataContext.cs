@@ -1,4 +1,5 @@
 ﻿using MahApps.Metro.Controls.Dialogs;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,6 +16,9 @@ namespace AutopilotQuick
         public IDialogCoordinator DialogCoordinator { get; set; }
         public string Version { get; set; }
         public string LatestVersion { get; set; }
+        public string LatestReleaseAssetURL { get; set; }
+        public string LatestReleaseAssetSignedHashURL { get; set; }
+
 
 
         public UserDataContext(IDialogCoordinator dialogCoordinator)
@@ -22,6 +26,26 @@ namespace AutopilotQuick
             DialogCoordinator = dialogCoordinator;
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
+            try
+            {
+                GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version));
+                Release latest = new Release();
+                latest = client.Repository.Release.GetLatest("PCSD202", "AutopilotQuick").Result;
+
+                LatestReleaseAssetURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip").BrowserDownloadUrl;
+                if (latest.Assets.Any(x => x.Name == "AutopilotQuick.zip.sha256.pgp"))
+                    LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
+
+                LatestVersion = $"{latest.TagName}";
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                LatestVersion = "ERROR";
+            }
+
+            OnPropertyChanged(nameof(LatestVersion));
+            OnPropertyChanged(nameof(Version));
         }
 
 

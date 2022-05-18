@@ -7,13 +7,18 @@
         xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
         xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         mc:Ignorable="d"
+        Loaded="MetroWindow_Loaded"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         dialogs:DialogParticipation.Register="{Binding}"
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
-        Title="Autopilot quick imaging" Height="450" Width="800">
+        Title="Autopilot Quick" Height="450" Width="800">
     <Grid>
-        <TextBlock Text="{Binding Version}"/>
+        <StackPanel>
+            <TextBlock Text="{Binding Version}"/>
+            <TextBlock Text="{Binding LatestVersion}"/>
+        </StackPanel>
+        
     </Grid>
 </mah:MetroWindow>
