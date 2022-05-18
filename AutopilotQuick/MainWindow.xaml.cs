@@ -130,6 +130,7 @@ namespace AutopilotQuick
                 latestVersion = new Version(context.LatestVersion);
             }
             catch (Exception e) { }
+#if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) return;
@@ -267,6 +268,8 @@ namespace AutopilotQuick
                 };
                 var downloaderClient = client.DownloadFileTaskAsync(context.LatestReleaseAssetURL, downloadPath);
             }
+#endif
         }
+
     }
 }
