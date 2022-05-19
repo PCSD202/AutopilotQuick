@@ -46,8 +46,7 @@ namespace AutopilotQuick
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
-                Console.WriteLine(e);
+                Logger.Error(e.ToString());
                 LatestVersion = "ERROR";
             }
 
