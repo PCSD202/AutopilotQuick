@@ -33,6 +33,7 @@ namespace AutopilotQuick
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public UserDataContext context;
         private readonly bool Updated;
+        private WimCacher wimCache;
         public MainWindow()
         {
             Logger.Info("Hello world");
@@ -65,6 +66,7 @@ namespace AutopilotQuick
             {
                 Updated = false;
             }
+            wimCache = new WimCacher("http://sccm2.psd202.org/WIM/21H2-install.wim", context);
 
         }
 
@@ -104,6 +106,13 @@ namespace AutopilotQuick
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+            Task.Run(async () =>
+            {
+                if (!wimCache.IsUpToDate())
+                {
+                    await wimCache.DownloadUpdatedISO();
+                }
+            });
             
 
             //TestUsers();
