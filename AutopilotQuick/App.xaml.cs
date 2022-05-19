@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -35,12 +36,13 @@ namespace AutopilotQuick
 
         public void SetupLoggingConfig()
         {
+            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var LoggingConfig = new NLog.Config.LoggingConfiguration();
-            FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
+            FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
             var logfile = new NLog.Targets.FileTarget("logfile")
             {
-                FileName = "logs/latest.log",
-                ArchiveFileName = "logs/{#}.log",
+                FileName = $"{appFolder}/logs/latest.log",
+                ArchiveFileName = $"{appFolder}/logs/{{#}}.log",
                 ArchiveNumbering = ArchiveNumberingMode.Date,
                 Layout = "${time:universalTime=True}|${level:uppercase=true}|${logger}|${message}",
                 MaxArchiveFiles = 100,

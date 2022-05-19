@@ -35,6 +35,7 @@ namespace AutopilotQuick
         private readonly bool Updated;
         public MainWindow()
         {
+            Logger.Info("Hello world");
             InitializeComponent();
             context = new UserDataContext(DialogCoordinator.Instance);
             DataContext = context;
