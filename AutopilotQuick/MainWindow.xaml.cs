@@ -86,19 +86,23 @@ namespace AutopilotQuick
 
         public async void WaitForInternet()
         {
-            var progressController = await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...", "Connecting to the internet");
-            progressController.SetIndeterminate();
+            
             var connectedToInternet = CheckForInternetConnection();
-            while (!connectedToInternet)
+            if (!connectedToInternet)
             {
-                connectedToInternet = CheckForInternetConnection();
+                var progressController = await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...", "Connecting to the internet");
+                progressController.SetIndeterminate();
+                while (!connectedToInternet)
+                {
+                    connectedToInternet = CheckForInternetConnection();
+                }
+                await progressController.CloseAsync();
             }
-            await progressController.CloseAsync();
+            
         }
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
             
 
