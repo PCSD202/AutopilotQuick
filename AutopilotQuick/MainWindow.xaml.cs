@@ -67,9 +67,40 @@ namespace AutopilotQuick
             }
 
         }
+
+        public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")
+        {
+            try
+            {
+                var request = (HttpWebRequest)WebRequest.Create(url);
+                request.KeepAlive = false;
+                request.Timeout = timeoutMs;
+                using (var response = (HttpWebResponse)request.GetResponse())
+                    return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async void WaitForInternet()
+        {
+            var progressController = await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...", "Connecting to the internet");
+            progressController.SetIndeterminate();
+            var connectedToInternet = CheckForInternetConnection();
+            while (!connectedToInternet)
+            {
+                connectedToInternet = CheckForInternetConnection();
+            }
+            await progressController.CloseAsync();
+        }
+
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+            
 
             //TestUsers();
             if (Updated) this.ShowMessageAsync("Update successful!", "The update was successful.");
@@ -127,6 +158,8 @@ namespace AutopilotQuick
             var latestVersion = new Version();
             try
             {
+                WaitForInternet();
+                context.RefreshLatestVersion();
                 version = new Version(context.Version);
                 latestVersion = new Version(context.LatestVersion);
             }

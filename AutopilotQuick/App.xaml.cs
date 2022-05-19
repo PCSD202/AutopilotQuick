@@ -18,9 +18,6 @@ namespace AutopilotQuick
     public partial class App : Application
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -33,6 +30,7 @@ namespace AutopilotQuick
             };
             mainWindow.Show();
         }
+
 
         public void SetupLoggingConfig()
         {
