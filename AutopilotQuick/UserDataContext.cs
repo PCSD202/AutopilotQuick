@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutopilotQuick
@@ -30,6 +31,18 @@ namespace AutopilotQuick
             DialogCoordinator = dialogCoordinator;
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
+            OnPropertyChanged(nameof(Version));
+            Title = $"Autopilot Quick - {Version}";
+            OnPropertyChanged(nameof(Title));
+            RefreshLatestVersion();
+        }
+
+        public void RefreshLatestVersion()
+        {
+            while (!MainWindow.CheckForInternetConnection())
+            {
+                Thread.Sleep(200);
+            }
             try
             {
                 GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version));
@@ -41,17 +54,18 @@ namespace AutopilotQuick
                     LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
 
                 LatestVersion = $"{latest.TagName}";
-                Title = $"Autopilot Quick - {Version}";
-                OnPropertyChanged(nameof(Title));
+                OnPropertyChanged(nameof(LatestVersion));
+                OnPropertyChanged(nameof(LatestReleaseAssetSignedHashURL));
+                OnPropertyChanged(nameof(LatestReleaseAssetURL));
             }
             catch (Exception e)
             {
                 Logger.Error(e.ToString());
                 LatestVersion = "ERROR";
+                OnPropertyChanged(nameof(LatestVersion));
+                OnPropertyChanged(nameof(LatestReleaseAssetSignedHashURL));
+                OnPropertyChanged(nameof(LatestReleaseAssetURL));
             }
-
-            OnPropertyChanged(nameof(LatestVersion));
-            OnPropertyChanged(nameof(Version));
         }
 
 
