@@ -34,7 +34,6 @@ namespace AutopilotQuick
             OnPropertyChanged(nameof(Version));
             Title = $"Autopilot Quick - {Version}";
             OnPropertyChanged(nameof(Title));
-            RefreshLatestVersion();
         }
 
         public void RefreshLatestVersion()
