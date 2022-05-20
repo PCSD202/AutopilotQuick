@@ -41,23 +41,23 @@ namespace AutopilotQuick
             {
                 await Task.Delay(200);
             }
+            updateWindow.Maximum = 100;
             using (var client = new WebClient())
             {
-                updateWindow.Maximum = 100;
                 client.DownloadProgressChanged += (sender, args) =>
                 {
-                    updateWindow.SetProgress(args.ProgressPercentage);
-                    updateWindow.SetMessage($"Downloading updated windows installation file\nPercent: {args.ProgressPercentage}% ({args.BytesReceived.Bytes().Humanize("#.##")}/{args.TotalBytesToReceive.Bytes().Humanize("#.##")})");
+                    updateWindow.SetProgress(((double)args.BytesReceived/(double)args.TotalBytesToReceive)*100);
+                    updateWindow.SetMessage($"Downloading updated windows installation file\n" +
+                        $"Progress: {((double)args.BytesReceived / (double)args.TotalBytesToReceive):P2} ({args.BytesReceived.Bytes().Humanize("#.##")}/{args.TotalBytesToReceive.Bytes().Humanize("#.##")})\n");
                 };
                 client.DownloadFileCompleted += async (sender, args) =>
                 {
-                    updateWindow.SetProgress(100);
-                    updateWindow.SetMessage($"Downloading updated windows installation file\nPercent: 100%");
                     SetCacheLastModified(GetLastModifiedFromWeb());
                     await updateWindow.CloseAsync();
                 };
-                var downloaderClient = client.DownloadFileTaskAsync(WimURL, WimPath);
+                _ = client.DownloadFileTaskAsync(WimURL, WimPath);
             }
+           
         }
 
         public bool IsUpToDate()
