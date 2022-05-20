@@ -10,27 +10,41 @@
         Loaded="MetroWindow_Loaded"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
+        WindowState="Maximized"
         dialogs:DialogParticipation.Register="{Binding}"
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
         Title="{Binding Title}" Height="450" Width="800">
     <Grid>
-        <StackPanel>
-            <mah:MetroHeader Header="App Version">
-                <TextBox
-                    MinWidth="150"
-                    VerticalAlignment="Center"
-                    IsReadOnly="True"
-                    Text="{Binding Version, Mode=OneWay}" />
-            </mah:MetroHeader>
-            <mah:MetroHeader Header="Latest Version">
-                <TextBox
-                    MinWidth="150"
-                    VerticalAlignment="Center"
-                    IsReadOnly="True"
-                    Text="{Binding LatestVersion, Mode=OneWay}" />
-            </mah:MetroHeader>
-        </StackPanel>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition Width="3*"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="3*"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+                <RowDefinition Height="3*"></RowDefinition>
+                <RowDefinition Height="auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                <TextBlock.Inlines>
+                    <Run Text="{Binding CurrentStepName}"/>
+                </TextBlock.Inlines>
+            </TextBlock>
+            <TextBlock Grid.Row="1" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <TextBlock.Inlines>
+                    <Run Text="{Binding CurrentStepMessage}"/>
+                </TextBlock.Inlines>
+            </TextBlock>
+            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" Value="{Binding CurrentStepProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+        </Grid>
+        <mah:MetroProgressBar  Grid.Row="2" Grid.ColumnSpan="3" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalStepProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
         
     </Grid>
 </mah:MetroWindow>

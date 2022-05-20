@@ -22,6 +22,13 @@ namespace AutopilotQuick
         {
             base.OnStartup(e);
             SetupLoggingConfig();
+            for (int i = 0; i != e.Args.Length; ++i)
+            {
+                if (e.Args[i] == "/run")
+                {
+                    TaskManager.getInstance().Enabled = true;
+                }
+            }
             var mainWindow = new MainWindow();
             this.MainWindow = mainWindow;
             mainWindow.Closing += (sender, args2) =>
