@@ -24,6 +24,54 @@ namespace AutopilotQuick
         public string LatestReleaseAssetURL { get; set; }
         public string LatestReleaseAssetSignedHashURL { get; set; }
 
+        private double _totalProgress = 0;
+        public double TotalProgress
+        {
+            get { return _totalProgress; }
+            set { _totalProgress = value; OnPropertyChanged(nameof(TotalProgress)); }
+        }
+
+        public double _currentStepProgress = 0;
+        public double CurrentStepProgress
+        {
+            get { return _currentStepProgress; }
+            set { _currentStepProgress = value; OnPropertyChanged(nameof(CurrentStepProgress)); }
+        }
+
+        public bool _currentStepIndeterminate = true;
+        public bool CurrentStepIndeterminate
+        {
+            get { return _currentStepIndeterminate; }
+            set { _currentStepIndeterminate = value; OnPropertyChanged(nameof(CurrentStepIndeterminate)); }
+        }
+
+        public bool _totalStepIndeterminate = true;
+        public bool TotalStepIndeterminate
+        {
+            get { return _totalStepIndeterminate; }
+            set { _totalStepIndeterminate = value; OnPropertyChanged(nameof(TotalStepIndeterminate)); }
+        }
+        public string _totalStepMessage = "Starting up...";
+        public string TotalStepMessage
+        {
+            get { return _totalStepMessage; }
+            set { _totalStepMessage = value; OnPropertyChanged(nameof(TotalStepMessage)); }
+        }
+
+        private string _currentStepName = "Starting up...";
+        public string CurrentStepName
+        {
+            get { return _currentStepName; }
+            set { _currentStepName = value; OnPropertyChanged(nameof(CurrentStepName)); }
+        }
+
+        private string _currentStepMessage = "Please wait for the application to finish starting up";
+        public string CurrentStepMessage
+        {
+            get { return _currentStepMessage; }
+            set { _currentStepMessage = value; OnPropertyChanged(nameof(CurrentStepMessage)); }
+        }
+
 
 
         public UserDataContext(IDialogCoordinator dialogCoordinator)

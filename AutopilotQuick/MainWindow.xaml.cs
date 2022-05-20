@@ -33,10 +33,9 @@ namespace AutopilotQuick
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public UserDataContext context;
         private readonly bool Updated;
-        private WimCacher wimCache;
+        
         public MainWindow()
         {
-            Logger.Info("Hello world");
             InitializeComponent();
             context = new UserDataContext(DialogCoordinator.Instance);
             DataContext = context;
@@ -66,7 +65,7 @@ namespace AutopilotQuick
             {
                 Updated = false;
             }
-            wimCache = new WimCacher("http://sccm2.psd202.org/WIM/21H2-install.wim", context);
+            
 
         }
 
@@ -105,20 +104,47 @@ namespace AutopilotQuick
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
-            Task.Run(async () =>
-            {
-                if (!wimCache.IsUpToDate())
-                {
-                    await wimCache.DownloadUpdatedISO();
-                }
-            });
+            TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
+            TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
+            TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
+            TaskManager.getInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
+            Task.Factory.StartNew(() => TaskManager.getInstance().Run(context));
+            InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
+            Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
             
 
             //TestUsers();
             if (Updated) this.ShowMessageAsync("Update successful!", "The update was successful.");
         }
 
+        private void MainWindow_CurrentTaskNameChanged(object? sender, CurrentTaskNameChangedEventArgs e)
+        {
+            context.CurrentStepName = e.Name;
+        }
+
+        private void MainWindow_CurrentTaskMessageChanged(object? sender, CurrentTaskMessageChangedEventArgs e)
+        {
+            context.CurrentStepMessage = e.Message;
+        }
+
+        private void MainWindow_CurrentTaskProgressChanged(object? sender, CurrentTaskProgressChangedEventArgs e)
+        {
+            context.CurrentStepProgress = e.Progress;
+            context.CurrentStepIndeterminate = e.isIndeterminate;
+        }
+
+        private void MainWindow_TotalTaskProgressChanged(object? sender, TotalTaskProgressChangedEventArgs e)
+        {
+            context.TotalProgress = e.Progress;
+            context.TotalStepIndeterminate = e.isIndeterminate;
+            context.TotalStepMessage = e.StepMessage;
+        }
+
+        private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
+        {
+            context.RefreshLatestVersion();
+            Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+        }
 
         public async void ShowErrorBox(string errorMessage, string title = "ERROR")
         {
