@@ -1,5 +1,6 @@
 ﻿using Humanizer;
 using Newtonsoft.Json;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,8 @@ namespace AutopilotQuick
 {
     public class WimCacher
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         //The path of the downloaded wim
         public string WimPath;
         
@@ -33,8 +36,9 @@ namespace AutopilotQuick
             context = dataContext;
         }
 
-        public async Task DownloadUpdatedISO()
+        public async Task<bool> DownloadUpdatedISO()
         {
+            Logger.Info("Started downloading new WIM file");
             var updateWindow = await context.DialogCoordinator.ShowProgressAsync(context, "Downloading update", "Downloading updated windows installation file");
             updateWindow.SetIndeterminate();
             while (!MainWindow.CheckForInternetConnection())
@@ -42,6 +46,7 @@ namespace AutopilotQuick
                 await Task.Delay(200);
             }
             updateWindow.Maximum = 100;
+            File.Delete(Path.Combine(CacheDir, "image.json"));
             using (var client = new WebClient())
             {
                 client.DownloadProgressChanged += (sender, args) =>
@@ -53,11 +58,16 @@ namespace AutopilotQuick
                 client.DownloadFileCompleted += async (sender, args) =>
                 {
                     SetCacheLastModified(GetLastModifiedFromWeb());
+                    
                     await updateWindow.CloseAsync();
+                    
                 };
-                _ = client.DownloadFileTaskAsync(WimURL, WimPath);
+               
+                await client.DownloadFileTaskAsync(WimURL, WimPath);
+
             }
-           
+            Logger.Info("Updated WIM file downloaded");
+            return true;
         }
 
         public bool IsUpToDate()

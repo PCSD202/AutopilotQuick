@@ -28,11 +28,11 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition></RowDefinition>
-                <RowDefinition Height="3*"></RowDefinition>
+                <RowDefinition Height="auto"></RowDefinition>
+                <RowDefinition Height="2*"></RowDefinition>
                 <RowDefinition Height="auto"></RowDefinition>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <TextBlock Grid.Row="0" FontSize="48" HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <TextBlock.Inlines>
                     <Run Text="{Binding CurrentStepName}"/>
                 </TextBlock.Inlines>
@@ -42,9 +42,9 @@
                     <Run Text="{Binding CurrentStepMessage}"/>
                 </TextBlock.Inlines>
             </TextBlock>
-            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" Value="{Binding CurrentStepProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" Value="{Binding CurrentStepProgress}" VerticalAlignment="Top"></mah:MetroProgressBar>
         </Grid>
-        <mah:MetroProgressBar  Grid.Row="2" Grid.ColumnSpan="3" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalStepProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+        <mah:MetroProgressBar  Grid.Row="2" Grid.ColumnSpan="3" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
         
     </Grid>
 </mah:MetroWindow>

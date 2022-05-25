@@ -11,13 +11,13 @@ namespace AutopilotQuick
     public class InternetMan
     {
         private static readonly InternetMan instance = new();
+
         public static InternetMan getInstance()
         {
             return instance;
         }
-        public bool IsConnected { get; private set; }
+        public bool IsConnected { get; private set; } = false;
         public event EventHandler InternetBecameAvailable;
-
 
         public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")
         {
@@ -45,6 +45,7 @@ namespace AutopilotQuick
                     InternetBecameAvailable?.Invoke(this, new EventArgs());
                 }
                 IsConnected = internet;
+                
                 Thread.Sleep(IsConnected?1000*10:1000);
             }
             
