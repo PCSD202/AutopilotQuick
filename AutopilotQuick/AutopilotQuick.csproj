@@ -19,16 +19,66 @@
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
+	  <None Remove="Resources\AutopilotConfigurationFile.json" />
+	  <None Remove="Resources\DellBiosSettings\BiosBitlocker-3189.ps1" />
+	  <None Remove="Resources\DellBiosSettings\BiosEX0.cmd" />
+	  <None Remove="Resources\DellBiosSettings\BIOSIntf.dll" />
+	  <None Remove="Resources\DellBiosSettings\cctk.exe" />
+	  <None Remove="Resources\DellBiosSettings\dchapi64.dll" />
+	  <None Remove="Resources\DellBiosSettings\dchbas64.dll" />
+	  <None Remove="Resources\DellBiosSettings\DesktopBiosSettings.cmd" />
+	  <None Remove="Resources\DellBiosSettings\Flash64W.exe" />
+	  <None Remove="Resources\DellBiosSettings\LaptopBiosSettings.cmd" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_3180_3189_1.10.0.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_3190_1.9.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5289_1.13.0.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5289_1.15.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5289_1.18.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5289_1.19.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5300_1.6.0.exe" />
+	  <None Remove="Resources\DellBiosSettings\Latitude_5X90_1.11.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\mxml1.dll" />
+	  <None Remove="Resources\DellBiosSettings\OptiPlex_3050_1.12.1.exe" />
+	  <None Remove="Resources\DellBiosSettings\pci.ids" />
+	  <None Remove="Resources\Wifi.ppkg" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Include="Resources\AutopilotConfigurationFile.json" />
 	  <EmbeddedResource Include="Resources\AutopilotQuick_PubKey.asc" />
+	  <EmbeddedResource Include="Resources\Wifi.ppkg" />
 	</ItemGroup>
 	
   <ItemGroup>
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="MahApps.Metro" Version="2.4.9" />
+    <PackageReference Include="Microsoft.Wim" Version="1.2.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NLog" Version="5.0.0" />
     <PackageReference Include="Octokit" Version="0.51.0" />
     <PackageReference Include="PgpCore" Version="5.5.0" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\DellBiosSettings\BiosBitlocker-3189.ps1" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\BiosEX0.cmd" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\BIOSIntf.dll" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\cctk.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\dchapi64.dll" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\dchbas64.dll" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\DesktopBiosSettings.cmd" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Flash64W.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\LaptopBiosSettings.cmd" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_3180_3189_1.10.0.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_3190_1.9.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5289_1.13.0.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5289_1.15.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5289_1.18.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5289_1.19.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5300_1.6.0.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\Latitude_5X90_1.11.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\mxml1.dll" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\OptiPlex_3050_1.12.1.exe" />
+    <EmbeddedResource Include="Resources\DellBiosSettings\pci.ids" />
   </ItemGroup>
 
 </Project>

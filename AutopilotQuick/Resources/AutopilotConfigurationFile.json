@@ -1,0 +1,15 @@
+{
+    "CloudAssignedDomainJoinMethod":  0,
+    "CloudAssignedDeviceName":  "PSD-%SERIAL%",
+    "CloudAssignedAutopilotUpdateTimeout":  1800000,
+    "CloudAssignedForcedEnrollment":  1,
+    "Version":  2049,
+    "CloudAssignedTenantId":  "0d6611ad-1f2d-482e-b332-cf79b44c0eb7",
+    "CloudAssignedAutopilotUpdateDisabled":  1,
+    "ZtdCorrelationId":  "6f59cea2-135e-435c-b983-0572b810a885",
+    "Comment_File":  "Profile User Driven Autopilot",
+    "CloudAssignedAadServerData":  "{\"ZeroTouchConfig\":{\"CloudAssignedTenantUpn\":\"\",\"ForcedEnrollment\":1,\"CloudAssignedTenantDomain\":\"psd202.onmicrosoft.com\"}}",
+    "CloudAssignedOobeConfig":  1310,
+    "CloudAssignedTenantDomain":  "psd202.onmicrosoft.com",
+    "CloudAssignedLanguage":  "os-default"
+}
