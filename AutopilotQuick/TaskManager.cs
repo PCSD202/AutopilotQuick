@@ -11,6 +11,7 @@ using System.IO;
 using NLog;
 using Microsoft.Wim;
 using System.Reflection;
+using Usb.Events;
 
 namespace AutopilotQuick
 {
@@ -63,7 +64,8 @@ namespace AutopilotQuick
        
 
         public bool Enabled = false;
-
+        public bool DriveRemoved = false;
+        public bool RemoveOnly = false;
 
         public string InvokePowershellScriptAndGetResult(string script)
         {
@@ -494,6 +496,52 @@ cd {dellBiosSettingsDir}
 
         }
 
+
+
+        public bool RemoveDriveStep()
+        {
+            InvokeCurrentTaskNameChanged("Imaging complete");
+            InvokeCurrentTaskMessageChanged("One moment");
+            InvokeCurrentTaskProgressChanged(0, true);
+            File.Copy(App.GetExecutablePath(), @"W:\App.exe");
+            Process formatProcess = new Process();
+            formatProcess.StartInfo.FileName = @"W:\App.exe";
+            formatProcess.StartInfo.UseShellExecute = true;
+            formatProcess.StartInfo.RedirectStandardOutput = false;
+            formatProcess.StartInfo.CreateNoWindow = false;
+            formatProcess.StartInfo.Arguments = "/remove";
+            formatProcess.Start();
+            Thread.Sleep(1000);
+            Environment.Exit(0);
+            return true;
+        }
+        public void RemoveOnlyTask()
+        {
+            InvokeTotalTaskProgressChanged(100, false);
+            InvokeCurrentTaskNameChanged("Imaging complete - Remove flash drive");
+            InvokeCurrentTaskMessageChanged("Waiting for flash drive to be removed");
+            InvokeCurrentTaskProgressChanged(0, true);
+            using IUsbEventWatcher usbEventWatcher = new UsbEventWatcher();
+            usbEventWatcher.UsbDeviceRemoved += UsbEventWatcher_UsbDeviceRemoved;
+            while (!DriveRemoved)
+            {
+                Thread.Sleep(100);
+            }
+            Process formatProcess = new Process();
+            formatProcess.StartInfo.FileName = "wpeutil";
+            formatProcess.StartInfo.UseShellExecute = false;
+            formatProcess.StartInfo.RedirectStandardOutput = true;
+            formatProcess.StartInfo.CreateNoWindow = true;
+            formatProcess.StartInfo.Arguments = "reboot";
+            formatProcess.Start();
+            formatProcess.WaitForExit();
+        }
+
+        private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
+        {
+            DriveRemoved = true;
+        }
+
         private double GetProgressPercent(int maxSteps, int step)
         {
             return ( (double)step / (double)maxSteps ) * 100;
@@ -502,8 +550,18 @@ cd {dellBiosSettingsDir}
         public void Run(UserDataContext context)
         {
             wimCache = new WimCacher("http://sccm2.psd202.org/WIM/21H2-install.wim", context);
+            if (InternetMan.getInstance().IsConnected)
+            {
+                TaskManager_InternetBecameAvailable(null, null);
+            }
             InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-            var maxSteps = 7;
+
+            if (RemoveOnly)
+            {
+                RemoveOnlyTask();
+            }
+
+            var maxSteps = 8;
             bool success = ApplyDellBiosSettings();
             if (!success)
             {
@@ -561,6 +619,9 @@ cd {dellBiosSettingsDir}
             }
             InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
 
+            RemoveDriveStep();
+            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 8), false);
+            
             InvokeCurrentTaskNameChanged("Finished");
 
         }

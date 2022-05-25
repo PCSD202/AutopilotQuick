@@ -28,6 +28,10 @@ namespace AutopilotQuick
                 {
                     TaskManager.getInstance().Enabled = true;
                 }
+                else if (e.Args[i] == "/remove")
+                {
+                    TaskManager.getInstance().RemoveOnly = true;
+                }
             }
             var mainWindow = new MainWindow();
             this.MainWindow = mainWindow;
