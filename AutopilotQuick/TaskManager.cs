@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
-using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
 using NLog;
@@ -59,7 +54,7 @@ namespace AutopilotQuick
                 Progress = newProgressPercent
             });
         }
-        public static WimCacher wimCache;
+        public static Cacher wimCache;
         public bool UpdatedImageAvailable = false;
        
 
@@ -259,16 +254,13 @@ exit
             {
                 try
                 {
-                    if (!File.Exists(wimCache.WimPath) || UpdatedImageAvailable)
+                    if (!File.Exists(wimCache.FilePath) || UpdatedImageAvailable)
                     {
-                        InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         UpdatedImageAvailable = false;
-                        
-                        wimCache.DownloadUpdatedISO().ConfigureAwait(false).GetAwaiter().GetResult();
-                        InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+                        wimCache.DownloadUpdate();
                     }
 
-                    using (var wimHandle = WimgApi.CreateFile(wimCache.WimPath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None))
+                    using (var wimHandle = WimgApi.CreateFile(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None))
                     {
                         // Always set a temporary path
                         WimgApi.SetTemporaryPath(wimHandle, Environment.GetEnvironmentVariable("TEMP"));
@@ -305,10 +297,8 @@ exit
             }
             if (UpdatedImageAvailable)
             {
-                InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 UpdatedImageAvailable = false;
-                wimCache.DownloadUpdatedISO().ConfigureAwait(false).GetAwaiter().GetResult();
-                InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+                wimCache.DownloadUpdate();
                 return ApplyImageStep();
             }
             
@@ -508,9 +498,9 @@ cd {dellBiosSettingsDir}
             InvokeCurrentTaskNameChanged("Imaging complete");
             InvokeCurrentTaskMessageChanged("One moment");
             InvokeCurrentTaskProgressChanged(0, true);
-            File.Copy(App.GetExecutablePath(), @"X:\App.exe");
+            File.Copy(App.GetExecutablePath(), @"W:\App.exe");
             Process formatProcess = new Process();
-            formatProcess.StartInfo.FileName = @"X:\App.exe";
+            formatProcess.StartInfo.FileName = @"W:\App.exe";
             formatProcess.StartInfo.UseShellExecute = true;
             formatProcess.StartInfo.RedirectStandardOutput = false;
             formatProcess.StartInfo.CreateNoWindow = false;
@@ -522,6 +512,7 @@ cd {dellBiosSettingsDir}
         }
         public void RemoveOnlyTask()
         {
+            InvokeTotalTaskProgressChanged(100, false);
             InvokeCurrentTaskNameChanged("Imaging complete - Remove flash drive");
             InvokeCurrentTaskMessageChanged("Waiting for flash drive to be removed");
             InvokeCurrentTaskProgressChanged(0, true);
@@ -543,9 +534,6 @@ cd {dellBiosSettingsDir}
 
         private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
         {
-            InvokeCurrentTaskNameChanged("Imaging complete - Rebooting");
-            InvokeCurrentTaskMessageChanged("Drive removed, rebooting...");
-            InvokeCurrentTaskProgressChanged(100, false);
             DriveRemoved = true;
         }
 
@@ -556,7 +544,7 @@ cd {dellBiosSettingsDir}
 
         public void Run(UserDataContext context)
         {
-            wimCache = new WimCacher("http://sccm2.psd202.org/WIM/21H2-install.wim", context);
+            wimCache = new Cacher("http://sccm2.psd202.org/WIM/21H2-install.wim", "21H2-install.wim", context);
             if (InternetMan.getInstance().IsConnected)
             {
                 TaskManager_InternetBecameAvailable(null, null);
@@ -633,9 +621,8 @@ cd {dellBiosSettingsDir}
 
         }
 
-        private void TaskManager_InternetBecameAvailable(object? sender, EventArgs e)
-        {
-            UpdatedImageAvailable = !wimCache.IsUpToDate();
+        private void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
+            UpdatedImageAvailable = !wimCache.IsUpToDate;
         }
     }
     public class CurrentTaskNameChangedEventArgs : EventArgs
