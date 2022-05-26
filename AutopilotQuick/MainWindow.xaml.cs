@@ -334,7 +334,7 @@ namespace AutopilotQuick
                                     Path.Combine(appFolder, appName + appExtension), true);
                                 Application.Current.Invoke(() =>
                                 {
-                                    Process.Start(Path.Combine(appFolder, appName + appExtension));
+                                    Process.Start(Path.Combine(appFolder, appName + appExtension), "/run");
                                     Environment.Exit(0);
                                 });
                             }
