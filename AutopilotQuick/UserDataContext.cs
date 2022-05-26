@@ -31,6 +31,20 @@ namespace AutopilotQuick
             set { _totalProgress = value; OnPropertyChanged(nameof(TotalProgress)); }
         }
 
+        private bool _takeHomeToggleEnabled = true;
+        public bool TakeHomeToggleEnabled
+        {
+            get { return _takeHomeToggleEnabled; }
+            set { _takeHomeToggleEnabled = value; OnPropertyChanged(nameof(TakeHomeToggleEnabled)); }
+        }
+
+        private bool _takeHomeToggleOn = false;
+        public bool TakeHomeToggleOn
+        {
+            get { return _takeHomeToggleOn; }
+            set { _takeHomeToggleOn = value; OnPropertyChanged(nameof(TakeHomeToggleOn)); }
+        }
+
         public double _currentStepProgress = 0;
         public double CurrentStepProgress
         {

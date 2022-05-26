@@ -20,7 +20,7 @@
         <mah:WindowCommands>
             <StackPanel Orientation="Horizontal">
                 <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" Margin="0 0 4 0"/>
-                <mah:ToggleSwitch OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled"/>
+                <mah:ToggleSwitch OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
             </StackPanel>
         </mah:WindowCommands>
     </mah:MetroWindow.RightWindowCommands>
