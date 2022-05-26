@@ -8,6 +8,7 @@ using Microsoft.Wim;
 using System.Reflection;
 using Usb.Events;
 using ORMi;
+using AutopilotQuick.WMI;
 
 namespace AutopilotQuick
 {
@@ -556,6 +557,10 @@ cd {dellBiosSettingsDir}
 
         public void Run(UserDataContext context)
         {
+            if (RemoveOnly)
+            {
+                RemoveOnlyTask();
+            }
             wimCache = WimMan.getInstance().GetCacherForModel();
             if (InternetMan.getInstance().IsConnected)
             {
@@ -563,10 +568,7 @@ cd {dellBiosSettingsDir}
             }
             InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
 
-            if (RemoveOnly)
-            {
-                RemoveOnlyTask();
-            }
+
             if (Enabled)
             {
                 var maxSteps = 8;

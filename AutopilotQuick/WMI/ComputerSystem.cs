@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AutopilotQuick
+namespace AutopilotQuick.WMI
 {
     [WMIClass("Win32_ComputerSystem")]
     public class ComputerSystem : WMIInstance

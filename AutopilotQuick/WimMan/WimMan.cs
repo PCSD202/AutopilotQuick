@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using AutopilotQuick.WMI;
+using Newtonsoft.Json;
 using NLog;
 using ORMi;
 using System;
