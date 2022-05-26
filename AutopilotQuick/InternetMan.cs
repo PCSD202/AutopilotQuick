@@ -66,8 +66,9 @@ namespace AutopilotQuick
                 var internet = CheckForInternetConnection(1000);
                 if (internet && !IsConnected)
                 {
-                    InternetBecameAvailable?.Invoke(this, new EventArgs());
                     _logger.Info("Internet became available");
+                    InternetBecameAvailable?.Invoke(this, new EventArgs());
+                    
                 }
                 else if(!internet && IsConnected)
                 {

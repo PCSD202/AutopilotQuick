@@ -7,8 +7,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using AutopilotQuick.WMI;
 using NLog;
 using NLog.Targets;
+using ORMi;
 
 namespace AutopilotQuick
 {
@@ -48,12 +50,15 @@ namespace AutopilotQuick
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var LoggingConfig = new NLog.Config.LoggingConfiguration();
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
+            var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
             var logfile = new NLog.Targets.FileTarget("logfile")
             {
                 FileName = $"{appFolder}/logs/latest.log",
                 ArchiveFileName = $"{appFolder}/logs/{{#}}.log",
                 ArchiveNumbering = ArchiveNumberingMode.Date,
-                Layout = "${time:universalTime=True}|${level:uppercase=true}|${logger}|${message}",
+                Layout = "${time:universalTime=True}"+$"|{serviceTag}|{model}|"+"${level:uppercase=true}|${logger}|${message}",
                 MaxArchiveFiles = 100,
                 ArchiveOldFileOnStartup = true,
                 ArchiveDateFormat = "yyyy-MM-dd HH_mm_ss",

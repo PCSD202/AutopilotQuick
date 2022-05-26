@@ -42,9 +42,18 @@ public class Cacher {
         }
     }
 
+    private Task? DownloadUpdateTask = null;
+
     public void DownloadUpdate() {
-        Task task = Task.Run(async () => await DownloadUpdateAsync());
-        task.Wait();
+        if(DownloadUpdateTask is not null)
+        {
+            DownloadUpdateTask.Wait();
+        } else {
+            Task task = Task.Run(async () => await DownloadUpdateAsync());
+            DownloadUpdateTask = task;
+            task.Wait();
+        }
+        
     }
 
     public async Task DownloadUpdateAsync() {
