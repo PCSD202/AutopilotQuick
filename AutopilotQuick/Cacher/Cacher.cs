@@ -28,7 +28,7 @@ public class Cacher {
 
     private UserDataContext _context;
 
-    public bool IsUpToDate => GetCachedFileLastModified() > GetLastModifiedFromWeb();
+    public bool IsUpToDate => GetCachedFileLastModified() >= GetLastModifiedFromWeb();
     private string FileCacheDataPath => Path.Combine(BaseDir, FileName + "-CacheData.json");
     
     static readonly HttpClient client = new HttpClient();
