@@ -9,6 +9,7 @@ using System.Reflection;
 using Usb.Events;
 using ORMi;
 using AutopilotQuick.WMI;
+using System.Threading.Tasks;
 
 namespace AutopilotQuick
 {
@@ -420,6 +421,10 @@ W:\Windows\System32\Reagentc /Info /Target W:\Windows
                 {
                     scriptExecutable = "DesktopBiosSettings.cmd";
                 }
+                if (TakeHome)
+                {
+                    scriptExecutable = "cctk.exe --setuppwd= --valsetuppwd=PCSD202";
+                }
                 var script = @$"
 cd {dellBiosSettingsDir}
 & .\{scriptExecutable}
@@ -548,17 +553,36 @@ cd {dellBiosSettingsDir}
             return ( (double)step / (double)maxSteps ) * 100;
         }
 
-        private bool AfterApplyAutopilot = false;
+        private bool AfterApply = false;
         private bool TakeHome = false;
+        private bool AfterBiosSettings = false;
+        private bool ReApplyBiosSettings = false;
         public void ApplyTakeHome(bool Enabled)
         {
+            if (Enabled)
+            {
+                TakeHome = true;
+            }
+            if (AfterApply) //We need to remove the autopilot file
+            {
+                File.Delete(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json");
+            }
+            if (AfterBiosSettings)
+            {
+                ReApplyBiosSettings = true;
+            }
 
+            
         }
 
+
+        private UserDataContext _context;
         public void Run(UserDataContext context)
         {
+            _context = context;
             if (RemoveOnly)
             {
+                context.TakeHomeToggleOn = !File.Exists(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json");
                 RemoveOnlyTask();
             }
             wimCache = WimMan.getInstance().GetCacherForModel();
@@ -572,22 +596,25 @@ cd {dellBiosSettingsDir}
             if (Enabled)
             {
                 var maxSteps = 8;
-                bool success = ApplyDellBiosSettings();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
+                
 
-                success = FormatStep();
+                bool success = FormatStep();
                 if (!success)
                 {
                     InvokeCurrentTaskNameChanged("Failed to image drive");
                     InvokeTotalTaskProgressChanged(100, false);
                     Thread.Sleep(10000);
                 }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
+
+                success = ApplyDellBiosSettings();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
+                AfterBiosSettings = true;
 
                 success = ApplyImageStep();
                 if (!success)
@@ -599,6 +626,7 @@ cd {dellBiosSettingsDir}
 
                 if (!TakeHome)
                 {
+                    
                     success = ApplyWindowsAutopilotConfigurationStep();
                     if (!success)
                     {
@@ -606,17 +634,17 @@ cd {dellBiosSettingsDir}
                         InvokeTotalTaskProgressChanged(100, false);
                     }
                     InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 4), false);
-                    AfterApplyAutopilot = true;
+                    
+                    success = ApplyWifiStep();
+                    if (!success)
+                    {
+                        InvokeCurrentTaskNameChanged("Failed to apply wifi settings");
+                        InvokeTotalTaskProgressChanged(100, false);
+                    }
+                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
                 }
-                
-
-                success = ApplyWifiStep();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to apply wifi settings");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
+                AfterApply = true;
+               
 
                 success = MakeDiskBootable();
                 if (!success)
@@ -633,6 +661,11 @@ cd {dellBiosSettingsDir}
                     InvokeTotalTaskProgressChanged(100, false);
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
+
+                if (ReApplyBiosSettings)
+                {
+                    ApplyDellBiosSettings();
+                }
 
                 RemoveDriveStep();
                 

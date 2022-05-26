@@ -57,7 +57,6 @@ namespace AutopilotQuick
 
         public Cacher GetCacherForModel(string? model = null)
         {
-            _logger.Info(ModelName);
             model ??= ModelName;
             var wimManData = GetWimManData();
             if (wimManData.ContainsKey(model))
