@@ -261,8 +261,11 @@ exit
                 {
                     if (!File.Exists(wimCache.WimPath) || UpdatedImageAvailable)
                     {
+                        InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         UpdatedImageAvailable = false;
+                        
                         wimCache.DownloadUpdatedISO().ConfigureAwait(false).GetAwaiter().GetResult();
+                        InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                     }
 
                     using (var wimHandle = WimgApi.CreateFile(wimCache.WimPath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None))
@@ -302,8 +305,10 @@ exit
             }
             if (UpdatedImageAvailable)
             {
+                InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 UpdatedImageAvailable = false;
                 wimCache.DownloadUpdatedISO().ConfigureAwait(false).GetAwaiter().GetResult();
+                InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                 return ApplyImageStep();
             }
             
@@ -503,9 +508,9 @@ cd {dellBiosSettingsDir}
             InvokeCurrentTaskNameChanged("Imaging complete");
             InvokeCurrentTaskMessageChanged("One moment");
             InvokeCurrentTaskProgressChanged(0, true);
-            File.Copy(App.GetExecutablePath(), @"W:\App.exe");
+            File.Copy(App.GetExecutablePath(), @"X:\App.exe");
             Process formatProcess = new Process();
-            formatProcess.StartInfo.FileName = @"W:\App.exe";
+            formatProcess.StartInfo.FileName = @"X:\App.exe";
             formatProcess.StartInfo.UseShellExecute = true;
             formatProcess.StartInfo.RedirectStandardOutput = false;
             formatProcess.StartInfo.CreateNoWindow = false;
@@ -517,7 +522,6 @@ cd {dellBiosSettingsDir}
         }
         public void RemoveOnlyTask()
         {
-            InvokeTotalTaskProgressChanged(100, false);
             InvokeCurrentTaskNameChanged("Imaging complete - Remove flash drive");
             InvokeCurrentTaskMessageChanged("Waiting for flash drive to be removed");
             InvokeCurrentTaskProgressChanged(0, true);
@@ -539,6 +543,9 @@ cd {dellBiosSettingsDir}
 
         private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
         {
+            InvokeCurrentTaskNameChanged("Imaging complete - Rebooting");
+            InvokeCurrentTaskMessageChanged("Drive removed, rebooting...");
+            InvokeCurrentTaskProgressChanged(100, false);
             DriveRemoved = true;
         }
 
