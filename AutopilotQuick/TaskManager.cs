@@ -254,10 +254,12 @@ exit
             {
                 try
                 {
-                    if (!File.Exists(wimCache.FilePath) || UpdatedImageAvailable)
+                    if ((!wimCache.IsUpToDate) || UpdatedImageAvailable)
                     {
+                        InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         UpdatedImageAvailable = false;
                         wimCache.DownloadUpdate();
+                        InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                     }
 
                     using (var wimHandle = WimgApi.CreateFile(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None))
@@ -295,10 +297,12 @@ exit
                 }
                 
             }
-            if (UpdatedImageAvailable)
+            if ((!wimCache.IsUpToDate) || UpdatedImageAvailable)
             {
+                InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 UpdatedImageAvailable = false;
                 wimCache.DownloadUpdate();
+                InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                 return ApplyImageStep();
             }
             
@@ -498,9 +502,9 @@ cd {dellBiosSettingsDir}
             InvokeCurrentTaskNameChanged("Imaging complete");
             InvokeCurrentTaskMessageChanged("One moment");
             InvokeCurrentTaskProgressChanged(0, true);
-            File.Copy(App.GetExecutablePath(), @"W:\App.exe");
+            File.Copy(App.GetExecutablePath(), @"X:\App.exe");
             Process formatProcess = new Process();
-            formatProcess.StartInfo.FileName = @"W:\App.exe";
+            formatProcess.StartInfo.FileName = @"X:\App.exe";
             formatProcess.StartInfo.UseShellExecute = true;
             formatProcess.StartInfo.RedirectStandardOutput = false;
             formatProcess.StartInfo.CreateNoWindow = false;
@@ -534,6 +538,8 @@ cd {dellBiosSettingsDir}
 
         private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
         {
+            InvokeCurrentTaskNameChanged("Imaging complete - Rebooting");
+            InvokeCurrentTaskMessageChanged("Flash drive removed, rebooting");
             DriveRemoved = true;
         }
 
