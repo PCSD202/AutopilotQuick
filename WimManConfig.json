@@ -1,0 +1,10 @@
+{
+	"Latitude 3190 2-in-1": {
+		"URL": "http://sccm2.psd202.org/WIM/21H2-install.wim",
+		"Name": "21H2-install.wim"
+	},
+	"default": {
+		"URL": "http://sccm2.psd202.org/WIM/21H2-install.wim",
+		"Name": "default.wim"
+	}
+}
