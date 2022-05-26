@@ -71,7 +71,7 @@ public class Cacher {
             if (!progressPercentage.HasValue) return;
             updateWindow.SetProgress(progressPercentage.Value);
             updateWindow.SetMessage($"Downloading updated file\n"+
-                                    $"Progress: {(progressPercentage.Value/100):P}" +
+                                    $"Progress: {(progressPercentage.Value/100):P} " +
                                     $"({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
         };
         await DownloadClient.StartDownload();
