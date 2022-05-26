@@ -57,7 +57,7 @@ public class Cacher {
         updateWindow.SetIndeterminate();
         updateWindow.Maximum = 100;
         SetCachedFileLastModified(DateTime.MinValue); //Set it to the lowest value so if we were to crash, it will re-download
-        using var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath, client);
+        using var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath);
         DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) => {
             if (!progressPercentage.HasValue) return;
             updateWindow.SetProgress(progressPercentage.Value);

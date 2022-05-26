@@ -7,6 +7,7 @@ using NLog;
 using Microsoft.Wim;
 using System.Reflection;
 using Usb.Events;
+using ORMi;
 
 namespace AutopilotQuick
 {
@@ -62,7 +63,7 @@ namespace AutopilotQuick
         public bool DriveRemoved = false;
         public bool RemoveOnly = false;
 
-        public string InvokePowershellScriptAndGetResult(string script)
+        public static string InvokePowershellScriptAndGetResult(string script)
         {
             var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), "script.ps1");
             File.WriteAllText(psscriptPath, script);
@@ -254,7 +255,7 @@ exit
             {
                 try
                 {
-                    if ((!wimCache.IsUpToDate) || UpdatedImageAvailable)
+                    if (!wimCache.IsUpToDate)
                     {
                         InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         UpdatedImageAvailable = false;
@@ -297,7 +298,7 @@ exit
                 }
                 
             }
-            if ((!wimCache.IsUpToDate) || UpdatedImageAvailable)
+            if (!wimCache.IsUpToDate)
             {
                 InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 UpdatedImageAvailable = false;
@@ -412,9 +413,9 @@ W:\Windows\System32\Reagentc /Info /Target W:\Windows
                 InvokeCurrentTaskProgressChanged(25, false);
                 InvokeCurrentTaskMessageChanged("Figuring out if desktop or laptop");
                 var scriptExecutable = "LaptopBiosSettings.cmd";
-                var WMIOutput = InvokePowershellScriptAndGetResult(@"Get-WmiObject -Query ""SELECT * FROM Win32_ComputerSystem WHERE Model LIKE '%Optiplex%'""");
-                Logger.Debug($"WMI output: {WMIOutput}");
-                if (WMIOutput != "")
+                WMIHelper helper = new WMIHelper("root\\CimV2");
+                var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
+                if (model.Contains("Optiplex"))
                 {
                     scriptExecutable = "DesktopBiosSettings.cmd";
                 }
@@ -495,8 +496,6 @@ cd {dellBiosSettingsDir}
 
         }
 
-
-
         public bool RemoveDriveStep()
         {
             InvokeCurrentTaskNameChanged("Imaging complete");
@@ -548,9 +547,16 @@ cd {dellBiosSettingsDir}
             return ( (double)step / (double)maxSteps ) * 100;
         }
 
+        private bool AfterApplyAutopilot = false;
+        private bool TakeHome = false;
+        public void ApplyTakeHome(bool Enabled)
+        {
+
+        }
+
         public void Run(UserDataContext context)
         {
-            wimCache = new Cacher("http://sccm2.psd202.org/WIM/21H2-install.wim", "21H2-install.wim", context);
+            wimCache = WimMan.getInstance().GetCacherForModel();
             if (InternetMan.getInstance().IsConnected)
             {
                 TaskManager_InternetBecameAvailable(null, null);
@@ -561,74 +567,89 @@ cd {dellBiosSettingsDir}
             {
                 RemoveOnlyTask();
             }
-
-            var maxSteps = 8;
-            bool success = ApplyDellBiosSettings();
-            if (!success)
+            if (Enabled)
             {
-                InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
+                var maxSteps = 8;
+                bool success = ApplyDellBiosSettings();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
 
-            success = FormatStep();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to image drive");
-                InvokeTotalTaskProgressChanged(100, false);
-                Thread.Sleep(10000);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
+                success = FormatStep();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to image drive");
+                    InvokeTotalTaskProgressChanged(100, false);
+                    Thread.Sleep(10000);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
 
-            success = ApplyImageStep();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to apply image to drive");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
+                success = ApplyImageStep();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to apply image to drive");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
 
-            success = ApplyWindowsAutopilotConfigurationStep();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to apply autopilot configuration file");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 4), false);
+                if (!TakeHome)
+                {
+                    success = ApplyWindowsAutopilotConfigurationStep();
+                    if (!success)
+                    {
+                        InvokeCurrentTaskNameChanged("Failed to apply autopilot configuration file");
+                        InvokeTotalTaskProgressChanged(100, false);
+                    }
+                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 4), false);
+                    AfterApplyAutopilot = true;
+                }
+                
 
-            success = ApplyWifiStep();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to apply wifi settings");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
+                success = ApplyWifiStep();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to apply wifi settings");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
 
-            success = MakeDiskBootable();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to make disk bootable");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 6), false);
+                success = MakeDiskBootable();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to make disk bootable");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 6), false);
 
-            success = RemoveUnattendXMLStep();
-            if (!success)
-            {
-                InvokeCurrentTaskNameChanged("Failed to delete unattend");
-                InvokeTotalTaskProgressChanged(100, false);
-            }
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
+                success = RemoveUnattendXMLStep();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to delete unattend");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
 
-            RemoveDriveStep();
-            InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 8), false);
-            
+                RemoveDriveStep();
+                
+            }
+            InvokeTotalTaskProgressChanged(GetProgressPercent(8, 8), false);
+
             InvokeCurrentTaskNameChanged("Finished");
+
+
 
         }
 
         private void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
-            UpdatedImageAvailable = !wimCache.IsUpToDate;
+            Logger.Info("Internet became available");
+            if (!UpdatedImageAvailable)
+            {
+                UpdatedImageAvailable = !wimCache.IsUpToDate;
+            }
+            
         }
     }
     public class CurrentTaskNameChangedEventArgs : EventArgs

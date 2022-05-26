@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 using Octokit;
 
 namespace AutopilotQuick
@@ -13,6 +14,7 @@ namespace AutopilotQuick
     {
         private static readonly InternetMan instance = new();
 
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         public static InternetMan getInstance()
         {
             return instance;
@@ -65,6 +67,11 @@ namespace AutopilotQuick
                 if (internet && !IsConnected)
                 {
                     InternetBecameAvailable?.Invoke(this, new EventArgs());
+                    _logger.Info("Internet became available");
+                }
+                else if(!internet && IsConnected)
+                {
+                    _logger.Info("Internet lost");
                 }
                 IsConnected = internet;
                 
