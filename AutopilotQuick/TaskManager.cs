@@ -504,18 +504,22 @@ cd {dellBiosSettingsDir}
 
         public bool RemoveDriveStep()
         {
-            InvokeCurrentTaskNameChanged("Imaging complete");
-            InvokeCurrentTaskMessageChanged("One moment");
-            InvokeCurrentTaskProgressChanged(0, true);
-            File.Copy(App.GetExecutablePath(), @"X:\App.exe");
+            InvokeCurrentTaskNameChanged("Imaging complete - Rebooting");
+            InvokeCurrentTaskMessageChanged("Rebooting in 5 seconds");
+            DateTime StartTime = DateTime.UtcNow;
+
+            while ((DateTime.UtcNow - StartTime).TotalSeconds <= 5)
+            {
+                InvokeCurrentTaskProgressChanged(((DateTime.UtcNow - StartTime).TotalSeconds / 5) * 100);
+            }
             Process formatProcess = new Process();
-            formatProcess.StartInfo.FileName = @"X:\App.exe";
-            formatProcess.StartInfo.UseShellExecute = true;
-            formatProcess.StartInfo.RedirectStandardOutput = false;
-            formatProcess.StartInfo.CreateNoWindow = false;
-            formatProcess.StartInfo.Arguments = "/remove";
+            formatProcess.StartInfo.FileName = "wpeutil";
+            formatProcess.StartInfo.UseShellExecute = false;
+            formatProcess.StartInfo.RedirectStandardOutput = true;
+            formatProcess.StartInfo.CreateNoWindow = true;
+            formatProcess.StartInfo.Arguments = "reboot";
             formatProcess.Start();
-            Thread.Sleep(1000);
+            formatProcess.WaitForExit();
             Environment.Exit(0);
             return true;
         }
@@ -527,18 +531,12 @@ cd {dellBiosSettingsDir}
             InvokeCurrentTaskProgressChanged(0, true);
             using IUsbEventWatcher usbEventWatcher = new UsbEventWatcher();
             usbEventWatcher.UsbDeviceRemoved += UsbEventWatcher_UsbDeviceRemoved;
-            while (!DriveRemoved)
+            DateTime start = DateTime.UtcNow;
+            while (!DriveRemoved && (DateTime.UtcNow - start).TotalSeconds > 5)
             {
                 Thread.Sleep(100);
             }
-            Process formatProcess = new Process();
-            formatProcess.StartInfo.FileName = "wpeutil";
-            formatProcess.StartInfo.UseShellExecute = false;
-            formatProcess.StartInfo.RedirectStandardOutput = true;
-            formatProcess.StartInfo.CreateNoWindow = true;
-            formatProcess.StartInfo.Arguments = "reboot";
-            formatProcess.Start();
-            formatProcess.WaitForExit();
+            
         }
 
         private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
