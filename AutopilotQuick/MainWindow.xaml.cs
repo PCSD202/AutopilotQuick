@@ -39,6 +39,7 @@ namespace AutopilotQuick
             InitializeComponent();
             context = new UserDataContext(DialogCoordinator.Instance);
             DataContext = context;
+            WimMan.getInstance().SetContext(context);
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var appName = Path.GetFileNameWithoutExtension(Environment.ProcessPath);
             var appExtension = Path.GetExtension(Environment.ProcessPath);
@@ -104,6 +105,7 @@ namespace AutopilotQuick
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
@@ -145,7 +147,14 @@ namespace AutopilotQuick
             context.RefreshLatestVersion();
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
         }
-
+        private void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        {
+            ToggleSwitch toggleSwitch = sender as ToggleSwitch;
+            if (toggleSwitch != null)
+            {
+                TaskManager.getInstance().ApplyTakeHome(toggleSwitch.IsOn);
+            }
+        }
         public async void ShowErrorBox(string errorMessage, string title = "ERROR")
         {
             var errorBox = await context.DialogCoordinator.ShowMessageAsync(context, title,

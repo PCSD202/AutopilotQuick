@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace AutopilotQuick
 {
-    public class WimCacheData
+    internal class WimManData
     {
-        public DateTime LastModified { get; set; }
+        public string URL { get; set; }
+        public string Name { get; set; }
     }
 }

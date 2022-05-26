@@ -16,15 +16,15 @@ public class HttpClientDownloadWithProgress : IDisposable
 
     public event ProgressChangedHandler ProgressChanged;
 
-    public HttpClientDownloadWithProgress(string downloadUrl, string destinationFilePath, HttpClient client)
+    public HttpClientDownloadWithProgress(string downloadUrl, string destinationFilePath)
     {
         _downloadUrl = downloadUrl;
         _destinationFilePath = destinationFilePath;
-        _httpClient = client;
     }
 
     public async Task StartDownload()
     {
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromDays(1) };
         using (var response = await _httpClient.GetAsync(_downloadUrl, HttpCompletionOption.ResponseHeadersRead))
             await DownloadFileFromHttpResponseMessage(response);
     }
