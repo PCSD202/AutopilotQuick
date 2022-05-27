@@ -225,11 +225,14 @@ namespace AutopilotQuick
                 version = new Version(context.Version);
                 latestVersion = new Version(context.LatestVersion);
             }
-            catch (Exception e) { }
+            catch (Exception e) { _taskManagerPauseTokenSource.IsPaused = false;  }
 #if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
-            if (!(latestVersion.CompareTo(version) > 0)) return;
+            if (!(latestVersion.CompareTo(version) > 0)) {
+                _taskManagerPauseTokenSource.IsPaused = false;
+                return;
+            }
             var selection = await context.DialogCoordinator.ShowMessageAsync(context, "An update is available",
                 $"We've detected you're using an older version of Autopilot Quick!\nYour version: {version.ToString(3)}\nLatest version: {latestVersion.ToString(3)}",
                 MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings
