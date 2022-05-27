@@ -50,6 +50,22 @@ namespace AutopilotQuick
             return JsonConvert.DeserializeObject<WimManDatabase>(File.ReadAllText(_configCacher.FilePath));
         }
 
+        public void Preload() {
+            Task task = Task.Run(async () => await PreloadAsync());
+            task.Wait();
+        }
+
+        public async Task PreloadAsync() {
+            var WimManData = GetWimManData();
+            foreach (var modelName in WimManData.Keys) {
+                var cacher = GetCacherForModel(modelName);
+                if (!cacher.IsUpToDate) {
+                    await cacher.DownloadUpdateAsync();
+                }
+            }
+
+        }
+
         
 
         private string _modelName;
