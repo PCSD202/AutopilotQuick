@@ -10,11 +10,11 @@ using Usb.Events;
 using ORMi;
 using AutopilotQuick.WMI;
 using System.Threading.Tasks;
+using Nito.AsyncEx;
 
 namespace AutopilotQuick
 {
-    class TaskManager
-    {
+    class TaskManager {
         private static readonly TaskManager instance = new();
         public static TaskManager getInstance()
         {
@@ -257,7 +257,7 @@ exit
             {
                 try
                 {
-                    if (!wimCache.IsUpToDate)
+                    if (!wimCache.FileCached)
                     {
                         InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         UpdatedImageAvailable = false;
@@ -300,7 +300,7 @@ exit
                 }
                 
             }
-            if (!wimCache.IsUpToDate)
+            if (!wimCache.FileCached)
             {
                 InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 UpdatedImageAvailable = false;
@@ -502,16 +502,20 @@ cd {dellBiosSettingsDir}
 
         }
 
+        public void Countdown(string title, string message, int seconds = 5, PauseToken pauseToken = new PauseToken()) {
+            InvokeCurrentTaskNameChanged(title);
+            InvokeCurrentTaskMessageChanged(message);
+            DateTime StartTime = DateTime.UtcNow;
+            while ((DateTime.UtcNow - StartTime).TotalSeconds <= seconds)
+            {
+                pauseToken.WaitWhilePaused();
+                InvokeCurrentTaskProgressChanged(((DateTime.UtcNow - StartTime).TotalSeconds / seconds) * 100);
+                Thread.Sleep(20);
+            }
+        }
         public bool RemoveDriveStep()
         {
-            InvokeCurrentTaskNameChanged("Imaging complete - Rebooting");
-            InvokeCurrentTaskMessageChanged("Rebooting in 5 seconds");
-            DateTime StartTime = DateTime.UtcNow;
-
-            while ((DateTime.UtcNow - StartTime).TotalSeconds <= 5)
-            {
-                InvokeCurrentTaskProgressChanged(((DateTime.UtcNow - StartTime).TotalSeconds / 5) * 100);
-            }
+            Countdown("Imaging complete - Rebooting", "Rebooting in 5 seconds", 5);
             Process formatProcess = new Process();
             formatProcess.StartInfo.FileName = "wpeutil";
             formatProcess.StartInfo.UseShellExecute = false;
@@ -523,21 +527,7 @@ cd {dellBiosSettingsDir}
             Environment.Exit(0);
             return true;
         }
-        public void RemoveOnlyTask()
-        {
-            InvokeTotalTaskProgressChanged(100, false);
-            InvokeCurrentTaskNameChanged("Imaging complete - Remove flash drive");
-            InvokeCurrentTaskMessageChanged("Waiting for flash drive to be removed");
-            InvokeCurrentTaskProgressChanged(0, true);
-            using IUsbEventWatcher usbEventWatcher = new UsbEventWatcher();
-            usbEventWatcher.UsbDeviceRemoved += UsbEventWatcher_UsbDeviceRemoved;
-            DateTime start = DateTime.UtcNow;
-            while (!DriveRemoved && (DateTime.UtcNow - start).TotalSeconds > 5)
-            {
-                Thread.Sleep(100);
-            }
-            
-        }
+        
 
         private void UsbEventWatcher_UsbDeviceRemoved(object? sender, UsbDevice e)
         {
@@ -551,38 +541,21 @@ cd {dellBiosSettingsDir}
             return ( (double)step / (double)maxSteps ) * 100;
         }
 
-        private bool AfterApply = false;
         private bool TakeHome = false;
-        private bool AfterBiosSettings = false;
-        private bool ReApplyBiosSettings = false;
         public void ApplyTakeHome(bool Enabled)
         {
             if (Enabled)
             {
                 TakeHome = true;
             }
-            if (AfterApply) //We need to remove the autopilot file
-            {
-                File.Delete(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json");
-            }
-            if (AfterBiosSettings)
-            {
-                ReApplyBiosSettings = true;
-            }
-
-            
         }
 
 
         private UserDataContext _context;
-        public void Run(UserDataContext context)
+        public void Run(UserDataContext context, PauseToken pauseToken)
         {
+            pauseToken.WaitWhilePaused();
             _context = context;
-            if (RemoveOnly)
-            {
-                context.TakeHomeToggleOn = !File.Exists(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json");
-                RemoveOnlyTask();
-            }
             wimCache = WimMan.getInstance().GetCacherForModel();
             if (InternetMan.getInstance().IsConnected)
             {
@@ -595,7 +568,7 @@ cd {dellBiosSettingsDir}
             {
                 var maxSteps = 8;
                 
-
+                pauseToken.WaitWhilePaused();
                 bool success = FormatStep();
                 if (!success)
                 {
@@ -605,26 +578,27 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
 
-                success = ApplyDellBiosSettings();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
-                AfterBiosSettings = true;
-
+                
+                pauseToken.WaitWhilePaused();
                 success = ApplyImageStep();
                 if (!success)
                 {
                     InvokeCurrentTaskNameChanged("Failed to apply image to drive");
                     InvokeTotalTaskProgressChanged(100, false);
                 }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
-
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
+                
+                pauseToken.WaitWhilePaused();
                 if (!TakeHome)
                 {
-                    
+                    success = ApplyDellBiosSettings();
+                    if (!success)
+                    {
+                        InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
+                        InvokeTotalTaskProgressChanged(100, false);
+                    }
+                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
+
                     success = ApplyWindowsAutopilotConfigurationStep();
                     if (!success)
                     {
@@ -641,9 +615,9 @@ cd {dellBiosSettingsDir}
                     }
                     InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
                 }
-                AfterApply = true;
+                context.TakeHomeToggleEnabled = false;
                
-
+                pauseToken.WaitWhilePaused();
                 success = MakeDiskBootable();
                 if (!success)
                 {
@@ -652,6 +626,7 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 6), false);
 
+                pauseToken.WaitWhilePaused();
                 success = RemoveUnattendXMLStep();
                 if (!success)
                 {
@@ -660,16 +635,14 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
 
-                if (ReApplyBiosSettings)
-                {
-                    ApplyDellBiosSettings();
-                }
-
+                pauseToken.WaitWhilePaused();
                 RemoveDriveStep();
                 
             }
+            
             InvokeTotalTaskProgressChanged(GetProgressPercent(8, 8), false);
 
+            Countdown("Finished", "Waiting for 100 seconds", 100, pauseToken);
             InvokeCurrentTaskNameChanged("Finished");
 
 
@@ -677,7 +650,6 @@ cd {dellBiosSettingsDir}
         }
 
         private void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
-            Logger.Info("Internet became available");
             if (!UpdatedImageAvailable)
             {
                 UpdatedImageAvailable = !wimCache.IsUpToDate;
