@@ -22,6 +22,7 @@ using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
 using MahApps.Metro.Controls;
+using Nito.AsyncEx;
 
 namespace AutopilotQuick
 {
@@ -33,6 +34,7 @@ namespace AutopilotQuick
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public UserDataContext context;
         private readonly bool Updated;
+        private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
         
         public MainWindow()
         {
@@ -110,7 +112,7 @@ namespace AutopilotQuick
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
             TaskManager.getInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
-            Task.Factory.StartNew(() => TaskManager.getInstance().Run(context));
+            Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
             Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
             
@@ -147,13 +149,25 @@ namespace AutopilotQuick
             context.RefreshLatestVersion();
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
         }
-        private void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        private async void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
         {
             ToggleSwitch toggleSwitch = sender as ToggleSwitch;
-            if (toggleSwitch != null)
-            {
-                TaskManager.getInstance().ApplyTakeHome(toggleSwitch.IsOn);
+            if (toggleSwitch != null && toggleSwitch.IsOn) {
+                _taskManagerPauseTokenSource.IsPaused = true;
+                var result = await context.DialogCoordinator.ShowMessageAsync(context, "Apply take home?", "This removes the bios password, de-registers the device from autopilot, and does not apply autopilot or wifi config. If confirmed, this can only be undone by re-imaging. Would you like to continue?", MessageDialogStyle.AffirmativeAndNegative);
+                if (result == MessageDialogResult.Affirmative)
+                {
+                    context.TakeHomeToggleEnabled = false;
+                    TaskManager.getInstance().ApplyTakeHome(toggleSwitch.IsOn);
+                }
+                else
+                {
+                    context.TakeHomeToggleEnabled = true;
+                    context.TakeHomeToggleOn = false;
+                }
+                _taskManagerPauseTokenSource.IsPaused = false;
             }
+            
         }
         public async void ShowErrorBox(string errorMessage, string title = "ERROR")
         {
@@ -200,8 +214,8 @@ namespace AutopilotQuick
             }
         }
 
-        public async void Update()
-        {
+        public async void Update() {
+            _taskManagerPauseTokenSource.IsPaused = true;
             var version = new Version();
             var latestVersion = new Version();
             try
@@ -353,6 +367,7 @@ namespace AutopilotQuick
                 var downloaderClient = client.DownloadFileTaskAsync(context.LatestReleaseAssetURL, downloadPath);
             }
 #endif
+            _taskManagerPauseTokenSource.IsPaused = false;
         }
 
     }
