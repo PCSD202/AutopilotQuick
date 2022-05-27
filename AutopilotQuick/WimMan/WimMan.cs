@@ -29,7 +29,7 @@ namespace AutopilotQuick
         public void SetContext(UserDataContext context)
         {
             _context = context;
-            _configCacher = new Cacher("http://sccm2.psd202.org/WIM/WimManConfig.json", "WimManConfig.json", _context);
+            _configCacher = new Cacher("http://nettools.psd202.org/AutoPilotFast/WimManConfig.json", "WimManConfig.json", _context);
             InternetMan.getInstance().InternetBecameAvailable += WimMan_InternetBecameAvailable;
         }
 
