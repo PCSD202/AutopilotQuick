@@ -1,10 +1,38 @@
 {
-	"Latitude 3190 2-in-1": {
-		"URL": "http://sccm2.psd202.org/WIM/21H2-install.wim",
-		"Name": "21H2-install.wim"
+	"Latitude 3310": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
 	},
+	"Latitude 3189": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
+	},
+	"Latitude 3190 2-in-1": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
+	},
+	"Latitude 5289": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
+	},
+	"Latitude 5300 2-in-1": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
+	},	
+	"Latitude 7420": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
+	},	
+	"OptiPlex 3050": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Desktops-19044.1706.wim",
+		"Name": "Desktops.wim"
+	},
+	"OptiPlex 3090": {
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Desktops-19044.1706.wim",
+		"Name": "Desktops.wim"
+	},	
 	"default": {
-		"URL": "http://sccm2.psd202.org/WIM/21H2-install.wim",
-		"Name": "default.wim"
+		"URL": "http://nettools.psd202.org/AutoPilotFast/Laptops-19044.1706.wim",
+		"Name": "Laptops.wim"
 	}
 }
