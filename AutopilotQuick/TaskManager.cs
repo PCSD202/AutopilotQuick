@@ -639,6 +639,10 @@ cd {dellBiosSettingsDir}
                 RemoveDriveStep();
                 
             }
+
+            if (!Enabled) {
+                WimMan.getInstance().Preload();
+            }
             
             InvokeTotalTaskProgressChanged(GetProgressPercent(8, 8), false);
 
