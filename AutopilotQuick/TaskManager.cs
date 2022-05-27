@@ -508,7 +508,7 @@ cd {dellBiosSettingsDir}
             DateTime StartTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - StartTime).TotalSeconds <= seconds)
             {
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 InvokeCurrentTaskProgressChanged(((DateTime.UtcNow - StartTime).TotalSeconds / seconds) * 100);
                 Thread.Sleep(20);
             }
@@ -550,7 +550,13 @@ cd {dellBiosSettingsDir}
             }
         }
 
-
+        private void WaitForPause(PauseToken pauseToken) {
+            if (!pauseToken.IsPaused) return;
+            InvokeCurrentTaskNameChanged("Paused");
+            InvokeCurrentTaskMessageChanged("Waiting for unpause");
+            InvokeCurrentTaskProgressChanged(0, true);
+            pauseToken.WaitWhilePaused();
+        }
         private UserDataContext _context;
         public void Run(UserDataContext context, PauseToken pauseToken)
         {
@@ -568,7 +574,7 @@ cd {dellBiosSettingsDir}
             {
                 var maxSteps = 8;
                 
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 bool success = FormatStep();
                 if (!success)
                 {
@@ -578,8 +584,8 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
 
+                WaitForPause(pauseToken);
                 
-                pauseToken.WaitWhilePaused();
                 success = ApplyImageStep();
                 if (!success)
                 {
@@ -588,7 +594,7 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
                 
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 if (!TakeHome)
                 {
                     success = ApplyDellBiosSettings();
@@ -617,7 +623,7 @@ cd {dellBiosSettingsDir}
                 }
                 context.TakeHomeToggleEnabled = false;
                
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 success = MakeDiskBootable();
                 if (!success)
                 {
@@ -626,7 +632,7 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 6), false);
 
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 success = RemoveUnattendXMLStep();
                 if (!success)
                 {
@@ -635,7 +641,7 @@ cd {dellBiosSettingsDir}
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
 
-                pauseToken.WaitWhilePaused();
+                WaitForPause(pauseToken);
                 RemoveDriveStep();
                 
             }
