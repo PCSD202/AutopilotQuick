@@ -10,6 +10,7 @@ using Usb.Events;
 using ORMi;
 using AutopilotQuick.WMI;
 using System.Threading.Tasks;
+using ControlzEx.Standard;
 using Nito.AsyncEx;
 
 namespace AutopilotQuick
@@ -421,14 +422,6 @@ W:\Windows\System32\Reagentc /Info /Target W:\Windows
                 {
                     scriptExecutable = "DesktopBiosSettings.cmd";
                 }
-                if (TakeHome)
-                {
-                    scriptExecutable = "cctk.exe --setuppwd= --valsetuppwd=PCSD202";
-                }
-                var script = @$"
-cd {dellBiosSettingsDir}
-& .\{scriptExecutable}
-";
                 if (scriptExecutable == "LaptopBiosSettings.cmd")
                 {
                     InvokeCurrentTaskMessageChanged("This device is a laptop, applying settings");
@@ -437,6 +430,16 @@ cd {dellBiosSettingsDir}
                 {
                     InvokeCurrentTaskMessageChanged("This device is a Desktop, applying settings");
                 }
+
+                if (TakeHome)
+                {
+                    scriptExecutable = "cctk.exe --setuppwd= --valsetuppwd=PCSD202";
+                }
+                var script = @$"
+cd {dellBiosSettingsDir}
+& .\{scriptExecutable}
+";
+                
                 var output = InvokePowershellScriptAndGetResult(script);
                 Logger.Debug($"Dell bios output: {output}");
                 InvokeCurrentTaskProgressChanged(50, false);
@@ -550,6 +553,58 @@ cd {dellBiosSettingsDir}
             }
         }
 
+        public bool RemoveDeviceFromAutopilot() {
+            InvokeCurrentTaskNameChanged("Removing device from autopilot");
+            InvokeCurrentTaskProgressChanged(0, false);
+            InvokeCurrentTaskMessageChanged("Extracting files");
+            var scriptDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "ScriptsTemp");
+            Directory.CreateDirectory(scriptDir);
+            InvokeCurrentTaskProgressChanged(0, true);
+            //Copy all of our files from Resources/DellBiosSettings to a directory to execute
+            var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            foreach (var fileName in files.Where(x => x.Contains("TakeHome")))
+            {
+                using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
+                {
+                    using (var file = new FileStream(Path.Combine(scriptDir, fileName.Replace("AutopilotQuick.Resources.TakeHome.", "")), FileMode.Create, FileAccess.Write))
+                    {
+
+                        resource.CopyTo(file);
+                    }
+                }
+            }
+            InvokeCurrentTaskProgressChanged(50, false);
+            InvokeCurrentTaskMessageChanged("Running scripts...");
+            var output = InvokePowershellScriptAndGetResult($@"
+function Get-Key{{
+    $encoder = new-object System.Text.UTF8Encoding
+    #Turns that key into a byte array so the securestring doesn't get angry
+    return $encoder.Getbytes('{"SpPMOYjwbiruhLlZeWXmNyIsgvqxkRfT"}')
+}}
+function Decode-SecString(){{
+    param
+    (
+    [Parameter(Mandatory=$true)]
+    $secString
+    )
+    $decrypted = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secString)
+    $decryptedPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($decrypted)
+    return $decryptedPassword
+}}
+$key = Get-Key
+$credStore = Import-Clixml -Path {Path.TrimEndingDirectorySeparator(scriptDir)}\TakeHomeCreds.xml
+$appid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.AppID -Key $key)
+$tenantid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.TenantID -Key $key)
+$clientSecret = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.ClientSecret -Key $key)
+. {Path.TrimEndingDirectorySeparator(scriptDir)}\AutopilotCleanup.ps1
+Cleanup-Autopilot -appid $appid -tenantid $tenantid -clientsecret $clientSecret
+"); 
+            InvokeCurrentTaskMessageChanged("Finished");
+            InvokeCurrentTaskProgressChanged(100, false);
+            Logger.Debug("Autopilot Script output: "+output);
+            return true;
+        }
+
         private void WaitForPause(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
             InvokeCurrentTaskNameChanged("Paused");
@@ -583,7 +638,6 @@ cd {dellBiosSettingsDir}
                     Thread.Sleep(10000);
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
-
                 WaitForPause(pauseToken);
                 
                 success = ApplyImageStep();
@@ -593,18 +647,28 @@ cd {dellBiosSettingsDir}
                     InvokeTotalTaskProgressChanged(100, false);
                 }
                 InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
-                
                 WaitForPause(pauseToken);
-                if (!TakeHome)
-                {
-                    success = ApplyDellBiosSettings();
+                
+                context.TakeHomeToggleEnabled = false; //It is now too late to take home
+                if (TakeHome) {
+                    success = RemoveDeviceFromAutopilot();
                     if (!success)
                     {
-                        InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
+                        InvokeCurrentTaskNameChanged("Failed to remove device from autopilot");
                         InvokeTotalTaskProgressChanged(100, false);
                     }
-                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
-
+                }
+                
+                success = ApplyDellBiosSettings();
+                if (!success)
+                {
+                    InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
+                    InvokeTotalTaskProgressChanged(100, false);
+                }
+                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
+                
+                if (!TakeHome)
+                {
                     success = ApplyWindowsAutopilotConfigurationStep();
                     if (!success)
                     {
@@ -621,8 +685,6 @@ cd {dellBiosSettingsDir}
                     }
                     InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
                 }
-                context.TakeHomeToggleEnabled = false;
-               
                 WaitForPause(pauseToken);
                 success = MakeDiskBootable();
                 if (!success)

@@ -46,6 +46,10 @@
 	  <EmbeddedResource Include="Resources\AutopilotConfigurationFile.json" />
 	  <EmbeddedResource Include="Resources\AutopilotQuick_PubKey.asc" />
 	  <EmbeddedResource Include="Resources\Wifi.ppkg" />
+	  <None Remove="Resources\TakeHome\AutopilotCleanup.ps1" />
+	  <EmbeddedResource Include="Resources\TakeHome\AutopilotCleanup.ps1" />
+	  <None Remove="Resources\TakeHome\TakeHomeCreds.xml" />
+	  <EmbeddedResource Include="Resources\TakeHome\TakeHomeCreds.xml" />
 	</ItemGroup>
 	
   <ItemGroup>
