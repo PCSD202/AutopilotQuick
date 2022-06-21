@@ -40,6 +40,8 @@
 	  <None Remove="Resources\DellBiosSettings\mxml1.dll" />
 	  <None Remove="Resources\DellBiosSettings\OptiPlex_3050_1.12.1.exe" />
 	  <None Remove="Resources\DellBiosSettings\pci.ids" />
+	  <None Remove="Resources\Images\status-connected.png" />
+	  <None Remove="Resources\Images\status-disconnected.png" />
 	  <None Remove="Resources\Wifi.ppkg" />
 	</ItemGroup>
 	<ItemGroup>
@@ -83,6 +85,11 @@
     <EmbeddedResource Include="Resources\DellBiosSettings\mxml1.dll" />
     <EmbeddedResource Include="Resources\DellBiosSettings\OptiPlex_3050_1.12.1.exe" />
     <EmbeddedResource Include="Resources\DellBiosSettings\pci.ids" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Resource Include="Resources\Images\status-connected.png" />
+    <Resource Include="Resources\Images\status-disconnected.png" />
   </ItemGroup>
 
 </Project>

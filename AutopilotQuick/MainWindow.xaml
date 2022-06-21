@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:AutopilotQuick"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
-        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-        mc:Ignorable="d"
+        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters"
+                 mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -16,6 +16,14 @@
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
         Title="{Binding Title}" Height="450" Width="800">
+    <mah:MetroWindow.Resources>
+        <ResourceDictionary>
+            <converters:BoolToString x:Key="BoolToString" />
+            <BitmapImage x:Key="status-connected" UriSource="Resources/Images/status-connected.png" />
+            <BitmapImage x:Key="status-disconnected" UriSource="Resources/Images/status-disconnected.png" />
+        </ResourceDictionary>
+    </mah:MetroWindow.Resources>
+    
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
             <StackPanel Orientation="Horizontal">
@@ -54,7 +62,34 @@
             </TextBlock>
             <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" Value="{Binding CurrentStepProgress}" VerticalAlignment="Top"></mah:MetroProgressBar>
         </Grid>
-        <mah:MetroProgressBar  Grid.Row="2" Grid.ColumnSpan="3" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+        <Grid Grid.Row="2" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="8*"></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <mah:MetroProgressBar Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Bottom">
+                <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="{StaticResource status-disconnected}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Path=ConnectedToInternet, Converter={StaticResource BoolToString}}" Value="True">
+                                    <Setter Property="Source" Value="{StaticResource status-connected}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">
+                    <Label.Content>
+                        Internet
+                    </Label.Content>
+                </Label>
+            </StackPanel>
+
+        </Grid>
+        
         
     </Grid>
 </mah:MetroWindow>

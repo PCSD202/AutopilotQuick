@@ -24,6 +24,10 @@ namespace AutopilotQuick
         public string LatestReleaseAssetURL { get; set; }
         public string LatestReleaseAssetSignedHashURL { get; set; }
 
+        private bool _connectedToInternet { get; set; }
+        public bool ConnectedToInternet { get { return _connectedToInternet; } set { _connectedToInternet = value; OnPropertyChanged(nameof(ConnectedToInternet)); } }
+
+
         private double _totalProgress = 0;
         public double TotalProgress
         {

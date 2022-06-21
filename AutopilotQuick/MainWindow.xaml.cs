@@ -146,6 +146,7 @@ namespace AutopilotQuick
 
         private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
         {
+            context.ConnectedToInternet = true;
             context.RefreshLatestVersion();
             Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
         }
