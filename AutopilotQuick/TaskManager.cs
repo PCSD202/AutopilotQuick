@@ -113,6 +113,23 @@ $disk.number
             }
         }
 
+        public string RunDiskpartScript(string Script)
+        {
+            var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), "diskpart.txt");
+            File.WriteAllText(diskpartScriptPath, Script);
+            Process diskpartProcess = new Process();
+            diskpartProcess.StartInfo.FileName = "diskpart.exe";
+            diskpartProcess.StartInfo.UseShellExecute = false;
+            diskpartProcess.StartInfo.RedirectStandardOutput = true;
+            diskpartProcess.StartInfo.Arguments = $"/s {diskpartScriptPath}";
+            diskpartProcess.StartInfo.CreateNoWindow = true;
+            diskpartProcess.Start();
+            var output = diskpartProcess.StandardOutput.ReadToEnd();
+            diskpartProcess.WaitForExit();
+            File.Delete(diskpartScriptPath);
+            return output;
+        }
+
         public bool FormatDrive(int DriveToImage)
         {
             try
@@ -149,19 +166,9 @@ gpt attributes = 0x8000000000000001
 exit
 ";
                 InvokeCurrentTaskMessageChanged($"Identified drive {DriveToImage}, running diskpart");
-                var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), "diskpart.txt");
-                File.WriteAllText(diskpartScriptPath, diskpartScript);
-                Process diskpartProcess = new Process();
-                diskpartProcess.StartInfo.FileName = "diskpart.exe";
-                diskpartProcess.StartInfo.UseShellExecute = false;
-                diskpartProcess.StartInfo.RedirectStandardOutput = true;
-                diskpartProcess.StartInfo.Arguments = $"/s {diskpartScriptPath}";
-                diskpartProcess.StartInfo.CreateNoWindow = true;
-                diskpartProcess.Start();
-                var diskpartOutput = diskpartProcess.StandardOutput.ReadToEnd();
+                var diskpartOutput = RunDiskpartScript(diskpartScript);
                 Logger.Debug($"Diskpart output: {diskpartOutput}");
-                diskpartProcess.WaitForExit();
-                File.Delete(diskpartScriptPath);
+                
                 if (diskpartOutput != null && diskpartOutput.Split(" ").Count(x => x.ToLower() == "successfully" || x.ToLower() == "succeeded") >= 14)
                 {
                     InvokeCurrentTaskMessageChanged($"Successfully formated drive {DriveToImage}");
@@ -326,7 +333,7 @@ exit
                     // Get the message as a WimMessageProgress object
                     WimMessageProgress progressMessage = (WimMessageProgress)message;
 
-                    InvokeCurrentTaskMessageChanged($"Applying windows image {progressMessage.PercentComplete}%");
+                    InvokeCurrentTaskMessageChanged($"Applying image {progressMessage.PercentComplete}%");
                     // Print the progress
                     InvokeCurrentTaskProgressChanged(progressMessage.PercentComplete);
 
