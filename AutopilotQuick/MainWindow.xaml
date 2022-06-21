@@ -17,13 +17,9 @@
         TitleAlignment="Left"
         Title="{Binding Title}" Height="450" Width="800">
     <mah:MetroWindow.Resources>
-        <ResourceDictionary>
-            <converters:BoolToString x:Key="BoolToString" />
-            <BitmapImage x:Key="status-connected" UriSource="Resources/Images/status-connected.png" />
-            <BitmapImage x:Key="status-disconnected" UriSource="Resources/Images/status-disconnected.png" />
-        </ResourceDictionary>
+        <converters:BoolToColorConverter x:Key="StatusConverter"/>
     </mah:MetroWindow.Resources>
-    
+
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
             <StackPanel Orientation="Horizontal">
@@ -65,22 +61,11 @@
         <Grid Grid.Row="2" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <mah:MetroProgressBar Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Bottom">
-                <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Source" Value="{StaticResource status-disconnected}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=ConnectedToInternet, Converter={StaticResource BoolToString}}" Value="True">
-                                    <Setter Property="Source" Value="{StaticResource status-connected}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
+                <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
                 <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">
                     <Label.Content>
                         Internet
