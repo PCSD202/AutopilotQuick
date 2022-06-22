@@ -30,10 +30,14 @@ namespace AutopilotQuick.Steps
             {
                 WaitForPause(pauseToken);
                 Progress = ((DateTime.UtcNow - StartTime).TotalMilliseconds / ms) * 100;
+                if (Progress <= 0)
+                {
+                    Progress = 100;
+                }
                 Thread.Sleep((int)Math.Round(ms/1000));
             }
 
-            Status = oldStatus;
+            Status = oldStatus with{Progress = 100};
         }
 
         public string InvokePowershellScriptAndGetResult(string script)

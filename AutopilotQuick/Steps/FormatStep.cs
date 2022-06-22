@@ -15,7 +15,6 @@ namespace AutopilotQuick.Steps
         public int IdentifyDriveToImage()
         {
             Message = "Identifying drive to image...";
-            Progress = 0;
             IsIndeterminate = true;
             var psscript = @"
 Import-Module OSD
@@ -106,6 +105,7 @@ exit
             if (IsEnabled)
             {
                 Title = "Formatting drive";
+                Progress = 0;
                 IsIndeterminate = false;
                 int DriveToImage = IdentifyDriveToImage();
                 if (DriveToImage == -1)

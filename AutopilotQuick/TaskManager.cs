@@ -569,7 +569,18 @@ cd {dellBiosSettingsDir}
         }
         private UserDataContext _context;
 
-        private List<StepBase> Steps = new List<StepBase>() { new FormatStep(), new ApplyImageStep(), new DisableTakeHomeStep(), new ApplyDellBiosSettingsStep() };
+        private List<StepBase> Steps = new List<StepBase>()
+        {
+            new FormatStep(),
+            new ApplyImageStep(),
+            new DisableTakeHomeStep(),
+            new ApplyDellBiosSettingsStep(),
+            new ApplyAutopilotConfigurationStep(),
+            new ApplyWifiStep(),
+            new MakeDiskBootableStep(),
+            new RemoveUnattendXMLStep(),
+            new RebootStep()
+        };
 
         private int CurrentStep = 1;
 
@@ -580,6 +591,10 @@ cd {dellBiosSettingsDir}
 
             foreach (var step in Steps)
             {
+                InvokeCurrentTaskMessageChanged("");
+                InvokeCurrentTaskNameChanged("");
+                InvokeCurrentTaskProgressChanged(0, false);
+
                 step.StepUpdated += StepOnStepUpdated;
                 var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
                 if (result.Success)
@@ -594,102 +609,21 @@ cd {dellBiosSettingsDir}
                     Thread.Sleep(10000);
                 }
                 step.StepUpdated -= StepOnStepUpdated;
-                CurrentStep++;
             }
 
-            if (Enabled && false)
-            {
-                var maxSteps = 8;
-                
-                WaitForPause(pauseToken);
-                bool success = FormatStep();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to image drive");
-                    InvokeTotalTaskProgressChanged(100, false);
-                    Thread.Sleep(10000);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 1), false);
-
-                WaitForPause(pauseToken);
-                
-                success = ApplyImageStep();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to apply image to drive");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 2), false);
-                
-                WaitForPause(pauseToken);
-                if (!TakeHome)
-                {
-                    success = ApplyDellBiosSettings();
-                    if (!success)
-                    {
-                        InvokeCurrentTaskNameChanged("Failed to apply dell bios settings");
-                        InvokeTotalTaskProgressChanged(100, false);
-                    }
-                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 3), false);
-
-                    success = ApplyWindowsAutopilotConfigurationStep();
-                    if (!success)
-                    {
-                        InvokeCurrentTaskNameChanged("Failed to apply autopilot configuration file");
-                        InvokeTotalTaskProgressChanged(100, false);
-                    }
-                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 4), false);
-                    
-                    success = ApplyWifiStep();
-                    if (!success)
-                    {
-                        InvokeCurrentTaskNameChanged("Failed to apply wifi settings");
-                        InvokeTotalTaskProgressChanged(100, false);
-                    }
-                    InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 5), false);
-                }
-                context.TakeHomeToggleEnabled = false;
-               
-                WaitForPause(pauseToken);
-                success = MakeDiskBootable();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to make disk bootable");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 6), false);
-
-                WaitForPause(pauseToken);
-                success = RemoveUnattendXMLStep();
-                if (!success)
-                {
-                    InvokeCurrentTaskNameChanged("Failed to delete unattend");
-                    InvokeTotalTaskProgressChanged(100, false);
-                }
-                InvokeTotalTaskProgressChanged(GetProgressPercent(maxSteps, 7), false);
-
-                WaitForPause(pauseToken);
-                RemoveDriveStep();
-                
-            }
 
             if (!Enabled) {
                 WimMan.getInstance().Preload();
             }
+
+
             
-            InvokeTotalTaskProgressChanged(GetProgressPercent(8, 8), false);
-
-            Countdown("Finished", "Waiting for 100 seconds", 100, pauseToken);
-            InvokeCurrentTaskNameChanged("Finished");
-
-
-
         }
 
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
         {
-            Debug.WriteLine($"Step: {CurrentStep}, Progress: {e.Progress}");
-            double totalProgress = ((double)((CurrentStep-1)*100+e.Progress) / (Steps.Count*100))*100;
+            double totalProgress = Steps.Average(x => x.Progress);
+            Debug.WriteLine($"Step: {CurrentStep}, Progress: {e.Progress}, Total: {totalProgress}");
             InvokeTotalTaskProgressChanged(totalProgress);
             InvokeCurrentTaskMessageChanged(e.Message);
             InvokeCurrentTaskNameChanged(e.Title);
