@@ -28,9 +28,8 @@ namespace AutopilotQuick
 
         private static void changing(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            Debug.WriteLine($"Progress bar changing to {e.NewValue} from {e.OldValue}");
-            var anim = new DoubleAnimation((double)e.OldValue, (double)e.NewValue, new TimeSpan(0, 0, 0, 0, 250));
-            (d as MetroProgressBar).BeginAnimation(MetroProgressBar.ValueProperty, anim, HandoffBehavior.Compose);
+            var anim = new DoubleAnimation((double)e.OldValue, (double)e.NewValue, new TimeSpan(0, 0, 0, 0, 500));
+            (d as ProgressBar).BeginAnimation(ProgressBar.ValueProperty, anim, HandoffBehavior.Compose);
         }
     }
 }

@@ -70,8 +70,13 @@ cd {dellBiosSettingsDir}
                 Message = "Done";
                 Progress = 100;
             }
-
-            return new StepResult(true, "Successfully applied drivers");
+            else
+            {
+                Title = "Applying dell bios settings - DISABLED";
+                Message = "Will continue after 5 seconds";
+                await Task.Run(() => CountDown(pauseToken, 5000));
+            }
+            return new StepResult(true, "Successfully applied bios settings");
         }
     }
 }

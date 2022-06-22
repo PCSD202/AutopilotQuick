@@ -56,14 +56,14 @@
                     <Run Text="{Binding CurrentStepMessage}"/>
                 </TextBlock.Inlines>
             </TextBlock>
-            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" Value="{Binding CurrentStepProgress}" VerticalAlignment="Top"></mah:MetroProgressBar>
+            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" local:ProgressBarSmoother.SmoothValue="{Binding CurrentStepProgress}" VerticalAlignment="Top"></mah:MetroProgressBar>
         </Grid>
         <Grid Grid.Row="2" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"></ColumnDefinition>
                 <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <mah:MetroProgressBar local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+            <mah:MetroProgressBar VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Bottom">
                 <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
                 <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">

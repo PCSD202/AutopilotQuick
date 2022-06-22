@@ -11,6 +11,8 @@ namespace AutopilotQuick.Steps
     {
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
         {
+            Title = "Disabling take home option";
+            Progress = 100;
             context.TakeHomeToggleEnabled = false;
             return new StepResult(true, "Disabled takehome option");
         }
