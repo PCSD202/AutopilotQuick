@@ -63,7 +63,7 @@
                 <ColumnDefinition Width="8*"></ColumnDefinition>
                 <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <mah:MetroProgressBar Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" Value="{Binding TotalProgress}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+            <mah:MetroProgressBar local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Bottom">
                 <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
                 <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
@@ -10,6 +11,8 @@ using Usb.Events;
 using ORMi;
 using AutopilotQuick.WMI;
 using System.Threading.Tasks;
+using System.Windows.Documents;
+using AutopilotQuick.Steps;
 using Nito.AsyncEx;
 
 namespace AutopilotQuick
@@ -565,19 +568,36 @@ cd {dellBiosSettingsDir}
             pauseToken.WaitWhilePaused();
         }
         private UserDataContext _context;
+
+        private List<StepBase> Steps = new List<StepBase>() { new FormatStep(), new ApplyImageStep(), new DisableTakeHomeStep(), new ApplyDellBiosSettingsStep() };
+
+        private int CurrentStep = 1;
+
         public void Run(UserDataContext context, PauseToken pauseToken)
         {
             pauseToken.WaitWhilePaused();
             _context = context;
-            wimCache = WimMan.getInstance().GetCacherForModel();
-            if (InternetMan.getInstance().IsConnected)
+
+            foreach (var step in Steps)
             {
-                TaskManager_InternetBecameAvailable(null, null);
+                step.StepUpdated += StepOnStepUpdated;
+                var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
+                if (result.Success)
+                {
+                    InvokeCurrentTaskMessageChanged(result.Message);
+                    Thread.Sleep(500);
+                }
+                else
+                {
+                    InvokeCurrentTaskNameChanged("Failed");
+                    InvokeCurrentTaskMessageChanged(result.Message);
+                    Thread.Sleep(10000);
+                }
+                step.StepUpdated -= StepOnStepUpdated;
+                CurrentStep++;
             }
-            InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
 
-
-            if (Enabled)
+            if (Enabled && false)
             {
                 var maxSteps = 8;
                 
@@ -666,7 +686,17 @@ cd {dellBiosSettingsDir}
 
         }
 
-        private void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
+        private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
+        {
+            Debug.WriteLine($"Step: {CurrentStep}, Progress: {e.Progress}");
+            double totalProgress = ((double)((CurrentStep-1)*100+e.Progress) / (Steps.Count*100))*100;
+            InvokeTotalTaskProgressChanged(totalProgress);
+            InvokeCurrentTaskMessageChanged(e.Message);
+            InvokeCurrentTaskNameChanged(e.Title);
+            InvokeCurrentTaskProgressChanged(e.Progress, e.IsIndeterminate);
+        }
+
+        public void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
             if (!UpdatedImageAvailable)
             {
                 UpdatedImageAvailable = !wimCache.IsUpToDate;
