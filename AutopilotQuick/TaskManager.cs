@@ -605,9 +605,19 @@ cd {dellBiosSettingsDir}
                     }
                     else
                     {
-                        InvokeCurrentTaskNameChanged("Failed");
-                        InvokeCurrentTaskMessageChanged(result.Message);
-                        Thread.Sleep(10000);
+                        if (!step.Critical)
+                        {
+                            InvokeCurrentTaskNameChanged("Failed");
+                            InvokeCurrentTaskMessageChanged(result.Message);
+                            Thread.Sleep(10000);
+                        }
+                        else
+                        {
+                            InvokeCurrentTaskNameChanged("Failed - Cannot continue");
+                            InvokeCurrentTaskMessageChanged(result.Message);
+                            break;
+
+                        }
                     }
 
                     step.StepUpdated -= StepOnStepUpdated;

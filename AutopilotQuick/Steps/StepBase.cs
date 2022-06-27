@@ -48,6 +48,8 @@ namespace AutopilotQuick.Steps
             set => Status = Status with { Title = value };
         }
 
+        public bool Critical = true; //This defines if task manager should continue or not if this task fails. 
+
         public readonly record struct StepStatus(double Progress, bool IsIndeterminate, string Message, string Title);
 
         public readonly record struct StepResult(bool Success, string Message);
