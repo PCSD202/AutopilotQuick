@@ -25,7 +25,15 @@ namespace AutopilotQuick.Steps
                 {
                     await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotConfigurationFile.json");
                     await using var file = new FileStream(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json", FileMode.Create, FileAccess.Write);
-                    await resource.CopyToAsync(file);
+                    if (resource != null)
+                    {
+                        await resource.CopyToAsync(file);
+                    }
+                    else
+                    {
+                        Logger.Error("Could not find the autopilot config internally. This is a issue.");
+                    }
+                    
                 }
                 else
                 {
