@@ -588,28 +588,36 @@ cd {dellBiosSettingsDir}
         {
             pauseToken.WaitWhilePaused();
             _context = context;
-
-            foreach (var step in Steps)
+            try
             {
-                InvokeCurrentTaskMessageChanged("");
-                InvokeCurrentTaskNameChanged("");
-                InvokeCurrentTaskProgressChanged(0, false);
+                foreach (var step in Steps)
+                {
+                    InvokeCurrentTaskMessageChanged("");
+                    InvokeCurrentTaskNameChanged("");
+                    InvokeCurrentTaskProgressChanged(0, false);
 
-                step.StepUpdated += StepOnStepUpdated;
-                var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
-                if (result.Success)
-                {
-                    InvokeCurrentTaskMessageChanged(result.Message);
-                    Thread.Sleep(500);
+                    step.StepUpdated += StepOnStepUpdated;
+                    var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
+                    if (result.Success)
+                    {
+                        InvokeCurrentTaskMessageChanged(result.Message);
+                        Thread.Sleep(500);
+                    }
+                    else
+                    {
+                        InvokeCurrentTaskNameChanged("Failed");
+                        InvokeCurrentTaskMessageChanged(result.Message);
+                        Thread.Sleep(10000);
+                    }
+
+                    step.StepUpdated -= StepOnStepUpdated;
                 }
-                else
-                {
-                    InvokeCurrentTaskNameChanged("Failed");
-                    InvokeCurrentTaskMessageChanged(result.Message);
-                    Thread.Sleep(10000);
-                }
-                step.StepUpdated -= StepOnStepUpdated;
             }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+            
 
 
             if (!Enabled) {
