@@ -588,6 +588,10 @@ cd {dellBiosSettingsDir}
         {
             pauseToken.WaitWhilePaused();
             _context = context;
+            if (!Enabled)
+            {
+                WimMan.getInstance().Preload();
+            }
             try
             {
                 foreach (var step in Steps)
@@ -630,9 +634,7 @@ cd {dellBiosSettingsDir}
             
 
 
-            if (!Enabled) {
-                WimMan.getInstance().Preload();
-            }
+
 
 
             
