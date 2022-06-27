@@ -26,6 +26,14 @@
                 <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" Margin="0 0 4 0"/>
                 <mah:ToggleSwitch OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
             </StackPanel>
+            <Button x:Name="ShutdownButton"  ToolTip="Shutdown" Click="ShutdownButton_OnClick">
+                <iconPacks:PackIconMaterial Width="22"
+                                          Height="22"
+                                          Kind="Power" />
+            </Button>
+            <Button x:Name="RestartButton" ToolTip="Restart" Click="RestartButton_OnClick">
+                <iconPacks:PackIconCodicons Width="22" Height="22" Kind="DebugRestart" />
+            </Button>
         </mah:WindowCommands>
     </mah:MetroWindow.RightWindowCommands>
     

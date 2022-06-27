@@ -374,5 +374,46 @@ namespace AutopilotQuick
             _taskManagerPauseTokenSource.IsPaused = false;
         }
 
+        private async void ShutdownButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            _taskManagerPauseTokenSource.IsPaused = true;
+            var result = await context.DialogCoordinator.ShowMessageAsync(context, 
+                "Shutdown?",
+                "Would you like to shutdown this PC?",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings(){AffirmativeButtonText = "Shutdown", AnimateHide = true, AnimateShow = true, NegativeButtonText = "Cancel"});
+            if (result == MessageDialogResult.Affirmative)
+            {
+                Process shutdownProcess = new Process();
+                shutdownProcess.StartInfo.FileName = "wpeutil";
+                shutdownProcess.StartInfo.UseShellExecute = false;
+                shutdownProcess.StartInfo.RedirectStandardOutput = true;
+                shutdownProcess.StartInfo.CreateNoWindow = true;
+                shutdownProcess.StartInfo.Arguments = "shutdown";
+                shutdownProcess.Start();
+                shutdownProcess.WaitForExit();
+            }
+            _taskManagerPauseTokenSource.IsPaused = false;
+        }
+
+        private async void RestartButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            _taskManagerPauseTokenSource.IsPaused = true;
+            var result = await context.DialogCoordinator.ShowMessageAsync(context,
+                "Reboot?",
+                "Would you like to reboot this PC?",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() { AffirmativeButtonText = "Reboot", AnimateHide = true, AnimateShow = true, NegativeButtonText = "Cancel" });
+            if (result == MessageDialogResult.Affirmative)
+            {
+                Process shutdownProcess = new Process();
+                shutdownProcess.StartInfo.FileName = "wpeutil";
+                shutdownProcess.StartInfo.UseShellExecute = false;
+                shutdownProcess.StartInfo.RedirectStandardOutput = true;
+                shutdownProcess.StartInfo.CreateNoWindow = true;
+                shutdownProcess.StartInfo.Arguments = "reboot";
+                shutdownProcess.Start();
+                shutdownProcess.WaitForExit();
+            }
+            _taskManagerPauseTokenSource.IsPaused = false;
+        }
     }
 }
