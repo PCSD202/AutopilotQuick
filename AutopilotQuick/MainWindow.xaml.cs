@@ -21,6 +21,7 @@ using System.IO.Compression;
 using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
+using AutopilotQuick.LogMan;
 using MahApps.Metro.Controls;
 using Nito.AsyncEx;
 
@@ -107,7 +108,7 @@ namespace AutopilotQuick
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            
+            Task.Factory.StartNew(()=> DurableAzureBackgroundTask.getInstance().Run(context));
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
