@@ -602,8 +602,10 @@ cd {dellBiosSettingsDir}
 
                     step.StepUpdated += StepOnStepUpdated;
                     var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
+                    Logger.Info($"Step completed. Success: {result.Success}, Output: {result.Message}");
                     if (result.Success)
                     {
+                        Logger.Info("Step completed. Result: "+result.Message);
                         InvokeCurrentTaskMessageChanged(result.Message);
                         Thread.Sleep(500);
                     }
@@ -643,7 +645,6 @@ cd {dellBiosSettingsDir}
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
         {
             double totalProgress = Steps.Average(x => x.Progress);
-            Debug.WriteLine($"Step: {CurrentStep}, Progress: {e.Progress}, Total: {totalProgress}");
             InvokeTotalTaskProgressChanged(totalProgress);
             InvokeCurrentTaskMessageChanged(e.Message);
             InvokeCurrentTaskNameChanged(e.Title);
