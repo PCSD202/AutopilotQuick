@@ -62,8 +62,8 @@ namespace AutopilotQuick
                 MaxArchiveFiles = 100,
                 ArchiveOldFileOnStartup = true,
                 ArchiveDateFormat = "yyyy-MM-dd HH_mm_ss",
-                Header = $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart}\n",
-                Footer = $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart}"
+                Header = $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
+                Footer = $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
             LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
             NLog.LogManager.Configuration = LoggingConfig;

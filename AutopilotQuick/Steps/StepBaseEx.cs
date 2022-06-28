@@ -10,7 +10,7 @@ using Nito.AsyncEx;
 
 namespace AutopilotQuick.Steps
 {
-    internal abstract class StepBaseEx : StepBase
+    public abstract class StepBaseEx : StepBase
     {
         public void WaitForPause(PauseToken pauseToken)
         {
