@@ -27,6 +27,10 @@ namespace AutopilotQuick.LogMan
         public ShareClient Share;
         public Cacher AzureLogSettingsCache;
         
+        public bool Stopped { get; private set; }
+
+        public bool ShouldStop { get; set; } = false;
+        
         private void OnInternetBecameAvailable(object? sender, EventArgs e)
         {
             Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
@@ -43,6 +47,7 @@ namespace AutopilotQuick.LogMan
         }
         public void Run(UserDataContext context)
         {
+            Stopped = false;
             AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json", "AzureLogSettings.json", context);
             var ConnectionString = GetConnectionString();
             InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
@@ -52,48 +57,52 @@ namespace AutopilotQuick.LogMan
                 Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
             }
             
-            while (true)
+            while (!ShouldStop)
             {
                 if (InternetMan.getInstance().IsConnected)
                 {
-                    var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
-                    var logFolder = $"{appFolder}/logs/";
-
-                    Task task = Task.Run(async () => await CreateShareAsync("autopilot-quick-logs"));
-                    task.Wait();
-                    var client = Share.GetDirectoryClient("logs");
-                    foreach (var update in ComputeFilesToUpload())
-                    {
-                        try
-                        {
-                            var filePath = Path.Join(logFolder, update);
-                            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
-                                FileShare.ReadWrite);
-                            var fInfo = new FileInfo(filePath);
-                            var fClient = client.GetFileClient(update);
-                            fClient.Create(fInfo.Length);
-                            var response = client.GetFileClient(update).Upload(fs);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine($"File {Path.GetFileName(update)} open and cannot be opened again...");
-                        }
-                    }
-
-                    foreach (var update in ComputeFilesToDelete())
-                    {
-                        var fClient = client.GetFileClient(update);
-                        var response = fClient.DeleteIfExists();
-                    }
-
+                    SyncLogs();
                 }
+
                 Thread.Sleep(1000);
             }
-            
-            
 
+            Stopped = true;
         }
 
+        public void SyncLogs()
+        {
+            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var logFolder = $"{appFolder}/logs/";
+
+            Task task = Task.Run(async () => await CreateShareAsync("autopilot-quick-logs"));
+            task.Wait();
+            var client = Share.GetDirectoryClient(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
+            client.CreateIfNotExists();
+            foreach (var update in ComputeFilesToUpload())
+            {
+                try
+                {
+                    var filePath = Path.Join(logFolder, update);
+                    using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                        FileShare.ReadWrite);
+                    var fInfo = new FileInfo(filePath);
+                    var fClient = client.GetFileClient(update);
+                    fClient.Create(fInfo.Length);
+                    var response = client.GetFileClient(update).Upload(fs);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"File {Path.GetFileName(update)} open and cannot be opened again...");
+                }
+            }
+
+            foreach (var update in ComputeFilesToDelete())
+            {
+                var fClient = client.GetFileClient(update);
+                var response = fClient.DeleteIfExists();
+            }
+        }
         public List<string> ComputeFilesToUpload()
         {
             var lastModifiedLocal = GetLastModifiedForLocal();

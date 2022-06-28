@@ -8,7 +8,7 @@ using NLog;
 
 namespace AutopilotQuick.Steps
 {
-    internal abstract class StepBase
+    public abstract class StepBase
     {
         public event EventHandler<StepStatus> StepUpdated;
 

@@ -574,11 +574,14 @@ cd {dellBiosSettingsDir}
             new FormatStep(),
             new ApplyImageStep(),
             new DisableTakeHomeStep(),
+            new RemoveDeviceFromAutopilotStep(),
             new ApplyDellBiosSettingsStep(),
             new ApplyAutopilotConfigurationStep(),
             new ApplyWifiStep(),
             new MakeDiskBootableStep(),
             new RemoveUnattendXMLStep(),
+            new IntuneCleanupStep(),
+            new FinalizeSyncingLogsStep(),
             new RebootStep()
         };
 
@@ -605,7 +608,6 @@ cd {dellBiosSettingsDir}
                     Logger.Info($"Step completed. Success: {result.Success}, Output: {result.Message}");
                     if (result.Success)
                     {
-                        Logger.Info("Step completed. Result: "+result.Message);
                         InvokeCurrentTaskMessageChanged(result.Message);
                         Thread.Sleep(500);
                     }
