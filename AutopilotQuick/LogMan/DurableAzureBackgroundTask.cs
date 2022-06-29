@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using DiskQueue;
@@ -56,6 +57,11 @@ namespace AutopilotQuick.LogMan
             {
                 Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
             }
+
+            Application.Current.Exit += (sender, args) =>
+            {
+                ShouldStop = true;
+            };
             
             while (!ShouldStop)
             {
