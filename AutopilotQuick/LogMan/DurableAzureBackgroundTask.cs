@@ -48,46 +48,52 @@ namespace AutopilotQuick.LogMan
         }
         public void Run(UserDataContext context)
         {
-            Stopped = false;
-            AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json", "AzureLogSettings.json", context);
-            var ConnectionString = GetConnectionString();
-            // Instantiate a ShareClient which will be used to create and manipulate the file share
-            if (InternetMan.getInstance().IsConnected)
+            Logger.Info("Log upload service started");
+            try
             {
-                Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
-            }
-            else
-            {
-                InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
-            }
-
-            Application.Current.Exit += (sender, args) =>
-            {
-                ShouldStop = true;
-                Stopped = true;
-            };
-            
-            while (!ShouldStop)
-            {
+                Stopped = false;
+                AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
+                    "AzureLogSettings.json", context);
+                var ConnectionString = GetConnectionString();
+                // Instantiate a ShareClient which will be used to create and manipulate the file share
                 if (InternetMan.getInstance().IsConnected)
                 {
-                    try
-                    {
-                        SyncLogs();
-                    }
-                    catch (Exception  ex)
-                    {
-                        Logger.Error(ex);
-                        ShouldStop = true;
-                        Stopped = true;
-                    }
-
+                    Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
+                }
+                else
+                {
+                    InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
 
-                Thread.Sleep(1000);
-            }
 
-            Stopped = true;
+
+                while (!ShouldStop)
+                {
+                    if (InternetMan.getInstance().IsConnected)
+                    {
+                        try
+                        {
+                            SyncLogs();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex);
+                            ShouldStop = true;
+                            Stopped = true;
+                        }
+
+                    }
+
+                    Thread.Sleep(1000);
+                }
+
+                Stopped = true;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+            
         }
 
         public void SyncLogs()
