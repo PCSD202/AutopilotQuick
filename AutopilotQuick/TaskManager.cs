@@ -581,7 +581,7 @@ cd {dellBiosSettingsDir}
             new MakeDiskBootableStep(),
             new RemoveUnattendXMLStep(),
             new IntuneCleanupStep(),
-            new FinalizeSyncingLogsStep(),
+            //new FinalizeSyncingLogsStep(),
             new RebootStep()
         };
 

@@ -8,22 +8,14 @@ function Install-ModuleIfNotFound {
     $module = Import-Module $ModuleName -PassThru -ErrorAction Ignore
     if (-not $module) {
         Write-Host "Installing module $($ModuleName)..."
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force 6>$null 1>$null
-        if (!(Test-Path "$(Get-Location)\Modules")) {
-            New-Item -Path "$(Get-Location)\Modules" -ItemType "directory"
-        }
-        Save-Module -Path "$(Get-Location)\Modules" -Name $ModuleName
+        Install-Module -Name $ModuleName
     }
 }
-Uninstall-Module Microsoft.Graph.Authentication -ErrorAction Ignore
-Uninstall-Module Microsoft.Graph.DeviceManagement -ErrorAction Ignore
-Uninstall-Module Microsoft.Graph.DeviceManagement.Enrolment -ErrorAction Ignore
-
-$Env:PSModulePath = $Env:PSModulePath+";$(Get-Location)\Modules"
 #Lets setup our dependancies
-Install-ModuleIfNotFound Microsoft.Graph.Authentication
-Install-ModuleIfNotFound Microsoft.Graph.DeviceManagement
-Install-ModuleIfNotFound Microsoft.Graph.DeviceManagement.Enrolment
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force 6>$null 1>$null
+Install-Module Microsoft.Graph.Authentication -Repository PSGallery -Force
+Install-Module Microsoft.Graph.DeviceManagement -Repository PSGallery -Force
+Install-Module Microsoft.Graph.DeviceManagement.Enrolment -Repository PSGallery -Force
 
 function Cleanup-Autopilot {
     param
