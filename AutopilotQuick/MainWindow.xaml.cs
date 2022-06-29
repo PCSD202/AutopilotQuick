@@ -235,15 +235,6 @@ namespace AutopilotQuick
                 _taskManagerPauseTokenSource.IsPaused = false;
                 return;
             }
-            var selection = await context.DialogCoordinator.ShowMessageAsync(context, "An update is available",
-                $"We've detected you're using an older version of Autopilot Quick!\nYour version: {version.ToString(3)}\nLatest version: {latestVersion.ToString(3)}",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings
-                {
-                    AffirmativeButtonText = "Update",
-                    NegativeButtonText = "No thanks",
-                    DefaultButtonFocus = MessageDialogResult.Affirmative
-                });
-            if (selection != MessageDialogResult.Affirmative) return;
             var DownloadProgress = await context.DialogCoordinator.ShowProgressAsync(context, $"Step 1/{maxStep} - Downloading", "Percent: 0% (0/0)", isCancelable: false, new MetroDialogSettings { AnimateHide = false });
             DownloadProgress.Maximum = 100;
             using (var client = new WebClient())
