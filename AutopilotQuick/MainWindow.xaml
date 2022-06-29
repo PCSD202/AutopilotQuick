@@ -9,6 +9,7 @@
         xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters"
                  mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"
+        ShowCloseButton="False"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowState="Maximized"
