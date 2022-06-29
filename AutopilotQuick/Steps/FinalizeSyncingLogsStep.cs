@@ -25,7 +25,8 @@ public class FinalizeSyncingLogsStep : StepBaseEx
 
         Progress = 25;
         Message = "Waiting for log service to shutdown...";
-        while (!DurableAzureBackgroundTask.getInstance().Stopped)
+        var startTime = DateTime.UtcNow;
+        while (!DurableAzureBackgroundTask.getInstance().Stopped && ((DateTime.UtcNow - startTime).TotalSeconds <= 5))
         {
             DurableAzureBackgroundTask.getInstance().ShouldStop = true;
             Thread.Sleep(250);
@@ -33,11 +34,15 @@ public class FinalizeSyncingLogsStep : StepBaseEx
 
         Progress = 75;
         Message = "Doing one final log sync...";
-        try
+        if (((DateTime.UtcNow - startTime).TotalSeconds <= 10))
         {
-            DurableAzureBackgroundTask.getInstance().SyncLogs();
+            try
+            {
+                DurableAzureBackgroundTask.getInstance().SyncLogs();
+            }
+            catch (Exception e) { Logger.Error(e); }
         }
-        catch (Exception e) { Logger.Error(e); }
+        
         
 
         Progress = 100;

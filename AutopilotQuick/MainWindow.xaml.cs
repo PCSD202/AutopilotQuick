@@ -108,7 +108,7 @@ namespace AutopilotQuick
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Factory.StartNew(()=> DurableAzureBackgroundTask.getInstance().Run(context));
+            Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context));
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;

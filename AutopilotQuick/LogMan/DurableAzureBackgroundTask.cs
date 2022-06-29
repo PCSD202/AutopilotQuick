@@ -51,23 +51,37 @@ namespace AutopilotQuick.LogMan
             Stopped = false;
             AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json", "AzureLogSettings.json", context);
             var ConnectionString = GetConnectionString();
-            InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
             // Instantiate a ShareClient which will be used to create and manipulate the file share
             if (InternetMan.getInstance().IsConnected)
             {
                 Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
             }
+            else
+            {
+                InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
+            }
 
             Application.Current.Exit += (sender, args) =>
             {
                 ShouldStop = true;
+                Stopped = true;
             };
             
             while (!ShouldStop)
             {
                 if (InternetMan.getInstance().IsConnected)
                 {
-                    SyncLogs();
+                    try
+                    {
+                        SyncLogs();
+                    }
+                    catch (Exception  ex)
+                    {
+                        Logger.Error(ex);
+                        ShouldStop = true;
+                        Stopped = true;
+                    }
+
                 }
 
                 Thread.Sleep(1000);
