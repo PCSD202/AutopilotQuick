@@ -15,6 +15,9 @@
         Save-Module -Path "$(Get-Location)\Modules" -Name $ModuleName
     }
 }
+Uninstall-Module Microsoft.Graph.Authentication -ErrorAction Ignore
+Uninstall-Module Microsoft.Graph.DeviceManagement -ErrorAction Ignore
+Uninstall-Module Microsoft.Graph.DeviceManagement.Enrolment -ErrorAction Ignore
 
 $Env:PSModulePath = $Env:PSModulePath+";$(Get-Location)\Modules"
 #Lets setup our dependancies
