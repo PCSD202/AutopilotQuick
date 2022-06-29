@@ -116,10 +116,6 @@ namespace AutopilotQuick
             Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
             Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
-            
-
-            //TestUsers();
-            if (Updated) this.ShowMessageAsync("Update successful!", "The update was successful.");
         }
 
         private void MainWindow_CurrentTaskNameChanged(object? sender, CurrentTaskNameChangedEventArgs e)
