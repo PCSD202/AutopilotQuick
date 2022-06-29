@@ -16,22 +16,32 @@
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
         Title="{Binding Title}" Height="450" Width="800">
+    
     <mah:MetroWindow.Resources>
         <converters:BoolToColorConverter x:Key="StatusConverter"/>
     </mah:MetroWindow.Resources>
 
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
-            <StackPanel Orientation="Horizontal">
-                <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" Margin="0 0 4 0"/>
-                <mah:ToggleSwitch OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" Margin="0 0 5 0">
+                <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
+                <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">
+                    <Label.Content>
+                        Internet
+                    </Label.Content>
+                </Label>
             </StackPanel>
-            <Button x:Name="ShutdownButton"  ToolTip="Shutdown" Click="ShutdownButton_OnClick">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
+                <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
+                <mah:ToggleSwitch VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+            </StackPanel>
+            <Button x:Name="ShutdownButton"  ToolTip="Shutdown" Click="ShutdownButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
                 <iconPacks:PackIconMaterial Width="22"
                                           Height="22"
                                           Kind="Power" />
             </Button>
-            <Button x:Name="RestartButton" ToolTip="Restart" Click="RestartButton_OnClick">
+            <Button x:Name="RestartButton" ToolTip="Restart" Click="RestartButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
                 <iconPacks:PackIconCodicons Width="22" Height="22" Kind="DebugRestart" />
             </Button>
         </mah:WindowCommands>
@@ -72,15 +82,6 @@
                 <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <mah:MetroProgressBar VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
-            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Bottom">
-                <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
-                <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">
-                    <Label.Content>
-                        Internet
-                    </Label.Content>
-                </Label>
-            </StackPanel>
-
         </Grid>
         
         

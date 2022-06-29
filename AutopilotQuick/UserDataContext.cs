@@ -98,7 +98,7 @@ namespace AutopilotQuick
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
             OnPropertyChanged(nameof(Version));
-            Title = $"Autopilot Quick - {Version}";
+            Title = $"Autopilot Quick - {Version} | ID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}";
             OnPropertyChanged(nameof(Title));
         }
 
