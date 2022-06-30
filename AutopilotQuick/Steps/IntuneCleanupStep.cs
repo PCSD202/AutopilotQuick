@@ -18,6 +18,14 @@ public class IntuneCleanupStep : StepBaseEx
             CountDown(pauseToken, 5000);
             return new StepResult(true, "Cleaning up autopilot records - DISABLED");
         }
+
+        if (!InternetMan.getInstance().IsConnected)
+        {
+            Title = "Cleaning up autopilot records - NO INTERNET";
+            Progress = 100;
+            CountDown(pauseToken, 5000);
+            return new StepResult(true, "Skipped cleaning up autopilot records due to not having internet");
+        }
         Title = "Cleaning up autopilot records";
         Progress = 0;
         Message = "Extracting files";
