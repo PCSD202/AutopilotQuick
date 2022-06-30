@@ -45,7 +45,7 @@ namespace AutopilotQuick.Steps
 
         public string InvokePowershellScriptAndGetResult(string script)
         {
-            var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-({Guid.NewGuid()}).ps1");
+            var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-{Guid.NewGuid()}.ps1");
             File.WriteAllText(psscriptPath, script);
             Process formatProcess = new Process();
             formatProcess.StartInfo.FileName = "Powershell.exe";
