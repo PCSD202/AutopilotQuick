@@ -42,7 +42,7 @@ jobs:
           mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick.exe
       - name: Zip
         run: |
-          7z a ..\AutopilotQuick.zip ..\AutopilotQuick.exe -mx=9
+          7z a ..\AutopilotQuick.zip ..\AutopilotQuick.exe -mx=5
       - name: Sign
         uses: carbonneuron/GHActionSignHash@v4
         env: 
