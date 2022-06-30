@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
 using NLog;
+using Polly;
+using Polly.Retry;
 
 namespace AutopilotQuick.Steps
 {
@@ -43,7 +45,7 @@ namespace AutopilotQuick.Steps
 
         public string InvokePowershellScriptAndGetResult(string script)
         {
-            var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script.ps1");
+            var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-({Guid.NewGuid()}).ps1");
             File.WriteAllText(psscriptPath, script);
             Process formatProcess = new Process();
             formatProcess.StartInfo.FileName = "Powershell.exe";
@@ -60,23 +62,23 @@ namespace AutopilotQuick.Steps
 
         public string RunDiskpartScript(string Script)
         {
-            var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"diskpart-({Guid.NewGuid()}).txt");
-            try
+            var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"diskpart-(${Guid.NewGuid()}).txt");
+            RetryPolicy retry = Policy
+                .Handle<IOException>()
+                .WaitAndRetry(60, retryAttempt => TimeSpan.FromSeconds(5));
+            retry.Execute(() =>
             {
                 File.WriteAllText(diskpartScriptPath, Script);
-            }
-            catch (IOException e)
+            });
+            
+            //Shutdown diskpart if it is already open
+            var processes = System.Diagnostics.Process.GetProcessesByName("diskpart");
+            foreach (var process in processes)
             {
-                LogManager.GetCurrentClassLogger().Error(e);
-                //The file is being used by diskpart. We need to wait until diskpart has closed and retry
-                var processes = System.Diagnostics.Process.GetProcessesByName("diskpart");
-                foreach (var process in processes)
+                process.WaitForExit(10000);
+                if (!process.HasExited)
                 {
-                    process.WaitForExit(10000);
-                    if (!process.HasExited)
-                    {
-                        process.Kill();
-                    }
+                    process.Kill();
                 }
             }
             
