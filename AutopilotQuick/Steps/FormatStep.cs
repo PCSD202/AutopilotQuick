@@ -128,8 +128,24 @@ exit
                 }
 
                 Progress = 50;
-                var result = FormatDrive(DriveToImage);
-                if (!result)
+                RetryPolicy policy = RetryPolicy.Handle<DriveNotFoundException>()
+                    .WaitAndRetry(5, i => TimeSpan.FromSeconds(5));
+                var result = policy.ExecuteAndCapture(() =>
+                {
+                    int DriveToImage = IdentifyDriveToImage();
+                    if (DriveToImage == -1)
+                    {
+                        throw new DriveNotFoundException();
+                    }
+                    var result = FormatDrive(DriveToImage);
+                    if (!result)
+                    {
+                        throw new DriveNotFoundException();
+                    }
+                    return;
+                });
+                
+                if (result.Outcome == OutcomeType.Failure)
                 {
                     return new StepResult(false, "Failed to format drive");
                 }
