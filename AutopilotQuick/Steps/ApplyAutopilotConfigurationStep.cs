@@ -21,6 +21,7 @@ namespace AutopilotQuick.Steps
             IsIndeterminate = true;
             if (IsEnabled)
             {
+                Message = "Copying autopilot config to windows";
                 if (!context.TakeHomeToggleOn)
                 {
                     await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotConfigurationFile.json");
