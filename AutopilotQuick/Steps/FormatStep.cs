@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
 using NLog;
+using Polly;
+using Polly.Retry;
 
 namespace AutopilotQuick.Steps
 {
@@ -23,18 +27,28 @@ $disk.number
 ";
             try
             {
-                string diskNum = InvokePowershellScriptAndGetResult(psscript);
-                int intDiskNum;
-                bool success = int.TryParse(diskNum, out intDiskNum);
-                if (success)
+                RetryPolicy retry = Policy
+                    .Handle<DriveNotFoundException>()
+                    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(5));
+                var retryResult = retry.ExecuteAndCapture(() =>
                 {
-                    Message = $"Identified drive {intDiskNum}";
+                    string diskNum = InvokePowershellScriptAndGetResult(psscript);
+                    Logger.Debug(diskNum);
+                    int intDiskNum;
+                    bool success = int.TryParse(diskNum, out intDiskNum);
+                    if (!success)
+                    {
+                        throw new DriveNotFoundException();
+                    }
+
                     return intDiskNum;
-                }
-                else
+                });
+                if (retryResult.Outcome == OutcomeType.Successful)
                 {
-                    return -1;
+                    return retryResult.Result;
                 }
+
+                return -1;
             }
             catch (Exception ex)
             {
