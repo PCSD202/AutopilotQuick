@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
+using NLog;
 
 namespace AutopilotQuick.Steps
 {
@@ -60,7 +61,26 @@ namespace AutopilotQuick.Steps
         public string RunDiskpartScript(string Script)
         {
             var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), "diskpart.txt");
-            File.WriteAllText(diskpartScriptPath, Script);
+            try
+            {
+                File.WriteAllText(diskpartScriptPath, Script);
+            }
+            catch (IOException e)
+            {
+                //The file is being used by diskpart. We need to wait until diskpart has closed and retry
+                var processes = System.Diagnostics.Process.GetProcessesByName("diskpart");
+                foreach (var process in processes)
+                {
+                    process.WaitForExit(10000);
+                    if (!process.HasExited)
+                    {
+                        process.Kill(true);
+                    }
+
+                    return RunDiskpartScript(Script);
+                }
+            }
+            
             Process diskpartProcess = new Process();
             diskpartProcess.StartInfo.FileName = "diskpart.exe";
             diskpartProcess.StartInfo.UseShellExecute = false;
