@@ -94,5 +94,10 @@
     <EmbeddedResource Include="Resources\DellBiosSettings\OptiPlex_3050_1.12.1.exe" />
     <EmbeddedResource Include="Resources\DellBiosSettings\pci.ids" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <None Remove="Resources\sharedpc.json" />
+    <EmbeddedResource Include="Resources\sharedpc.json" />
+  </ItemGroup>
 
 </Project>
