@@ -4,9 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using AutopilotQuick.WMI;
 using Nito.AsyncEx;
 using NLog;
+using ORMi;
 
 namespace AutopilotQuick.Steps
 {
@@ -24,7 +27,16 @@ namespace AutopilotQuick.Steps
                 Message = "Copying autopilot config to windows";
                 if (!context.TakeHomeToggleOn)
                 {
-                    await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotConfigurationFile.json");
+                    var resourceLocation = "AutopilotQuick.Resources.AutopilotConfigurationFile.json";
+                    WMIHelper helper = new WMIHelper("root\\CimV2");
+                    var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
+                    if (model == "Precision 7560")
+                    {
+                        resourceLocation = "AutopilotQuick.Resources.sharedpc.json";
+                        Message = "Copying sharedpc autopilot config to windows";
+                        Thread.Sleep(3000);
+                    }
+                    await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceLocation);
                     await using var file = new FileStream(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json", FileMode.Create, FileAccess.Write);
                     if (resource != null)
                     {
