@@ -73,8 +73,15 @@ namespace AutopilotQuick.Steps
 
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
         {
-            InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-
+            if (!InternetMan.getInstance().IsConnected)
+            {
+                InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+            }
+            else
+            {
+                TaskManager_InternetBecameAvailable(this, EventArgs.Empty);
+            }
+            
             var wimCache = WimMan.getInstance().GetCacherForModel();
             if (IsEnabled)
             {
@@ -125,14 +132,15 @@ namespace AutopilotQuick.Steps
                 {
                     Logger.Error(e);
                 }
-                if (!wimCache.FileCached)
-                {
-                    InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
-                    _updatedImageAvailable = false;
-                    wimCache.DownloadUpdate();
-                    InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-                    return await Run(context, pauseToken);
-                }
+
+                if (wimCache.FileCached && !_updatedImageAvailable)
+                    return new StepResult(true, "Successfully applied image to drive");
+                
+                InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
+                _updatedImageAvailable = false;
+                wimCache.DownloadUpdate();
+                InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+                return await Run(context, pauseToken);
             }
             else
             {
