@@ -22,7 +22,7 @@ namespace AutopilotQuick.Steps
             IsIndeterminate = true;
             var psscript = @"
 Import-Module OSD
-$disk = Get-Disk | Where-Object {$_.Number -notin (Get-Disk.usb | Select-Object -ExpandProperty Number)}
+$disk = Get-Disk | Where-Object {$_.Number -notin (Get-Disk.usb | Select-Object -ExpandProperty Number)} | Where-Object {$_.OperationalStatus -eq 'Online'}
 $disk.number
 ";
             try
