@@ -21,9 +21,11 @@ using System.IO.Compression;
 using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
+using System.Windows.Forms;
 using AutopilotQuick.LogMan;
 using MahApps.Metro.Controls;
 using Nito.AsyncEx;
+using Application = System.Windows.Application;
 
 namespace AutopilotQuick
 {
@@ -113,7 +115,9 @@ namespace AutopilotQuick
             {
                 DurableAzureBackgroundTask.getInstance().ShouldStop = true;
             };
-            
+
+
+            BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
@@ -121,10 +125,15 @@ namespace AutopilotQuick
             Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
             Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
-            
+            Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop());
         }
 
-        
+        private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
+        {
+            context.IsCharging = e.IsCharging;
+            context.BatteryPercent = e.BatteryPercent;
+        }
+
         private void MainWindow_CurrentTaskNameChanged(object? sender, CurrentTaskNameChangedEventArgs e)
         {
             context.CurrentStepName = e.Name;
