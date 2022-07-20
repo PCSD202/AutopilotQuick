@@ -35,6 +35,21 @@ namespace AutopilotQuick
             set { _totalProgress = value; OnPropertyChanged(nameof(TotalProgress)); }
         }
 
+        private bool _isCharging = false;
+        public bool IsCharging
+        {
+            get { return _isCharging; }
+            set { _isCharging = value; OnPropertyChanged(nameof(IsCharging)); }
+        }
+
+        private int _batteryPercent = 0;
+        public int BatteryPercent
+        {
+            get { return _batteryPercent; }
+            set { _batteryPercent = value; OnPropertyChanged(nameof(BatteryPercent)); }
+        }
+
+
         private bool _takeHomeToggleEnabled = true;
         public bool TakeHomeToggleEnabled
         {
