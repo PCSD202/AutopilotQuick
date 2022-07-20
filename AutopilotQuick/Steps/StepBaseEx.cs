@@ -42,7 +42,7 @@ namespace AutopilotQuick.Steps
 
             Status = oldStatus with{Progress = 100};
         }
-
+        
         public string InvokePowershellScriptAndGetResult(string script)
         {
             var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-{Guid.NewGuid()}.ps1");
