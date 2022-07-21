@@ -114,6 +114,8 @@ namespace AutopilotQuick
             Application.Current.Exit += (o, args) =>
             {
                 DurableAzureBackgroundTask.getInstance().ShouldStop = true;
+                BatteryMan.getInstance().ShouldStop = true;
+                Environment.Exit(0);
             };
 
 
@@ -308,11 +310,11 @@ namespace AutopilotQuick
                                 DownloadProgress.SetMessage("Please wait, we may go unresponsive but don't close the window, we will restart the program after.");
                                 DownloadProgress.SetIndeterminate();
                                 if (!Directory.Exists(System.IO.Path.Join(
-                                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                        Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
                                     "\\AutopilotQuick\\Update")))
                                 {
                                     Directory.CreateDirectory(System.IO.Path.Join(
-                                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                        Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
                                         "\\AutopilotQuick\\Update"));
                                 }
 
@@ -321,7 +323,7 @@ namespace AutopilotQuick
                                     try
                                     {
                                         var entry = archive.Entries.First(x => x.FullName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
-                                        entry.ExtractToFile(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                        entry.ExtractToFile(Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
                                             "\\AutopilotQuick\\Update", "AutoPilotQuick.exe"), true);
                                     }
                                     catch (Exception e)
@@ -352,7 +354,7 @@ namespace AutopilotQuick
                                 DownloadProgress.SetMessage("Finishing up..");
                                 File.Move(Process.GetCurrentProcess().MainModule.FileName, archivePath);
 
-                                File.Move(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\AutopilotQuick\\Update", "AutopilotQuick.exe"),
+                                File.Move(Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName, "\\AutopilotQuick\\Update", "AutopilotQuick.exe"),
                                     Path.Combine(appFolder, appName + appExtension), true);
                                 Application.Current.Invoke(() =>
                                 {
