@@ -28,6 +28,7 @@ namespace AutopilotQuick
         {
             base.OnStartup(e);
             AllocConsole();
+            Console.WriteLine("Starting up");
             SetupLoggingConfig();
             
             for (int i = 0; i != e.Args.Length; ++i)
