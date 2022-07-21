@@ -5,12 +5,16 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using AutopilotQuick.WMI;
 using NLog;
 using NLog.Targets;
 using ORMi;
+using Application = System.Windows.Application;
 
 namespace AutopilotQuick
 {
@@ -23,7 +27,9 @@ namespace AutopilotQuick
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            AllocConsole();
             SetupLoggingConfig();
+            
             for (int i = 0; i != e.Args.Length; ++i)
             {
                 if (e.Args[i] == "/run")
@@ -37,12 +43,19 @@ namespace AutopilotQuick
             }
             var mainWindow = new MainWindow();
             this.MainWindow = mainWindow;
-            mainWindow.Closing += (sender, args2) =>
+            mainWindow.Closed += (sender, args2) =>
             {
                 Environment.Exit(0);
             };
+
+            Application.Current.Exit += (sender, args) =>
+            {
+                MainWindow.Close();
+            };
+            App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.Show();
         }
+        
 
 
         public void SetupLoggingConfig()
@@ -65,12 +78,32 @@ namespace AutopilotQuick
                 Header = $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
                 Footer = $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
+            var logConsole = new NLog.Targets.ConsoleTarget("logconsole")
+            {
+                AutoFlush = true,
+                DetectConsoleAvailable = false,
+                Layout = "${time:universalTime=True}" + $"|{serviceTag}|{model}|" +
+                         "${level:uppercase=true}|${logger}|${message}",
+                Header =
+                    $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
+                Footer =
+                    $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
+            };
             LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+            LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logConsole);
             NLog.LogManager.Configuration = LoggingConfig;
         }
         public static string GetExecutablePath()
         {
             return Process.GetCurrentProcess().MainModule.FileName;
         }
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool AllocConsole();
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool FreeConsole();
     }
 }
