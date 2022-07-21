@@ -111,10 +111,10 @@ namespace AutopilotQuick
             
         }
 
-        private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             var cancellationToken = _cancelTokenSource.Token;
-            var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken));
+            
             Application.Current.Exit += (o, args) =>
             {
                 _cancelTokenSource.Cancel();
@@ -123,22 +123,23 @@ namespace AutopilotQuick
 
 
             BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
-            var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop());
+
             
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
             TaskManager.getInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
-            var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
+            
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
-            
-            _backgroundTasks.Add(LoggingTask);
-            _backgroundTasks.Add(BatteryManTask);
-            _backgroundTasks.Add(TaskManagerTask);
-            _backgroundTasks.Add(InternetManTask);
-            
+
+            Application.Current.BeginInvoke(() =>
+            {
+                var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken), TaskCreationOptions.LongRunning);
+                var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
+                var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
+                var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
+            });
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
