@@ -44,15 +44,11 @@ namespace AutopilotQuick.LogMan
             return data?.ConnectionString ?? string.Empty;
         }
 
-        private bool Stopped = false;
+        public bool Stopped = false;
         private bool ShouldStop = false;
         public void Stop()
         {
             ShouldStop = true;
-            while (!Stopped)
-            {
-                Thread.Sleep(1);
-            }
         }
         
         public void Run(UserDataContext context, CancellationToken ct)
@@ -72,6 +68,7 @@ namespace AutopilotQuick.LogMan
                 {
                     InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
+
                 while (!ct.IsCancellationRequested && !ShouldStop)
                 {
                     if (InternetMan.getInstance().IsConnected)
@@ -86,6 +83,7 @@ namespace AutopilotQuick.LogMan
                         }
 
                     }
+
                     Thread.Sleep(1000);
                 }
 
@@ -93,6 +91,10 @@ namespace AutopilotQuick.LogMan
             catch (Exception e)
             {
                 Logger.Error(e);
+            }
+            finally
+            {
+                Stopped = true;
             }
 
             Stopped = true;

@@ -76,7 +76,7 @@ namespace AutopilotQuick
                 }
                 IsConnected = internet;
                 
-                Thread.Sleep(IsConnected?1000*10:1000);
+                Task.Delay(IsConnected?1000*10:1000).Wait();
             }
             
 

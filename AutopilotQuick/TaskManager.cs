@@ -113,7 +113,7 @@ namespace AutopilotQuick
             _context = context;
             if (!Enabled)
             {
-                WimMan.getInstance().Preload();
+                //WimMan.getInstance().Preload();
             }
             try
             {
