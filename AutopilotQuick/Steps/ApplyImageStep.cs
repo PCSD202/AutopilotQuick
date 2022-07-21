@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -101,8 +102,14 @@ namespace AutopilotQuick.Steps
                     using (var wimHandle = WimgApi.CreateFile(wimCache.FilePath, WimFileAccess.Read,
                                WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None))
                     {
+                        if (Directory.Exists(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP")))
+                        {
+                            Directory.Delete(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"), true);
+                        }
+
+                        Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"));
                         // Always set a temporary path
-                        WimgApi.SetTemporaryPath(wimHandle, Environment.GetEnvironmentVariable("TEMP"));
+                        WimgApi.SetTemporaryPath(wimHandle, Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"));
 
                         // Register a method to be called while actions are performed by WIMGAPi for this .wim file
                         WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
