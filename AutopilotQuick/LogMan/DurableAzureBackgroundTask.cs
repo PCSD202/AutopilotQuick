@@ -28,9 +28,6 @@ namespace AutopilotQuick.LogMan
         public ShareClient Share;
         public Cacher AzureLogSettingsCache;
         
-        public bool Stopped { get; private set; }
-
-        public bool ShouldStop { get; set; } = false;
         
         private void OnInternetBecameAvailable(object? sender, EventArgs e)
         {
@@ -46,12 +43,23 @@ namespace AutopilotQuick.LogMan
             var data = JsonConvert.DeserializeObject<LogSettings>(File.ReadAllText(AzureLogSettingsCache.FilePath));
             return data?.ConnectionString ?? string.Empty;
         }
-        public void Run(UserDataContext context)
+
+        private bool Stopped = false;
+        private bool ShouldStop = false;
+        public void Stop()
+        {
+            ShouldStop = true;
+            while (!Stopped)
+            {
+                Thread.Sleep(1);
+            }
+        }
+        
+        public void Run(UserDataContext context, CancellationToken ct)
         {
             Logger.Info("Log upload service started");
             try
             {
-                Stopped = false;
                 AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
                     "AzureLogSettings.json", context);
                 var ConnectionString = GetConnectionString();
@@ -64,10 +72,7 @@ namespace AutopilotQuick.LogMan
                 {
                     InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
-
-
-
-                while (!ShouldStop)
+                while (!ct.IsCancellationRequested && !ShouldStop)
                 {
                     if (InternetMan.getInstance().IsConnected)
                     {
@@ -78,22 +83,20 @@ namespace AutopilotQuick.LogMan
                         catch (Exception ex)
                         {
                             Logger.Error(ex);
-                            ShouldStop = true;
-                            Stopped = true;
                         }
 
                     }
-
                     Thread.Sleep(1000);
                 }
 
-                Stopped = true;
             }
             catch (Exception e)
             {
                 Logger.Error(e);
             }
-            
+
+            Stopped = true;
+
         }
 
         public void SyncLogs()

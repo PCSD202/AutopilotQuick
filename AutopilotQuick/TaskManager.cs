@@ -13,6 +13,7 @@ using AutopilotQuick.WMI;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using AutopilotQuick.Steps;
+using Humanizer;
 using Nito.AsyncEx;
 
 namespace AutopilotQuick
@@ -122,34 +123,55 @@ namespace AutopilotQuick
                     InvokeCurrentTaskMessageChanged("");
                     InvokeCurrentTaskNameChanged("");
                     InvokeCurrentTaskProgressChanged(0, false);
-
+                    var s = Stopwatch.StartNew();
                     step.StepUpdated += StepOnStepUpdated;
-                    var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
-                    Logger.Info($"Step completed. Success: {result.Success}, Output: {result.Message}");
-                    step.Progress = 100;
-                    if (result.Success)
+                    try
                     {
-                        InvokeCurrentTaskMessageChanged(result.Message);
-                        Thread.Sleep(500);
-                    }
-                    else
-                    {
-                        if (!step.Critical)
+                        var result = step.Run(context, pauseToken).ConfigureAwait(true).GetAwaiter().GetResult();
+                        Logger.Info($"Step completed. Success: {result.Success}, Output: {result.Message}");
+                        step.Progress = 100;
+                        if (result.Success)
                         {
-                            InvokeCurrentTaskNameChanged("Failed");
                             InvokeCurrentTaskMessageChanged(result.Message);
-                            Thread.Sleep(10000);
+                            Thread.Sleep(500);
                         }
                         else
                         {
-                            InvokeCurrentTaskNameChanged("Failed - Cannot continue");
-                            InvokeCurrentTaskMessageChanged(result.Message);
-                            break;
+                            if (!step.Critical)
+                            {
+                                InvokeCurrentTaskNameChanged("Failed");
+                                InvokeCurrentTaskMessageChanged(result.Message);
+                            }
+                            else
+                            {
+                                InvokeCurrentTaskNameChanged("Failed - Cannot continue");
+                                InvokeCurrentTaskMessageChanged(result.Message);
+                                break;
 
+                            }
                         }
                     }
+                    catch (Exception b)
+                    {
+                        Logger.Error(b);
+                        if (!step.Critical)
+                        {
+                            Logger.Info("Continuing to next step because step was not critical");
+                            continue;
+                        }
+                        else
+                        {
+                            Logger.Info("Cannot continue, step was marked as critical.");
+                            InvokeCurrentTaskNameChanged("Failed - Cannot continue");
+                            InvokeCurrentTaskMessageChanged($"{b}");
+                            break;
+                        }
+                    }
+                    
 
                     step.StepUpdated -= StepOnStepUpdated;
+                    s.Stop();
+                    Logger.Info($"Step execution took {s.Elapsed.Humanize(3)}.");
                 }
             }
             catch (Exception e)
@@ -157,13 +179,6 @@ namespace AutopilotQuick
                 Logger.Error(e);
                 Logger.Info(e.StackTrace);
             }
-            
-
-
-
-
-
-            
         }
 
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)

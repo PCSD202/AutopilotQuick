@@ -15,7 +15,7 @@ public class FinalizeSyncingLogsStep : StepBaseEx
         Title = "Synchronizing logs with azure";
         Message = "Checking for internet";
         Progress = 0;
-        DurableAzureBackgroundTask.getInstance().ShouldStop = true;
+        DurableAzureBackgroundTask.getInstance().Stop();
         if (!InternetMan.CheckForInternetConnection())
         {
             Message = "Internet is not available. Logs will be uploaded next time";
@@ -26,9 +26,9 @@ public class FinalizeSyncingLogsStep : StepBaseEx
         Progress = 25;
         Message = "Waiting for log service to shutdown...";
         var startTime = DateTime.UtcNow;
-        while (!DurableAzureBackgroundTask.getInstance().Stopped && ((DateTime.UtcNow - startTime).TotalSeconds <= 5))
+        while (((DateTime.UtcNow - startTime).TotalSeconds <= 5))
         {
-            DurableAzureBackgroundTask.getInstance().ShouldStop = true;
+            DurableAzureBackgroundTask.getInstance().Stop();
             Thread.Sleep(250);
         }
 

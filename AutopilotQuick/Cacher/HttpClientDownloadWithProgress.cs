@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Windows;
+using MahApps.Metro.Controls;
 
 namespace AutopilotQuick; 
 
@@ -45,6 +47,14 @@ public class HttpClientDownloadWithProgress : IDisposable
         var readCount = 0L;
         var buffer = new byte[1024];
         var isMoreToRead = true;
+        var shouldStop = false;
+        Application.Current.Invoke(() =>
+        {
+            Application.Current.Exit += (sender, args) =>
+            {
+                shouldStop = true;
+            };
+        });
 
         await using var fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 1024, true);
         do
@@ -65,7 +75,7 @@ public class HttpClientDownloadWithProgress : IDisposable
             if (readCount % 100 == 0)
                 TriggerProgressChanged(totalDownloadSize, totalBytesRead);
         }
-        while (isMoreToRead);
+        while (isMoreToRead && !shouldStop);
     }
 
     private void TriggerProgressChanged(long? totalDownloadSize, long totalBytesRead)

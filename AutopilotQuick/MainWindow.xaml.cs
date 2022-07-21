@@ -21,6 +21,7 @@ using System.IO.Compression;
 using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Windows.Forms;
 using AutopilotQuick.LogMan;
 using MahApps.Metro.Controls;
@@ -38,6 +39,8 @@ namespace AutopilotQuick
         public UserDataContext context;
         private readonly bool Updated;
         private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
+        private readonly CancellationTokenSource _cancelTokenSource = new();
+        private List<Task> _backgroundTasks = new List<Task>();
         
         public MainWindow()
         {
@@ -110,24 +113,32 @@ namespace AutopilotQuick
 
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context));
+            var cancellationToken = _cancelTokenSource.Token;
+            var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken));
             Application.Current.Exit += (o, args) =>
             {
-                DurableAzureBackgroundTask.getInstance().ShouldStop = true;
-                BatteryMan.getInstance().ShouldStop = true;
-                Environment.Exit(0);
+                _cancelTokenSource.Cancel();
+                Close();
             };
 
 
             BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
+            var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop());
+            
             TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
             TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
             TaskManager.getInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
-            Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
+            var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token));
+            
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
-            Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop());
+            var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop());
+            
+            _backgroundTasks.Add(LoggingTask);
+            _backgroundTasks.Add(BatteryManTask);
+            _backgroundTasks.Add(TaskManagerTask);
+            _backgroundTasks.Add(InternetManTask);
+            
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
@@ -242,141 +253,164 @@ namespace AutopilotQuick
                 latestVersion = new Version(context.LatestVersion);
             }
             catch (Exception e) { _taskManagerPauseTokenSource.IsPaused = false;  }
-#if PUBLISH
+//#if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) {
                 _taskManagerPauseTokenSource.IsPaused = false;
                 return;
             }
+            
             var DownloadProgress = await context.DialogCoordinator.ShowProgressAsync(context, $"Step 1/{maxStep} - Downloading", "Percent: 0% (0/0)", isCancelable: false, new MetroDialogSettings { AnimateHide = false });
             DownloadProgress.Maximum = 100;
-            using (var client = new WebClient())
+            
+            var downloadPath = System.IO.Path.GetTempFileName();
+
+            try
             {
-                var downloadPath = System.IO.Path.GetTempFileName();
-                client.DownloadProgressChanged += (sender, args) =>
+                using var DownloadClient = new HttpClientDownloadWithProgress(context.LatestReleaseAssetURL, downloadPath);
+                DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
                 {
-                    DownloadProgress.SetProgress(args.ProgressPercentage);
-                    DownloadProgress.SetMessage($"Percent: {args.ProgressPercentage}% ({args.BytesReceived.Bytes().Humanize("#.##")}/{args.TotalBytesToReceive.Bytes().Humanize("#.##")})");
+                    if (!progressPercentage.HasValue) return;
+                    DownloadProgress.SetProgress(progressPercentage.Value);
+                    DownloadProgress.SetMessage(
+                        $"Percent: {progressPercentage}% ({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
                 };
-                client.DownloadFileCompleted += async (sender, args) =>
-                {
-                    if (args.Error is not null)
-                    {
-                        await DownloadProgress.CloseAsync();
-                    }
-                    else
-                    {
-                        DownloadProgress.SetTitle($"Step 2/{maxStep} - Downloading signature");
-                        using var client2 = new WebClient();
-                        var downloadPathSignedHash = System.IO.Path.GetTempFileName();
-                        client2.DownloadProgressChanged += (sender, args) =>
-                        {
-                            DownloadProgress.SetProgress(args.ProgressPercentage);
-                            DownloadProgress.SetMessage($"Percent: {args.ProgressPercentage}% ({args.BytesReceived.Bytes().Humanize("#.##")}/{args.TotalBytesToReceive.Bytes().Humanize("#.##")})");
-                        };
-                        client2.DownloadFileCompleted += async (sender, args) =>
-                        {
-                            if (args.Error is not null)
-                            {
-                                await DownloadProgress.CloseAsync();
-                                ShowErrorBox(args.Error.Message);
-                            }
-                            else
-                            {
-                                DownloadProgress.SetTitle($"Step 3/{maxStep} - Verifying signature");
-                                DownloadProgress.SetMessage("");
-                                DownloadProgress.SetIndeterminate();
-                                bool SignatureValid = VerifySignature(downloadPathSignedHash);
-                                if (!SignatureValid)
-                                {
-                                    await DownloadProgress.CloseAsync();
-                                    ShowErrorBox("File signature invalid. If you get this after retrying tell us on discord. It is potentially a security risk.");
-                                    return;
-                                }
-
-                                DownloadProgress.SetTitle($"Step 4/{maxStep} - Verifying hash");
-                                DownloadProgress.SetMessage("");
-                                DownloadProgress.SetIndeterminate();
-                                bool HashValid = VerifyHashFromSig(downloadPath, downloadPathSignedHash);
-                                if (!HashValid)
-                                {
-                                    await DownloadProgress.CloseAsync();
-                                    ShowErrorBox("Capture hash invalid. If you get this after retrying tell us on discord. It is potentially a security risk.");
-                                    return;
-                                }
-
-                                DownloadProgress.SetTitle($"Step 5/{maxStep} - Extracting");
-                                DownloadProgress.SetMessage("Please wait, we may go unresponsive but don't close the window, we will restart the program after.");
-                                DownloadProgress.SetIndeterminate();
-                                if (!Directory.Exists(System.IO.Path.Join(
-                                        Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
-                                    "\\AutopilotQuick\\Update")))
-                                {
-                                    Directory.CreateDirectory(System.IO.Path.Join(
-                                        Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
-                                        "\\AutopilotQuick\\Update"));
-                                }
-
-                                using (ZipArchive archive = ZipFile.OpenRead(downloadPath))
-                                {
-                                    try
-                                    {
-                                        var entry = archive.Entries.First(x => x.FullName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
-                                        entry.ExtractToFile(Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
-                                            "\\AutopilotQuick\\Update", "AutoPilotQuick.exe"), true);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        var errorBox = await context.DialogCoordinator.ShowMessageAsync(context, "ERROR",
-                                            e.Message, MessageDialogStyle.AffirmativeAndNegative,
-                                            new MetroDialogSettings
-                                            {
-                                                AffirmativeButtonText = "retry",
-                                                NegativeButtonText = "cancel",
-                                                DefaultButtonFocus = MessageDialogResult.Affirmative
-                                            });
-                                        if (errorBox == MessageDialogResult.Affirmative)
-                                        {
-                                            await Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
-                                        }
-                                    }
-                                }
-
-
-                                //You can't delete a running application. But you can rename it.
-                                string appFolder = Path.GetDirectoryName(Environment.ProcessPath);
-                                string appName = Path.GetFileNameWithoutExtension(Environment.ProcessPath);
-                                string appExtension = Path.GetExtension(Environment.ProcessPath);
-                                string archivePath = Path.Combine(appFolder, appName + "_Old" + appExtension);
-
-                                DownloadProgress.SetTitle($"Step 6/{maxStep} - Copying files");
-                                DownloadProgress.SetMessage("Finishing up..");
-                                File.Move(Process.GetCurrentProcess().MainModule.FileName, archivePath);
-
-                                File.Move(Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName, "\\AutopilotQuick\\Update", "AutopilotQuick.exe"),
-                                    Path.Combine(appFolder, appName + appExtension), true);
-                                Application.Current.Invoke(() =>
-                                {
-                                    Process.Start(Path.Combine(appFolder, appName + appExtension), "/run");
-                                    Environment.Exit(0);
-                                });
-                            }
-                        };
-                        if (!string.IsNullOrEmpty(context.LatestReleaseAssetSignedHashURL))
-                        {
-                            var signatureDownloader = client2.DownloadFileTaskAsync(context.LatestReleaseAssetSignedHashURL, downloadPathSignedHash);
-                        }
-                        else
-                        {
-                            ShowErrorBox("Release does not have a signature. Not downloading, please retry later.");
-                        }
-
-                    }
-                };
-                var downloaderClient = client.DownloadFileTaskAsync(context.LatestReleaseAssetURL, downloadPath);
+                await DownloadClient.StartDownload();
             }
-#endif
+            catch (Exception e)
+            {
+                await DownloadProgress.CloseAsync();
+                ShowErrorBox(e.Message);
+            }
+            
+            var downloadPathSignedHash = System.IO.Path.GetTempFileName();
+            try
+            {
+                DownloadProgress.SetTitle($"Step 2/{maxStep} - Downloading signature");
+                using var SignatureDownloadClient =
+                    new HttpClientDownloadWithProgress(context.LatestReleaseAssetSignedHashURL, downloadPathSignedHash);
+                SignatureDownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                {
+                    if (!progressPercentage.HasValue) return;
+                    DownloadProgress.SetProgress(progressPercentage.Value);
+                    DownloadProgress.SetMessage(
+                        $"Percent: {progressPercentage}% ({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
+                };
+                await SignatureDownloadClient.StartDownload();
+            }
+            catch (Exception e)
+            {
+                await DownloadProgress.CloseAsync();
+                ShowErrorBox(e.Message);
+            }
+            
+            //We have the zip file downloaded to downloadPath, and the Signature downloaded to downloadPathSignedHash
+            //Now we need to verify the signature of the hash
+            DownloadProgress.SetTitle($"Step 3/{maxStep} - Verifying signature");
+            DownloadProgress.SetMessage("");
+            DownloadProgress.SetIndeterminate();
+            bool SignatureValid = VerifySignature(downloadPathSignedHash);
+            if (!SignatureValid)
+            {
+                await DownloadProgress.CloseAsync();
+                ShowErrorBox("File signature invalid. If you get this after retrying tell us on discord. It is potentially a security risk.");
+                return;
+            }
+            
+            //Now we verify the signed hash 
+            DownloadProgress.SetTitle($"Step 4/{maxStep} - Verifying hash");
+            DownloadProgress.SetMessage("");
+            DownloadProgress.SetIndeterminate();
+            bool HashValid = VerifyHashFromSig(downloadPath, downloadPathSignedHash);
+            if (!HashValid)
+            {
+                await DownloadProgress.CloseAsync();
+                ShowErrorBox("Capture hash invalid. If you get this after retrying tell us on discord. It is potentially a security risk.");
+                return;
+            }
+            
+            //Hash and signature valid. Now we need to extract
+            DownloadProgress.SetTitle($"Step 5/{maxStep} - Extracting");
+            DownloadProgress.SetMessage("Please wait, we may go unresponsive but don't close the window, we will restart the program after.");
+            DownloadProgress.SetIndeterminate();
+            var UpdateFolder =
+                System.IO.Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
+                    "\\AutopilotQuick\\Update");
+            //Clear out the update folder
+            if (Directory.Exists(UpdateFolder))
+            {
+                Directory.Delete(UpdateFolder, true);
+            }
+            Directory.CreateDirectory(UpdateFolder);
+            
+            //Extract the zip archive
+            using (ZipArchive archive = ZipFile.OpenRead(downloadPath))
+            {
+                try
+                {
+                    foreach (var thing in archive.Entries)
+                    {
+                        thing.ExtractToFile(Path.Join(UpdateFolder, thing.FullName), true);
+                    }
+                }
+                catch (Exception e)
+                {
+                    var errorBox = await context.DialogCoordinator.ShowMessageAsync(context, "ERROR",
+                        e.Message, MessageDialogStyle.AffirmativeAndNegative,
+                        new MetroDialogSettings
+                        {
+                            AffirmativeButtonText = "retry",
+                            NegativeButtonText = "cancel",
+                            DefaultButtonFocus = MessageDialogResult.Affirmative
+                        });
+                    if (errorBox == MessageDialogResult.Affirmative)
+                    {
+                        await Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+                    }
+                }
+            }
+            
+            //You can't delete a running application. But you can rename it.
+            string appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            string appName = Path.GetFileNameWithoutExtension(Environment.ProcessPath);
+            string appExtension = Path.GetExtension(Environment.ProcessPath);
+            string archivePath = Path.Combine(appFolder, appName + "_Old" + appExtension);
+
+            DownloadProgress.SetTitle($"Step 6/{maxStep} - Copying files");
+            DownloadProgress.SetMessage("Finishing up..");
+            
+            Application.Current.Invoke(() =>
+            {
+                
+                var psscriptPath = Path.Join(UpdateFolder, $"script-{Guid.NewGuid()}.ps1");
+                var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+                foreach (var fileName in files.Where(x => x.EndsWith("UpdateScript.ps1")))
+                {
+                    using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
+                    {
+                        using (var file = new FileStream(psscriptPath, FileMode.Create, FileAccess.Write))
+                        {
+                            resource.CopyTo(file);
+                        }
+                    }
+                }
+
+                var script = $"$AutopilotQuickPath = \"{Directory.GetParent(UpdateFolder)}\"\n"+File.ReadAllText(psscriptPath);
+                
+                File.WriteAllText(psscriptPath, script);
+                
+                Process updateProcess = new Process();
+                updateProcess.StartInfo.FileName = "Powershell.exe";
+                updateProcess.StartInfo.UseShellExecute = true;
+                updateProcess.StartInfo.RedirectStandardOutput = false;
+                updateProcess.StartInfo.CreateNoWindow = false;
+                updateProcess.StartInfo.Arguments = psscriptPath;
+                updateProcess.Start();
+                Thread.Sleep(1000);
+                Environment.Exit(0);
+            });
+//#endif
             _taskManagerPauseTokenSource.IsPaused = false;
         }
 
