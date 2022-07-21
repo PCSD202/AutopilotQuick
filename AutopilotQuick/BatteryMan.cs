@@ -44,9 +44,10 @@ namespace AutopilotQuick
             set => Status = Status with { BatteryPercent = value };
         }
         
+        public bool ShouldStop { get; set; } = false;
         public void RunLoop()
         {
-            while (true)
+            while (!ShouldStop)
             {
                 PowerStatus pwr = SystemInformation.PowerStatus;
 
