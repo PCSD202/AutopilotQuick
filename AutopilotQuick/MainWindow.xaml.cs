@@ -253,7 +253,7 @@ namespace AutopilotQuick
                 latestVersion = new Version(context.LatestVersion);
             }
             catch (Exception e) { _taskManagerPauseTokenSource.IsPaused = false;  }
-//#if PUBLISH
+#if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) {
@@ -410,7 +410,7 @@ namespace AutopilotQuick
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
-//#endif
+#endif
             _taskManagerPauseTokenSource.IsPaused = false;
         }
 
