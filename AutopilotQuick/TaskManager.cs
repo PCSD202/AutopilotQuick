@@ -89,7 +89,6 @@ namespace AutopilotQuick
 
         private List<StepBase> Steps = new List<StepBase>()
         {
-            new InitializePowershellStep(),
             new FormatStep(),
             new ApplyImageStep(),
             new DisableTakeHomeStep(),
@@ -188,14 +187,6 @@ namespace AutopilotQuick
             InvokeCurrentTaskMessageChanged(e.Message);
             InvokeCurrentTaskNameChanged(e.Title);
             InvokeCurrentTaskProgressChanged(e.Progress, e.IsIndeterminate);
-        }
-
-        public void TaskManager_InternetBecameAvailable(object? sender, EventArgs e) {
-            if (!UpdatedImageAvailable)
-            {
-                UpdatedImageAvailable = !wimCache.IsUpToDate;
-            }
-            
         }
     }
     public class CurrentTaskNameChangedEventArgs : EventArgs
