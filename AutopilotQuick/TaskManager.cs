@@ -79,7 +79,6 @@ namespace AutopilotQuick
         }
 
         private void WaitForPause(PauseToken pauseToken) {
-            if (!pauseToken.IsPaused) return;
             InvokeCurrentTaskNameChanged("Paused");
             InvokeCurrentTaskMessageChanged("Waiting for unpause");
             InvokeCurrentTaskProgressChanged(0, true);
@@ -108,7 +107,6 @@ namespace AutopilotQuick
 
         public void Run(UserDataContext context, PauseToken pauseToken)
         {
-            pauseToken.WaitWhilePaused();
             _context = context;
             if (!Enabled)
             {
@@ -118,6 +116,7 @@ namespace AutopilotQuick
             {
                 foreach (var step in Steps)
                 {
+                    Logger.Info(pauseToken.IsPaused);
                     WaitForPause(pauseToken);
                     InvokeCurrentTaskMessageChanged("");
                     InvokeCurrentTaskNameChanged("");
