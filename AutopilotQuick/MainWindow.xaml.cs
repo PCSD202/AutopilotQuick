@@ -41,6 +41,7 @@ namespace AutopilotQuick
         private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
         private readonly CancellationTokenSource _cancelTokenSource = new();
         private List<Task> _backgroundTasks = new List<Task>();
+        private bool Updating = false;
         
         public MainWindow()
         {
@@ -173,7 +174,31 @@ namespace AutopilotQuick
         {
             context.ConnectedToInternet = true;
             context.RefreshLatestVersion();
-            Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
+        }
+
+        private async void UpdateWithPause()
+        {
+            if (!Updating)
+            {
+                Updating = true;
+                Logger.Info("Pausing for update checking&applying");
+                _taskManagerPauseTokenSource.IsPaused = true;
+                try
+                {
+                    Logger.Info("Updating");
+                    await Update();
+                    Logger.Info("Done updating");
+                }
+                finally
+                {
+                    Logger.Info("unpausing done with update checking&applying");
+                    _taskManagerPauseTokenSource.IsPaused = false;
+                    Updating = false;
+                }
+            }
+
+
         }
         private async void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
         {
@@ -240,7 +265,7 @@ namespace AutopilotQuick
             }
         }
 
-        public async void Update()
+        public async Task Update()
         {
             var version = new Version();
             var latestVersion = new Version();
@@ -256,11 +281,9 @@ namespace AutopilotQuick
                 Logger.Error(e);
             }
 #if PUBLISH
-            _taskManagerPauseTokenSource.IsPaused = true;
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) {
-                _taskManagerPauseTokenSource.IsPaused = false;
                 return;
             }
             
@@ -413,7 +436,6 @@ namespace AutopilotQuick
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
-            _taskManagerPauseTokenSource.IsPaused = false;
 #endif
             
         }
