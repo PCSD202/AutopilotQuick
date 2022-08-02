@@ -116,7 +116,7 @@ namespace AutopilotQuick
             {
                 foreach (var step in Steps)
                 {
-                    Logger.Info(pauseToken.IsPaused);
+                    Logger.Info($"Is Paused: {pauseToken.IsPaused}");
                     WaitForPause(pauseToken);
                     InvokeCurrentTaskMessageChanged("");
                     InvokeCurrentTaskNameChanged("");
