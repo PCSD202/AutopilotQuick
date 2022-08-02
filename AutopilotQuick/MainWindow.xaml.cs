@@ -413,7 +413,7 @@ namespace AutopilotQuick
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
-            _taskManagerPauseTokenSource.IsPaused = PrevPauseState;
+            _taskManagerPauseTokenSource.IsPaused = false;
 #endif
             
         }
