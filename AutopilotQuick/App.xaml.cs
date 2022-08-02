@@ -12,6 +12,8 @@ using System.Windows;
 using System.Windows.Forms;
 using AutopilotQuick.WMI;
 using NLog;
+using NLog.Config;
+using NLog.LayoutRenderers;
 using NLog.Targets;
 using ORMi;
 using Application = System.Windows.Application;
@@ -61,6 +63,7 @@ namespace AutopilotQuick
 
         public void SetupLoggingConfig()
         {
+            ConfigurationItemFactory.Default.LayoutRenderers.RegisterDefinition("elapsedtime", typeof (ElapsedTimeLayoutRenderer));
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var LoggingConfig = new NLog.Config.LoggingConfiguration();
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
@@ -72,7 +75,7 @@ namespace AutopilotQuick
                 FileName = $"{appFolder}/logs/latest.log",
                 ArchiveFileName = $"{appFolder}/logs/{{#}}.log",
                 ArchiveNumbering = ArchiveNumberingMode.Date,
-                Layout = "${time:universalTime=True}"+$"|{serviceTag}|{model}|"+"${level:uppercase=true}|${logger}|${message}",
+                Layout = "${time:universalTime=True}|${elapsedtime}"+$"|{serviceTag}|{model}|"+"${level:uppercase=true}|${logger}|${message}",
                 MaxArchiveFiles = 100,
                 ArchiveOldFileOnStartup = true,
                 ArchiveDateFormat = "yyyy-MM-dd HH_mm_ss",
@@ -83,7 +86,7 @@ namespace AutopilotQuick
             {
                 AutoFlush = true,
                 DetectConsoleAvailable = false,
-                Layout = "${time:universalTime=True}" + $"|{serviceTag}|{model}|" +
+                Layout = "${time:universalTime=True}|${elapsedtime}" + $"|{serviceTag}|{model}|" +
                          "${level:uppercase=true}|${logger}|${message}",
                 Header =
                     $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
