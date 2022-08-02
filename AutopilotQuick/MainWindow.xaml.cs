@@ -132,14 +132,12 @@ namespace AutopilotQuick
             
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
+            
+            var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken), TaskCreationOptions.LongRunning);
+            var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
+            var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
+            var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
 
-            Application.Current.BeginInvoke(() =>
-            {
-                var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken), TaskCreationOptions.LongRunning);
-                var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
-                var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
-                var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
-            });
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
@@ -242,8 +240,8 @@ namespace AutopilotQuick
             }
         }
 
-        public async void Update() {
-            _taskManagerPauseTokenSource.IsPaused = true;
+        public async void Update()
+        {
             var version = new Version();
             var latestVersion = new Version();
             try
@@ -253,8 +251,12 @@ namespace AutopilotQuick
                 version = new Version(context.Version);
                 latestVersion = new Version(context.LatestVersion);
             }
-            catch (Exception e) { _taskManagerPauseTokenSource.IsPaused = false;  }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
 #if PUBLISH
+            _taskManagerPauseTokenSource.IsPaused = true;
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
             if (!(latestVersion.CompareTo(version) > 0)) {
@@ -411,8 +413,9 @@ namespace AutopilotQuick
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
+            _taskManagerPauseTokenSource.IsPaused = PrevPauseState;
 #endif
-            _taskManagerPauseTokenSource.IsPaused = false;
+            
         }
 
         private async void ShutdownButton_OnClick(object sender, RoutedEventArgs e)
