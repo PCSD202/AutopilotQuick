@@ -43,9 +43,10 @@ public class HttpClientDownloadWithProgress : IDisposable
 
     private async Task ProcessContentStream(long? totalDownloadSize, Stream contentStream)
     {
+        var bufferSize = 1024 * 512;
         var totalBytesRead = 0L;
         var readCount = 0L;
-        var buffer = new byte[1024*4];
+        var buffer = new byte[bufferSize];
         var isMoreToRead = true;
         var shouldStop = false;
         Application.Current.Invoke(() =>
@@ -56,7 +57,7 @@ public class HttpClientDownloadWithProgress : IDisposable
             };
         });
 
-        await using var fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 1024*4, true);
+        await using var fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
         do
         {
             var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length);
