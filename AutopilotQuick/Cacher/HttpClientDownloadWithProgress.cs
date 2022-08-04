@@ -43,7 +43,7 @@ public class HttpClientDownloadWithProgress : IDisposable
 
     private async Task ProcessContentStream(long? totalDownloadSize, Stream contentStream)
     {
-        var bufferSize = 1024 * 512;
+        const int bufferSize = 1024 * 512;
         var totalBytesRead = 0L;
         var readCount = 0L;
         var buffer = new byte[bufferSize];
