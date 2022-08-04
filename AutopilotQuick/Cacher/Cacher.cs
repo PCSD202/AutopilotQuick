@@ -80,7 +80,7 @@ public class Cacher {
         _logger.Info($"Download complete for {FileURL}");
     }
     
-    private DateTime GetLastModifiedFromWeb() {
+    public DateTime GetLastModifiedFromWeb() {
         InternetMan.WaitForInternet(_context); //We need internet connectivity
         try {
             var request = new HttpRequestMessage(HttpMethod.Head, FileURL);
@@ -100,7 +100,7 @@ public class Cacher {
         }
     }
 
-    private DateTime GetCachedFileLastModified() {
+    public DateTime GetCachedFileLastModified() {
         if (!File.Exists(FileCacheDataPath)) {
             return DateTime.MinValue;
         }
@@ -116,7 +116,7 @@ public class Cacher {
         
     }
 
-    private void SetCachedFileLastModified(DateTime LastModified) {
+    public void SetCachedFileLastModified(DateTime LastModified) {
         CacherData data = new CacherData() {
             LastModified = LastModified.ToUniversalTime()
         };

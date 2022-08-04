@@ -61,8 +61,9 @@ Write-Host $ISO;
     
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
     {
-        WinPEISOCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/OSDCloud_NoPrompt.iso", "OSDImage.iso",
-            context);
+        WinPEISOCache = new Cacher(
+            "http://nettools.psd202.org/AutoPilotFast/OSDCloud_NoPrompt.iso", 
+            "OSDImage.iso", context);
         
         var startTime = Stopwatch.StartNew();
         if (!IsEnabled || (!InternetMan.getInstance().IsConnected && !InternetMan.CheckForInternetConnection()))
@@ -78,14 +79,24 @@ Write-Host $ISO;
 
         Progress = 25;
         Message = "Making sure downloaded environment ISO is up to date";
+        bool Updated = false;
         if (!WinPEISOCache.IsUpToDate)
         {
             Message = "Downloading updated environment ISO";
             Logger.Info("Downloading updated WinPEISO");
             await WinPEISOCache.DownloadUpdateAsync();
+            Updated = true;
             Message = "Downloaded updated environment ISO";
         }
 
+        if (!Updated)
+        {
+            return new StepResult(true, "Skipped updating, no new OS file");
+        }
+
+        var SavedLastModified = WinPEISOCache.GetCachedFileLastModified(); //Temporarily reset the lastModified
+        WinPEISOCache.SetCachedFileLastModified(DateTime.MinValue); //To trigger a re-download and update if we're interupted
+        
         Progress = 50;
         Message = "Making sure the environment ISO is downloaded";
         if (!WinPEISOCache.FileCached)
@@ -113,6 +124,9 @@ Write-Host $ISO;
         Message = "Updated flash drive successfully";
         Progress = 100;
         Logger.Info($"Update step took {startTime.Elapsed.Humanize(3)}");
+        
+        //Restore the last-modified parameter so we do not re-download and update
+        WinPEISOCache.SetCachedFileLastModified(SavedLastModified);
         return new StepResult(true, $"Applied update in {startTime.Elapsed.Humanize(3)}");
     }
 }
