@@ -36,7 +36,7 @@ namespace AutopilotQuick.LogMan
 
         public string GetConnectionString()
         {
-            if (!AzureLogSettingsCache.FileCached)
+            if (!(AzureLogSettingsCache.FileCached && AzureLogSettingsCache.IsUpToDate))
             {
                 AzureLogSettingsCache.DownloadUpdate();
             }
@@ -58,10 +58,11 @@ namespace AutopilotQuick.LogMan
             {
                 AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
                     "AzureLogSettings.json", context);
-                var ConnectionString = GetConnectionString();
+                
                 // Instantiate a ShareClient which will be used to create and manipulate the file share
                 if (InternetMan.getInstance().IsConnected)
                 {
+                    var ConnectionString = GetConnectionString();
                     Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
                 }
                 else
