@@ -50,7 +50,6 @@
 	  <None Remove="Resources\TakeHome\AutopilotCleanup.ps1" />
 	  <EmbeddedResource Include="Resources\TakeHome\AutopilotCleanup.ps1" />
 	  <None Remove="Resources\TakeHome\TakeHomeCreds.xml" />
-	  <EmbeddedResource Include="Resources\TakeHome\TakeHomeCreds.xml" />
 	  <None Remove="Resources\TakeHome\IntuneCleanup.ps1" />
 	  <EmbeddedResource Include="Resources\TakeHome\IntuneCleanup.ps1" />
 	  <None Remove="Resources\UpdateScript.ps1" />

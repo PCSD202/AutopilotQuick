@@ -31,6 +31,16 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
         var scriptDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "ScriptsTemp");
         Directory.CreateDirectory(scriptDir);
         var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+        
+        var takehomeCredsCacher = new Cacher("http://nettools.psd202.org/AutoPilotFast/TakeHomeCreds.xml",
+            "TakeHomeCreds.xml", context);
+
+
+        if (!(takehomeCredsCacher.FileCached && takehomeCredsCacher.IsUpToDate))
+        {
+            takehomeCredsCacher.DownloadUpdate();
+        }
+        
         foreach (var fileName in files.Where(x => x.Contains("TakeHome")))
         {
             using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
@@ -64,7 +74,7 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
         return $decryptedPassword
     }}
     $key = Get-Key
-    $credStore = Import-Clixml -Path {Path.TrimEndingDirectorySeparator(scriptDir)}\TakeHomeCreds.xml
+    $credStore = Import-Clixml -Path {takehomeCredsCacher.FilePath}
     $appid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.AppID -Key $key)
     $tenantid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.TenantID -Key $key)
     $clientSecret = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.ClientSecret -Key $key)
