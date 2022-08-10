@@ -15,7 +15,7 @@ public class IntuneCleanupStep : StepBaseEx
         if (!IsEnabled)
         {
             Title = "Cleaning up autopilot records - DISABLED";
-            CountDown(pauseToken, 5000);
+            await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Cleaning up autopilot records - DISABLED");
         }
 
@@ -23,7 +23,7 @@ public class IntuneCleanupStep : StepBaseEx
         {
             Title = "Cleaning up autopilot records - NO INTERNET";
             Progress = 100;
-            CountDown(pauseToken, 5000);
+            await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Skipped cleaning up autopilot records due to not having internet");
         }
         Title = "Cleaning up autopilot records";

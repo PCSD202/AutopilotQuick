@@ -24,7 +24,7 @@ namespace AutopilotQuick.Steps
             Status = oldStatus;
         }
 
-        public void CountDown(PauseToken pauseToken, double ms)
+        public async Task CountDown(PauseToken pauseToken, double ms)
         {
             var oldStatus = Status;
             IsIndeterminate = false;
@@ -37,7 +37,7 @@ namespace AutopilotQuick.Steps
                 {
                     Progress = 100;
                 }
-                Thread.Sleep((int)Math.Round(ms/1000));
+                await Task.Delay(20);
             }
 
             Status = oldStatus with{Progress = 100};
@@ -58,6 +58,33 @@ namespace AutopilotQuick.Steps
             formatProcess.WaitForExit();
             File.Delete(psscriptPath);
             return output;
+        }
+        
+        public async Task<string> InvokePowershellScriptAndGetResultAsync(string script, CancellationToken cancellationToken)
+        {
+            var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-{Guid.NewGuid()}.ps1");
+            await File.WriteAllTextAsync(psscriptPath, script, cancellationToken);
+            Process powerShellProcess = new Process();
+            powerShellProcess.StartInfo.FileName = "Powershell.exe";
+            powerShellProcess.StartInfo.UseShellExecute = false;
+            powerShellProcess.StartInfo.RedirectStandardOutput = true;
+            powerShellProcess.StartInfo.CreateNoWindow = true;
+            powerShellProcess.StartInfo.Arguments = psscriptPath;
+            powerShellProcess.Start();
+            try
+            {
+                await powerShellProcess.WaitForExitAsync(cancellationToken);
+                var output = (await powerShellProcess.StandardOutput.ReadToEndAsync()).Trim();
+                return output;
+            } finally
+            {
+                if (!powerShellProcess.HasExited)
+                {
+                    powerShellProcess.Kill();
+                }
+                File.Delete(psscriptPath);
+            }
+            
         }
 
         public string RunDiskpartScript(string Script)
