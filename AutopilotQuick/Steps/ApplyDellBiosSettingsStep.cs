@@ -4,12 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Navigation;
 using AutopilotQuick.WMI;
+using Humanizer;
 using Nito.AsyncEx;
 using NLog;
 using ORMi;
+using Polly;
+using Polly.Timeout;
 
 namespace AutopilotQuick.Steps
 {
@@ -30,16 +35,10 @@ namespace AutopilotQuick.Steps
 
                 //Copy all of our files from Resources/DellBiosSettings to a directory to execute
                 var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-                foreach (var fileName in files.Where(x => x.Contains("DellBiosSettings")))
-                {
-                    using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
-                    {
-                        using (var file = new FileStream(Path.Combine(dellBiosSettingsDir, fileName.Replace("AutopilotQuick.Resources.DellBiosSettings.", "")), FileMode.Create, FileAccess.Write))
-                        {
-
-                            resource.CopyTo(file);
-                        }
-                    }
+                foreach (var fileName in files.Where(x => x.Contains("DellBiosSettings"))) {
+                    await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName);
+                    await using var file = new FileStream(Path.Combine(dellBiosSettingsDir, fileName.Replace("AutopilotQuick.Resources.DellBiosSettings.", "")), FileMode.Create, FileAccess.Write);
+                    await resource?.CopyToAsync(file)!;
                 }
 
                 IsIndeterminate = false;
@@ -62,8 +61,23 @@ cd {dellBiosSettingsDir}
 & .\{scriptExecutable}
 ";
                 Message = $"This device is a {model}, applying bios settings";
-                var output = InvokePowershellScriptAndGetResult(script);
-                Logger.Debug($"Dell bios output: {output}");
+                var timeoutPolicy = Policy.TimeoutAsync(1.Minutes(), async (context1, timespan, task) =>
+                {
+                    Logger.Error($"{context1.PolicyKey}: execution timed out after {timespan.TotalSeconds} seconds.");
+                    return;
+                });
+                string output = "";
+                try
+                {
+                    output = await timeoutPolicy.ExecuteAsync(
+                        async ct => await InvokePowershellScriptAndGetResultAsync(script, ct),
+                        CancellationToken.None);
+                }
+                catch (TimeoutRejectedException)
+                {
+                    Logger.Error("Task exceeded timeout");
+                }
+                Logger.Debug($"Dell bios output: {Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
                 Progress = 50;
                 Message = "Cleaning up";
                 Directory.Delete(dellBiosSettingsDir, true);
