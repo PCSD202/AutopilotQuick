@@ -10,6 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Humanizer;
+using Polly;
+using Polly.Retry;
 
 namespace AutopilotQuick
 {
@@ -119,24 +122,33 @@ namespace AutopilotQuick
 
         public void RefreshLatestVersion()
         {
-            while (!MainWindow.CheckForInternetConnection())
+            while (!InternetMan.getInstance().IsConnected)
             {
                 Thread.Sleep(200);
             }
             try
             {
+                RetryPolicy retry = Policy.Handle<AggregateException>().WaitAndRetry(5, retryAttempt => 5.Seconds());
+                
                 GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version));
                 Release latest = new Release();
-                latest = client.Repository.Release.GetLatest("PCSD202", "AutopilotQuick").Result;
+                var result = retry.ExecuteAndCapture<Release>(() => client.Repository.Release.GetLatest("PCSD202", "AutopilotQuick").Result);
+                if (result.Outcome == OutcomeType.Successful)
+                {
+                    latest = result.Result;
+                    LatestReleaseAssetURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip").BrowserDownloadUrl;
+                    if (latest.Assets.Any(x => x.Name == "AutopilotQuick.zip.sha256.pgp"))
+                        LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
 
-                LatestReleaseAssetURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip").BrowserDownloadUrl;
-                if (latest.Assets.Any(x => x.Name == "AutopilotQuick.zip.sha256.pgp"))
-                    LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
-
-                LatestVersion = $"{latest.TagName}";
-                OnPropertyChanged(nameof(LatestVersion));
-                OnPropertyChanged(nameof(LatestReleaseAssetSignedHashURL));
-                OnPropertyChanged(nameof(LatestReleaseAssetURL));
+                    LatestVersion = $"{latest.TagName}";
+                    OnPropertyChanged(nameof(LatestVersion));
+                    OnPropertyChanged(nameof(LatestReleaseAssetSignedHashURL));
+                    OnPropertyChanged(nameof(LatestReleaseAssetURL));
+                }
+                else
+                {
+                    throw result.FinalException;
+                }
             }
             catch (Exception e)
             {
