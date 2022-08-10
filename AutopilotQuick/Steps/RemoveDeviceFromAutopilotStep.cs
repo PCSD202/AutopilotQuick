@@ -15,7 +15,7 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
         if (!IsEnabled)
         {
             Title = "Removing device from ap - DISABLED";
-            CountDown(pauseToken, 5000);
+            await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Removing device from ap - DISABLED");
         }
 

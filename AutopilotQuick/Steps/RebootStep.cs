@@ -16,7 +16,7 @@ namespace AutopilotQuick.Steps
             if (!IsEnabled)
             {
                 Title = "Imaging complete - Rebooting - DISABLED";
-                CountDown(pauseToken, 5000);
+                await Task.Run(() => CountDown(pauseToken, 5000));
                 return new StepResult(true, "Imaging complete - Rebooting machine");
             }
 
