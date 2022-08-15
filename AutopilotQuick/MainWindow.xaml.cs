@@ -96,7 +96,7 @@ namespace AutopilotQuick
                         "CustomTheme",
                         BaseColor,
                         "CustomAccent",
-                        System.Windows.Media.Color.FromArgb(255,255,0,0),
+                        System.Windows.Media.Color.FromArgb(255,229,20,0),
                         new SolidColorBrush(System.Windows.Media.Color.FromArgb(255,140,0,0)),
                         true,
                         false);

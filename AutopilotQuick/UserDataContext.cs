@@ -125,7 +125,7 @@ namespace AutopilotQuick
                 DeveloperModeEnabled = true;
                 await DialogCoordinator.ShowMessageAsync(this, "Developer mode",
                     "Developer mode was enabled by pressing F1.\n" +
-                    "The Machine will not reboot automatically at the end of the task sequence");
+                    "The Machine will not reboot automatically at the end of the task sequence, you can press the reboot button when you are done.");
             }
         };
 

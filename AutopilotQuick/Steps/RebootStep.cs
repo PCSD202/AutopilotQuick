@@ -13,7 +13,7 @@ namespace AutopilotQuick.Steps
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
         {
             Title = "Imaging complete - Rebooting";
-            if (!IsEnabled)
+            if (!IsEnabled || context.DeveloperModeEnabled)
             {
                 Title = "Imaging complete - Rebooting - DISABLED";
                 await Task.Run(() => CountDown(pauseToken, 5000));
