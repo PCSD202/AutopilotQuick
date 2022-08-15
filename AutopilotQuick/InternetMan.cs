@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Humanizer;
 using NLog;
 using Octokit;
 
@@ -58,21 +60,39 @@ namespace AutopilotQuick
                 return false;
             }
         }
+        
+        public static bool CheckForHTTPSConnection(int timeoutMs = 10000, string url = "https://nettools.psd202.org/AutoPilotFast/InternetTest.txt")
+        {
+            try
+            {
+                
+                var request = (HttpWebRequest)WebRequest.Create(url);
+                request.KeepAlive = false;
+                request.Timeout = timeoutMs;
+
+                using (var response = (HttpWebResponse)request.GetResponse())
+                    return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         public void RunLoop()
         {
             while (true)
             {
-                var internet = CheckForInternetConnection(1000);
+                var internet = CheckForInternetConnection(1000) & CheckForHTTPSConnection(1000);
                 if (internet && !IsConnected)
                 {
-                    _logger.Info("Internet became available");
+                    _logger.Info("I decree internet is available");
                     InternetBecameAvailable?.Invoke(this, new EventArgs());
                     
                 }
                 else if(!internet && IsConnected)
                 {
-                    _logger.Info("Internet lost");
+                    _logger.Info("Where did the internet go? Nobody knows.");
                 }
                 IsConnected = internet;
                 
