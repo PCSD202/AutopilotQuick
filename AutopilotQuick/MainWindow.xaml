@@ -24,6 +24,7 @@
     </mah:MetroWindow.Resources>
     <Window.InputBindings>
         <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" />
+        <KeyBinding Key="F10" Command="{Binding RandomizeColorSchemeCmd}"/>
     </Window.InputBindings>
 
     <mah:MetroWindow.RightWindowCommands>
