@@ -78,6 +78,7 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
     $appid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.AppID -Key $key)
     $tenantid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.TenantID -Key $key)
     $clientSecret = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.ClientSecret -Key $key)
+    dism.exe /Image=W:\ /Set-ProductKey:8PTT6-RNW4C-6V7J2-C2D3X-MHBPB 
     . {Path.TrimEndingDirectorySeparator(scriptDir)}\AutopilotCleanup.ps1
     Cleanup-Autopilot -appid $appid -tenantid $tenantid -clientsecret $clientSecret
     ");
