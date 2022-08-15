@@ -12,9 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using ControlzEx.Theming;
 using Humanizer;
 using Polly;
 using Polly.Retry;
+using Application = System.Windows.Application;
 
 namespace AutopilotQuick
 {
@@ -126,6 +129,27 @@ namespace AutopilotQuick
                 await DialogCoordinator.ShowMessageAsync(this, "Developer mode",
                     "Developer mode was enabled by pressing F1.\n" +
                     "The Machine will not reboot automatically at the end of the task sequence, you can press the reboot button when you are done.");
+            }
+        };
+        private static readonly Random rand = new Random();
+        public ICommand RandomizeColorSchemeCmd => new SimpleCommand
+        {
+            CanExecuteDelegate = x => true,
+            ExecuteDelegate = async x =>
+            {
+                ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
+
+                string BaseColor = ThemeManager.BaseColorDark;
+
+                var newTheme2 = new Theme("CustomTheme",
+                    "CustomTheme",
+                    BaseColor,
+                    "CustomAccent",
+                    System.Windows.Media.Color.FromArgb(255,(byte)rand.Next(256),(byte)rand.Next(256),(byte)rand.Next(256)),
+                    new SolidColorBrush(System.Windows.Media.Color.FromArgb(255,(byte)rand.Next(256),(byte)rand.Next(256),(byte)rand.Next(256))),
+                    true,
+                    false);
+                ThemeManager.Current.ChangeTheme(Application.Current, newTheme2);
             }
         };
 
