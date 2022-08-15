@@ -2,6 +2,7 @@
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -24,6 +25,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
 using AutopilotQuick.LogMan;
+using ControlzEx.Theming;
 using MahApps.Metro.Controls;
 using Nito.AsyncEx;
 using Application = System.Windows.Application;
@@ -49,6 +51,7 @@ namespace AutopilotQuick
             context = new UserDataContext(DialogCoordinator.Instance);
             DataContext = context;
             WimMan.getInstance().SetContext(context);
+            context.PropertyChanged += ContextOnPropertyChanged;
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var appName = Path.GetFileNameWithoutExtension(Environment.ProcessPath);
             var appExtension = Path.GetExtension(Environment.ProcessPath);
@@ -77,6 +80,29 @@ namespace AutopilotQuick
             }
             
 
+        }
+
+        private void ContextOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "DeveloperModeEnabled")
+            {
+                if (context.DeveloperModeEnabled)
+                {
+                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
+
+                    string BaseColor = ThemeManager.BaseColorDark;
+
+                    var newTheme2 = new Theme("CustomTheme",
+                        "CustomTheme",
+                        BaseColor,
+                        "CustomAccent",
+                        System.Windows.Media.Color.FromArgb(255,255,0,0),
+                        new SolidColorBrush(System.Windows.Media.Color.FromArgb(255,140,0,0)),
+                        true,
+                        false);
+                    ThemeManager.Current.ChangeTheme(this, newTheme2);
+                }
+            }
         }
 
         public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")

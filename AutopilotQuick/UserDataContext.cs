@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Input;
 using Humanizer;
 using Polly;
 using Polly.Retry;
@@ -108,6 +110,24 @@ namespace AutopilotQuick
             set { _currentStepMessage = value; OnPropertyChanged(nameof(CurrentStepMessage)); }
         }
 
+        private bool _developerModeEnabled = false;
+
+        public bool DeveloperModeEnabled
+        {
+            get { return _developerModeEnabled; }
+            set { _developerModeEnabled = value; OnPropertyChanged(nameof(DeveloperModeEnabled)); }
+        }
+        public ICommand EnableDeveloperModeCmd => new SimpleCommand
+        {
+            CanExecuteDelegate = x => !DeveloperModeEnabled,
+            ExecuteDelegate = async x =>
+            {
+                DeveloperModeEnabled = true;
+                await DialogCoordinator.ShowMessageAsync(this, "Developer mode",
+                    "Developer mode was enabled by pressing F1.\n" +
+                    "The Machine will not reboot automatically at the end of the task sequence");
+            }
+        };
 
 
         public UserDataContext(IDialogCoordinator dialogCoordinator)
