@@ -44,8 +44,15 @@ function Cleanup-Autopilot {
     $connection = Invoke-RestMethod -Uri "https://login.microsoftonline.com/$tenantid/oauth2/v2.0/token" -Method POST -Body $body
      
     $token = $connection.access_token
-    
-    $graphid = Connect-MgGraph -AccessToken $token
+    try {
+        $graphid = Connect-MgGraph -AccessToken $token -ErrorAction Stop
+    }
+    catch {
+        Write-Host "Body: $body`ntoken: $token`nThrew: $_`nTrying again in 2 seconds."
+        Start-Sleep 2
+
+        $graphid = Connect-MgGraph -AccessToken $token -ErrorAction Stop
+    }
     
     $serial = (Get-WmiObject -Class Win32_bios).SerialNumber
     #Check to see if there is an autopilot device
