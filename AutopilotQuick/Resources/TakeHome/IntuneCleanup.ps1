@@ -7,17 +7,23 @@
     )
     $module = Import-Module $ModuleName -PassThru -ErrorAction Ignore
     if (-not $module) {
+        $modulePath = Join-Path (Split-Path -Parent $($global:MyInvocation.MyCommand.Definition)) "Modules"
         Write-Host "Installing module $($ModuleName)..."
         Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force 6>$null 1>$null
-        Install-Module -Name $ModuleName
+        if (!(Test-Path $modulePath)) {
+            New-Item -Path $modulePath -ItemType "directory"
+        }
+        Save-Module -Path $modulePath -Name $ModuleName
     }
 }
+
 #Lets setup our dependancies
 
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force 6>$null 1>$null
-Install-Module Microsoft.Graph.Authentication -Repository PSGallery -Force
-Install-Module Microsoft.Graph.DeviceManagement -Repository PSGallery -Force
-Install-Module Microsoft.Graph.DeviceManagement.Enrolment -Repository PSGallery -Force
+$Env:PSModulePath = $Env:PSModulePath+";"+(Join-Path (Split-Path -Parent $($global:MyInvocation.MyCommand.Definition)) "Modules")
+
+Install-ModuleIfNotFound Microsoft.Graph.Authentication
+Install-ModuleIfNotFound Microsoft.Graph.DeviceManagement
+Install-ModuleIfNotFound Microsoft.Graph.DeviceManagement.Enrolment
 
 function Cleanup-Autopilot {
     param
@@ -31,9 +37,9 @@ function Cleanup-Autopilot {
         [Parameter()]
         $clientsecret
     )
-    Import-Module Microsoft.Graph.Authentication
-    Import-Module Microsoft.Graph.DeviceManagement
-    Import-Module Microsoft.Graph.DeviceManagement.Enrolment
+    Import-Module Microsoft.Graph.Authentication -Scope Global 
+    Import-Module Microsoft.Graph.DeviceManagement -Scope Global 
+    Import-Module Microsoft.Graph.DeviceManagement.Enrolment -Scope Global 
     $body =  @{
         Grant_Type    = "client_credentials"
         Scope         = "https://graph.microsoft.com/.default"
