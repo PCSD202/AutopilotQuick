@@ -45,6 +45,7 @@ namespace AutopilotQuick.Steps
         
         public string InvokePowershellScriptAndGetResult(string script)
         {
+            CleanupScriptFiles();
             var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-{Guid.NewGuid()}.ps1");
             File.WriteAllText(psscriptPath, script);
             Process formatProcess = new Process();
@@ -62,6 +63,7 @@ namespace AutopilotQuick.Steps
         
         public async Task<string> InvokePowershellScriptAndGetResultAsync(string script, CancellationToken cancellationToken)
         {
+            CleanupScriptFiles();
             var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"script-{Guid.NewGuid()}.ps1");
             await File.WriteAllTextAsync(psscriptPath, script, cancellationToken);
             Process powerShellProcess = new Process();
@@ -87,8 +89,27 @@ namespace AutopilotQuick.Steps
             
         }
 
+        private void CleanupScriptFiles()
+        {
+            var filesInDir = Directory.GetFiles(Path.GetDirectoryName(App.GetExecutablePath())!);
+            var scriptFiles = filesInDir.Where(x => Path.GetFileName(x).ToLower().StartsWith("diskpart") || Path.GetFileName(x).ToLower().StartsWith("script"));
+            foreach (var scriptFile in scriptFiles)
+            {
+                try
+                {
+                    File.Delete(scriptFile);
+                }
+                catch (IOException e)
+                {
+                    //We could not delete the file because it is in use
+                    continue;
+                }
+            }
+            
+        }
         public string RunDiskpartScript(string Script)
         {
+            CleanupScriptFiles();
             var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()), $"diskpart-(${Guid.NewGuid()}).txt");
             RetryPolicy retry = Policy
                 .Handle<IOException>()
