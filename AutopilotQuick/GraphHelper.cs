@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,6 +21,49 @@ public static class GraphHelper
     
     
     private static string Password = "hK8J4k9@cgQ8";
+    
+    
+    public static async Task<WindowsAutopilotDeviceIdentity?> GetWindowsAutopilotDevice(string Serial, GraphServiceClient client, ILogger? Logger = null)
+    {
+        Logger ??= LogManager.GetCurrentClassLogger();
+        try
+        {
+            var devices = await client.DeviceManagement.WindowsAutopilotDeviceIdentities.Request()
+                .Filter($"contains(serialNumber,'{Serial}')").GetAsync();
+            return devices.Count >= 1 ? devices.First() : null;
+        }
+        catch (ServiceException e)
+        {
+            if (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            Logger.Error($"Got error while trying to look up autopilot record with st {Serial}");
+            Logger.Error(e);
+            return null;
+        }
+    }
+    
+    public static async Task<ManagedDevice?> GetIntuneObject(string ManagedDeviceID, GraphServiceClient client, ILogger? Logger = null)
+    {
+        Logger ??= LogManager.GetCurrentClassLogger();
+        try
+        {
+            var device = await client.DeviceManagement.ManagedDevices[ManagedDeviceID].Request().GetAsync();
+            return device;
+        }
+        catch (ServiceException e)
+        {
+            if (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            Logger.Error($"Got error while trying to look up intune object with id: {ManagedDeviceID}");
+            Logger.Error(e);
+            return null;
+        }
+        
+    }
     public static AppToken Decrypt(AppToken encryptedAppToken)
     {
         var decryptedTenantId = AESThenHMAC.SimpleDecryptWithPassword(encryptedAppToken.TenantID, Password);

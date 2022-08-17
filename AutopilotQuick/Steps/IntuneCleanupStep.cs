@@ -20,49 +20,7 @@ namespace AutopilotQuick.Steps;
 public class IntuneCleanupStep : StepBaseEx
 {
     public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
     
-    async Task<WindowsAutopilotDeviceIdentity?> GetWindowsAutopilotDevice(string Serial, GraphServiceClient client)
-    {
-        try
-        {
-            var devices = await client.DeviceManagement.WindowsAutopilotDeviceIdentities.Request()
-                .Filter($"contains(serialNumber,'{Serial}')").GetAsync();
-            return devices.Count >= 1 ? devices.First() : null;
-        }
-        catch (ServiceException e)
-        {
-            if (e.StatusCode == HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            Logger.Error($"Got error while trying to look up autopilot record with st {Serial}");
-            Logger.Error(e);
-            return null;
-        }
-        
-    }
-    
-    async Task<ManagedDevice?> GetIntuneObject(string ManagedDeviceID, GraphServiceClient client)
-    {
-        try
-        {
-            var device = await client.DeviceManagement.ManagedDevices[ManagedDeviceID].Request().GetAsync();
-            return device;
-        }
-        catch (ServiceException e)
-        {
-            if (e.StatusCode == HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            Logger.Error($"Got error while trying to look up intune object with id: {ManagedDeviceID}");
-            Logger.Error(e);
-            return null;
-        }
-        
-    }
-
     private int CurrentStep = 0;
     private int MaxSteps = 7;
     private void IncProgress()
@@ -116,7 +74,7 @@ public class IntuneCleanupStep : StepBaseEx
         Message = $"Looking up ({serviceTag})'s autopilot record...";
         IncProgress();
         Logger.Info($"Looking up autopilot record for device");
-        var autopilotRecord = await GetWindowsAutopilotDevice(serviceTag, graphClient);
+        var autopilotRecord = await GraphHelper.GetWindowsAutopilotDevice(serviceTag, graphClient, Logger);
 
         if (autopilotRecord is null)
         {
@@ -130,7 +88,7 @@ public class IntuneCleanupStep : StepBaseEx
         Message = $"Looking up ({serviceTag})'s intune object...";
         IncProgress();
         Logger.Info($"Looking up intune object with id: {autopilotRecord.ManagedDeviceId}");
-        var intuneObject = await GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient);
+        var intuneObject = await GraphHelper.GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient, Logger);
 
         if (intuneObject is null)
         {
