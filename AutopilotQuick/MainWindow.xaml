@@ -21,10 +21,15 @@
     <mah:MetroWindow.Resources>
         <converters:BoolToColorConverter x:Key="StatusConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <SolidColorBrush x:Key="ProgressBrush" x:Name="ColorBrush" Color="{DynamicResource MahApps.Colors.Accent}"/>
     </mah:MetroWindow.Resources>
     <Window.InputBindings>
-        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" />
-        <KeyBinding Key="F10" Command="{Binding RandomizeColorSchemeCmd}"/>
+        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}"/>
+        <KeyBinding Key="F10">
+            <KeyBinding.Command>
+                <local:SimpleMainWindowCommand Executed="F10KeyPressed_OnExecuted"/>
+            </KeyBinding.Command>
+        </KeyBinding>
     </Window.InputBindings>
 
     <mah:MetroWindow.RightWindowCommands>
@@ -71,8 +76,8 @@
 
         </mah:WindowCommands>
     </mah:MetroWindow.RightWindowCommands>
-
     <Grid>
+        
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition Width="3*"></ColumnDefinition>
@@ -83,6 +88,7 @@
             <RowDefinition Height="3*"></RowDefinition>
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
+        
 
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
@@ -100,14 +106,33 @@
                     <Run Text="{Binding CurrentStepMessage}"/>
                 </TextBlock.Inlines>
             </TextBlock>
-            <mah:MetroProgressBar  Grid.Row="2" IsIndeterminate="{Binding CurrentStepIndeterminate}" local:ProgressBarSmoother.SmoothValue="{Binding CurrentStepProgress}" VerticalAlignment="Top"></mah:MetroProgressBar>
+            <mah:MetroProgressBar Grid.Row="2" x:Name="Bar1" Foreground="{StaticResource ProgressBrush}" IsIndeterminate="{Binding CurrentStepIndeterminate}" local:ProgressBarSmoother.SmoothValue="{Binding CurrentStepProgress}" VerticalAlignment="Top">
+                <mah:MetroProgressBar.Triggers>
+                    <EventTrigger RoutedEvent="Button.Click">
+                        <BeginStoryboard>
+                            <Storyboard x:Name="RainbowStoryBoard" Storyboard.TargetName="Bar1" Storyboard.TargetProperty="Foreground.Color">
+                                <ColorAnimationUsingKeyFrames Duration="00:00:06" RepeatBehavior="Forever">
+                                    <EasingColorKeyFrame KeyTime="00:00:00" Value="Red"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:01" Value="Orange"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:02" Value="Yellow"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:03" Value="Green"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:04" Value="Blue"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:05" Value="Purple"/>
+                                    <EasingColorKeyFrame KeyTime="00:00:06" Value="Red"/>
+                                </ColorAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </mah:MetroProgressBar.Triggers>                
+                
+            </mah:MetroProgressBar>
         </Grid>
         <Grid Grid.Row="2" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"></ColumnDefinition>
                 <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <mah:MetroProgressBar VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+            <mah:MetroProgressBar Foreground="{StaticResource ProgressBrush}" VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
         </Grid>
 
 
