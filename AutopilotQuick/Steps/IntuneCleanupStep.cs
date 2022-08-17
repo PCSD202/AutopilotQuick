@@ -62,6 +62,14 @@ public class IntuneCleanupStep : StepBaseEx
         }
         
     }
+
+    private int CurrentStep = 0;
+    private int MaxSteps = 7;
+    private void IncProgress()
+    {
+        CurrentStep++;
+        Progress = ((double)CurrentStep / MaxSteps) * 100;
+    }
     
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
     {
@@ -79,25 +87,34 @@ public class IntuneCleanupStep : StepBaseEx
             await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Skipped cleaning up autopilot records due to not having internet");
         }
+        
         Title = "Cleaning up intune records";
         Progress = 0;
-        
         IsIndeterminate = false;
+        
+        
+        WaitWhilePaused(pauseToken);
         Message = "Looking up service tag...";
+        IncProgress();
         WMIHelper helper = new WMIHelper("root\\CimV2");
         var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
         
-        
+        WaitWhilePaused(pauseToken);
         Message = "Loading credentials...";
+        IncProgress();
         //Gets the decrypted credentials from the encrypted file
         var GraphCreds = await GraphHelper.GetGraphCreds(context);
         Logger.Info($"Credentials Loaded");
         
+        WaitWhilePaused(pauseToken);
         Message = "Connecting to Microsoft Graph...";
+        IncProgress();
         var graphClient = GraphHelper.ConnectToMSGraph(GraphCreds);
         Logger.Info($"Connected to MSGraph");
         
+        WaitWhilePaused(pauseToken);
         Message = $"Looking up ({serviceTag})'s autopilot record...";
+        IncProgress();
         Logger.Info($"Looking up autopilot record for device");
         var autopilotRecord = await GetWindowsAutopilotDevice(serviceTag, graphClient);
 
@@ -109,7 +126,9 @@ public class IntuneCleanupStep : StepBaseEx
         }
         Logger.Info($"Found autopilot record for device: {JsonConvert.SerializeObject(autopilotRecord)}");
         
+        WaitWhilePaused(pauseToken);
         Message = $"Looking up ({serviceTag})'s intune object...";
+        IncProgress();
         Logger.Info($"Looking up intune object with id: {autopilotRecord.ManagedDeviceId}");
         var intuneObject = await GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient);
 
@@ -121,7 +140,9 @@ public class IntuneCleanupStep : StepBaseEx
         }
         Logger.Info($"Found intune object for device: {JsonConvert.SerializeObject(intuneObject)}");
 
-        
+        WaitWhilePaused(pauseToken);
+        Message = "Deleting intune object...";
+        IncProgress();
         try
         {
             Logger.Info($"Deleting intune object...");
@@ -132,7 +153,7 @@ public class IntuneCleanupStep : StepBaseEx
             Logger.Info($"Got error trying to delete intune object id: {autopilotRecord.ManagedDeviceId}");
         }
 
-        Progress = 100;
+        IncProgress();
         Message = "Deleted intune object successfully";
         return new StepResult(true, "Deleted intune object for device");
     }
