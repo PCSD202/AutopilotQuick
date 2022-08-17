@@ -30,17 +30,20 @@ namespace AutopilotQuick.Steps
                 
                 Message = "Extracting dell bios application";
                 var dellBiosSettingsDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "DellBiosSettings");
-                Directory.CreateDirectory(dellBiosSettingsDir);
+                
                 Progress = 0;
                 IsIndeterminate = true;
 
                 Cacher DellBiosSettingsCacher =
                     new Cacher("https://nettools.psd202.org/AutoPilotFast/DellBiosSettings.zip", "DellBiosSettings.zip",
                         context);
-                if (!DellBiosSettingsCacher.FileCached ||
-                    (InternetMan.getInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate))
+                if (!DellBiosSettingsCacher.FileCached || (InternetMan.getInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate) || !Directory.Exists(dellBiosSettingsDir))
                 {
-                    Directory.Delete(dellBiosSettingsDir, true);
+                    if (Directory.Exists(dellBiosSettingsDir))
+                    {
+                        Directory.Delete(dellBiosSettingsDir, true);
+                    }
+                    
                     Directory.CreateDirectory(dellBiosSettingsDir);
                     DellBiosSettingsCacher.DownloadUpdate();
                     ZipFile.ExtractToDirectory(DellBiosSettingsCacher.FilePath, dellBiosSettingsDir);
