@@ -37,6 +37,8 @@ namespace AutopilotQuick.Steps
                 Cacher DellBiosSettingsCacher =
                     new Cacher("https://nettools.psd202.org/AutoPilotFast/DellBiosSettings.zip", "DellBiosSettings.zip",
                         context);
+                
+                //If the file is not cached, or if we have internet and the file is not up to date, or if the directory does not exist
                 if (!DellBiosSettingsCacher.FileCached || (InternetMan.getInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate) || !Directory.Exists(dellBiosSettingsDir))
                 {
                     if (Directory.Exists(dellBiosSettingsDir))
