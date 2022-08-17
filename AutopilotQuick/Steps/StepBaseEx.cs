@@ -18,7 +18,7 @@ namespace AutopilotQuick.Steps
         public void WaitWhilePaused(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
             var oldStatus = Status;
-            Message = "Paused, waiting for resume";
+            Message = "Paused, waiting to resume";
             IsIndeterminate = true;
             pauseToken.WaitWhilePaused();
             Status = oldStatus;
