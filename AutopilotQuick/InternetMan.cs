@@ -87,6 +87,7 @@ namespace AutopilotQuick
                 if (internet && !IsConnected)
                 {
                     _logger.Info("I decree internet is available");
+                    IsConnected = internet;
                     InternetBecameAvailable?.Invoke(this, new EventArgs());
                     
                 }
