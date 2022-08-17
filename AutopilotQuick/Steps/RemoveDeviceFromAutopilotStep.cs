@@ -31,7 +31,7 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
             return new StepResult(true, "Removing device from ap - DISABLED");
         }
 
-        if (!context.TakeHomeToggleOn && false)
+        if (!context.TakeHomeToggleOn)
         {
             Progress = 100;
             Title = "Removing device from ap - DISABLED";
