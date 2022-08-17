@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -33,12 +34,16 @@ namespace AutopilotQuick.Steps
                 Progress = 0;
                 IsIndeterminate = true;
 
-                //Copy all of our files from Resources/DellBiosSettings to a directory to execute
-                var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-                foreach (var fileName in files.Where(x => x.Contains("DellBiosSettings"))) {
-                    await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName);
-                    await using var file = new FileStream(Path.Combine(dellBiosSettingsDir, fileName.Replace("AutopilotQuick.Resources.DellBiosSettings.", "")), FileMode.Create, FileAccess.Write);
-                    await resource?.CopyToAsync(file)!;
+                Cacher DellBiosSettingsCacher =
+                    new Cacher("https://nettools.psd202.org/AutoPilotFast/DellBiosSettings.zip", "DellBiosSettings.zip",
+                        context);
+                if (!DellBiosSettingsCacher.FileCached ||
+                    (InternetMan.getInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate))
+                {
+                    Directory.Delete(dellBiosSettingsDir, true);
+                    Directory.CreateDirectory(dellBiosSettingsDir);
+                    DellBiosSettingsCacher.DownloadUpdate();
+                    ZipFile.ExtractToDirectory(DellBiosSettingsCacher.FilePath, dellBiosSettingsDir);
                 }
 
                 IsIndeterminate = false;
@@ -78,9 +83,6 @@ cd {dellBiosSettingsDir}
                     Logger.Error("Task exceeded timeout");
                 }
                 Logger.Debug($"Dell bios output: {Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
-                Progress = 50;
-                Message = "Cleaning up";
-                Directory.Delete(dellBiosSettingsDir, true);
                 Message = "Done";
                 Progress = 100;
             }
