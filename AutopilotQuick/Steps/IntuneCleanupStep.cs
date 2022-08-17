@@ -1,89 +1,139 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
+using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using AutopilotQuick.WMI;
+using Azure.Identity;
+using Microsoft.Graph;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 using NLog;
+using ORMi;
+using File = System.IO.File;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace AutopilotQuick.Steps;
 
 public class IntuneCleanupStep : StepBaseEx
 {
     public readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+    
+    async Task<WindowsAutopilotDeviceIdentity?> GetWindowsAutopilotDevice(string Serial, GraphServiceClient client)
+    {
+        try
+        {
+            var devices = await client.DeviceManagement.WindowsAutopilotDeviceIdentities.Request()
+                .Filter($"contains(serialNumber,'{Serial}')").GetAsync();
+            return devices.Count >= 1 ? devices.First() : null;
+        }
+        catch (ServiceException e)
+        {
+            if (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            Logger.Error($"Got error while trying to look up autopilot record with st {Serial}");
+            Logger.Error(e);
+            return null;
+        }
+        
+    }
+    
+    async Task<ManagedDevice?> GetIntuneObject(string ManagedDeviceID, GraphServiceClient client)
+    {
+        try
+        {
+            var device = await client.DeviceManagement.ManagedDevices[ManagedDeviceID].Request().GetAsync();
+            return device;
+        }
+        catch (ServiceException e)
+        {
+            if (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            Logger.Error($"Got error while trying to look up intune object with id: {ManagedDeviceID}");
+            Logger.Error(e);
+            return null;
+        }
+        
+    }
+    
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
     {
         if (!IsEnabled)
         {
-            Title = "Cleaning up autopilot records - DISABLED";
+            Title = "Cleaning up intune records - DISABLED";
             await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Cleaning up autopilot records - DISABLED");
         }
 
         if (!InternetMan.getInstance().IsConnected)
         {
-            Title = "Cleaning up autopilot records - NO INTERNET";
+            Title = "Cleaning up intune records - NO INTERNET";
             Progress = 100;
             await Task.Run(() => CountDown(pauseToken, 5000));
             return new StepResult(true, "Skipped cleaning up autopilot records due to not having internet");
         }
-        Title = "Cleaning up autopilot records";
+        Title = "Cleaning up intune records";
         Progress = 0;
-        Message = "Extracting files";
-        IsIndeterminate = true;
-        var scriptDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "ScriptsTemp");
-        Directory.CreateDirectory(scriptDir);
-        var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-        var takehomeCredsCacher = new Cacher("http://nettools.psd202.org/AutoPilotFast/TakeHomeCreds.xml",
-            "TakeHomeCreds.xml", context);
+        
+        IsIndeterminate = false;
+        Message = "Looking up service tag...";
+        WMIHelper helper = new WMIHelper("root\\CimV2");
+        var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+        
+        
+        Message = "Loading credentials...";
+        //Gets the decrypted credentials from the encrypted file
+        var GraphCreds = await GraphHelper.GetGraphCreds(context);
+        Logger.Info($"Credentials Loaded");
+        
+        Message = "Connecting to Microsoft Graph...";
+        var graphClient = GraphHelper.ConnectToMSGraph(GraphCreds);
+        Logger.Info($"Connected to MSGraph");
+        
+        Message = $"Looking up ({serviceTag})'s autopilot record...";
+        Logger.Info($"Looking up autopilot record for device");
+        var autopilotRecord = await GetWindowsAutopilotDevice(serviceTag, graphClient);
 
-
-        if (!(takehomeCredsCacher.FileCached && takehomeCredsCacher.IsUpToDate))
+        if (autopilotRecord is null)
         {
-            takehomeCredsCacher.DownloadUpdate();
+            Progress = 100;
+            Message = "No autopilot record found for device";
+            return new StepResult(true, "No autopilot record found for device");
+        }
+        Logger.Info($"Found autopilot record for device: {JsonConvert.SerializeObject(autopilotRecord)}");
+        
+        Message = $"Looking up ({serviceTag})'s intune object...";
+        Logger.Info($"Looking up intune object with id: {autopilotRecord.ManagedDeviceId}");
+        var intuneObject = await GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient);
+
+        if (intuneObject is null)
+        {
+            Progress = 100;
+            Message = "No intune object found for device";
+            return new StepResult(true, "No intune object found for device");
+        }
+        Logger.Info($"Found intune object for device: {JsonConvert.SerializeObject(intuneObject)}");
+
+        
+        try
+        {
+            Logger.Info($"Deleting intune object...");
+            await graphClient.DeviceManagement.ManagedDevices[autopilotRecord.ManagedDeviceId].Request().DeleteAsync();
+        }
+        catch (ServiceException e)
+        {
+            Logger.Info($"Got error trying to delete intune object id: {autopilotRecord.ManagedDeviceId}");
         }
 
-        foreach (var fileName in files.Where(x => x.Contains("TakeHome")))
-        {
-            using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
-            {
-                using (var file = new FileStream(
-                           Path.Combine(scriptDir, fileName.Replace("AutopilotQuick.Resources.TakeHome.", "")),
-                           FileMode.Create, FileAccess.Write))
-                {
-
-                    resource.CopyTo(file);
-                }
-            }
-        }
-        Progress = 50;
-        Message = "Running scripts...";
-        var output = InvokePowershellScriptAndGetResult($@"
-    function Get-Key{{
-        $encoder = new-object System.Text.UTF8Encoding
-        #Turns that key into a byte array so the securestring doesn't get angry
-        return $encoder.Getbytes('{"SpPMOYjwbiruhLlZeWXmNyIsgvqxkRfT"}')
-    }}
-    function Decode-SecString(){{
-        param
-        (
-        [Parameter(Mandatory=$true)]
-        $secString
-        )
-        $decrypted = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secString)
-        $decryptedPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($decrypted)
-        return $decryptedPassword
-    }}
-    $key = Get-Key
-    $credStore = Import-Clixml -Path {takehomeCredsCacher.FilePath}
-    $appid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.AppID -Key $key)
-    $tenantid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.TenantID -Key $key)
-    $clientSecret = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.ClientSecret -Key $key)
-    . {Path.TrimEndingDirectorySeparator(scriptDir)}\IntuneCleanup.ps1
-    Cleanup-Autopilot -appid $appid -tenantid $tenantid -clientsecret $clientSecret
-    ");
         Progress = 100;
-        Message = "Finished";
-        Logger.Debug("Intune script output: "+output);
-        return new StepResult(true, "Finished removing device");
+        Message = "Deleted intune object successfully";
+        return new StepResult(true, "Deleted intune object for device");
     }
 }
