@@ -10,11 +10,14 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using ControlzEx.Theming;
 using Humanizer;
+using MahApps.Metro.Controls;
 using Polly;
 using Polly.Retry;
 using Application = System.Windows.Application;
@@ -131,30 +134,9 @@ namespace AutopilotQuick
                     "The Machine will not reboot automatically at the end of the task sequence, you can press the reboot button when you are done.");
             }
         };
-        private static readonly Random rand = new Random();
-        public ICommand RandomizeColorSchemeCmd => new SimpleCommand
-        {
-            CanExecuteDelegate = x => true,
-            ExecuteDelegate = async x =>
-            {
-                ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
 
-                string BaseColor = ThemeManager.BaseColorDark;
-
-                var newTheme2 = new Theme("CustomTheme",
-                    "CustomTheme",
-                    BaseColor,
-                    "CustomAccent",
-                    System.Windows.Media.Color.FromArgb(255,(byte)rand.Next(256),(byte)rand.Next(256),(byte)rand.Next(256)),
-                    new SolidColorBrush(System.Windows.Media.Color.FromArgb(255,(byte)rand.Next(256),(byte)rand.Next(256),(byte)rand.Next(256))),
-                    true,
-                    false);
-                ThemeManager.Current.ChangeTheme(Application.Current, newTheme2);
-            }
-        };
-
-
-        public UserDataContext(IDialogCoordinator dialogCoordinator)
+        
+        public UserDataContext(IDialogCoordinator dialogCoordinator, MetroWindow window)
         {
             DialogCoordinator = dialogCoordinator;
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
