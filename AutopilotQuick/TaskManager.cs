@@ -91,6 +91,7 @@ namespace AutopilotQuick
             new FormatStep(),
             new ApplyImageStep(),
             new DisableTakeHomeStep(),
+            new ApplyProductKeyStep(),
             new RemoveDeviceFromAutopilotStep(),
             new ApplyDellBiosSettingsStep(),
             new ApplyAutopilotConfigurationStep(),
