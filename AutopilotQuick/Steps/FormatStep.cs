@@ -6,8 +6,11 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AutopilotQuick.WMI;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 using NLog;
+using ORMi;
 using Polly;
 using Polly.Retry;
 
@@ -20,38 +23,16 @@ namespace AutopilotQuick.Steps
         {
             Message = "Identifying drive to image...";
             IsIndeterminate = true;
-            var psscript = @"
-Import-Module OSD
-$disk = Get-Disk | Where-Object {$_.Number -notin (Get-Disk.usb | Select-Object -ExpandProperty Number)} | Where-Object {$_.OperationalStatus -eq 'Online'}
-$disk.number
-";
             try
             {
-                RetryPolicy retry = Policy
-                    .Handle<DriveNotFoundException>()
-                    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(5));
-                var retryResult = retry.ExecuteAndCapture(() =>
-                {
-                    string diskNum = InvokePowershellScriptAndGetResult(psscript);
-                    Logger.Debug(diskNum);
-                    int intDiskNum;
-                    bool success = int.TryParse(diskNum, out intDiskNum);
-                    if (!success)
-                    {
-                        throw new DriveNotFoundException();
-                    }
-
-                    return intDiskNum;
-                });
-                if (retryResult.Outcome == OutcomeType.Successful)
-                {
-                    return retryResult.Result;
-                }
-
-                return -1;
+                WMIHelper helper = new WMIHelper("root\\CimV2");
+                DiskDrive diskToSelect = helper.Query<DiskDrive>().First(x => x.InterfaceType != "USB" && x.MediaLoaded);
+                
+                return (int)diskToSelect.Index;
             }
             catch (Exception ex)
             {
+                Logger.Error(ex);
                 return -1;
             }
         }
@@ -121,22 +102,20 @@ exit
                 Title = "Formatting drive";
                 Progress = 0;
                 IsIndeterminate = false;
-                int DriveToImage = IdentifyDriveToImage();
-                if (DriveToImage == -1)
-                {
-                    return new StepResult(false, "Failed to identify a drive to image. Maybe none installed?");
-                }
 
-                Progress = 50;
+                
                 RetryPolicy policy = RetryPolicy.Handle<DriveNotFoundException>()
                     .WaitAndRetry(5, i => TimeSpan.FromSeconds(5));
                 var result = policy.ExecuteAndCapture(() =>
                 {
+                    Progress = 0;
                     int DriveToImage = IdentifyDriveToImage();
                     if (DriveToImage == -1)
                     {
                         throw new DriveNotFoundException();
                     }
+
+                    Progress = 50;
                     var result = FormatDrive(DriveToImage);
                     if (!result)
                     {
@@ -147,7 +126,7 @@ exit
                 
                 if (result.Outcome == OutcomeType.Failure)
                 {
-                    return new StepResult(false, "Failed to format drive");
+                    return new StepResult(false, "Failed to identify or format a drive to image. This could be because of a bad hard drive, or not having one installed.");
                 }
             }
             else
