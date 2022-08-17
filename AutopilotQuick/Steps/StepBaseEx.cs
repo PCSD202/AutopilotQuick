@@ -15,11 +15,11 @@ namespace AutopilotQuick.Steps
 {
     public abstract class StepBaseEx : StepBase
     {
-        public void WaitForPause(PauseToken pauseToken)
-        {
-            var oldStatus = Status;
+        public void WaitWhilePaused(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
-            Message = "Waiting to resume";
+            var oldStatus = Status;
+            Message = "Paused, waiting for resume";
+            IsIndeterminate = true;
             pauseToken.WaitWhilePaused();
             Status = oldStatus;
         }
@@ -31,7 +31,7 @@ namespace AutopilotQuick.Steps
             DateTime StartTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - StartTime).TotalMilliseconds <= ms)
             {
-                WaitForPause(pauseToken);
+                WaitWhilePaused(pauseToken);
                 Progress = ((DateTime.UtcNow - StartTime).TotalMilliseconds / ms) * 100;
                 if (Progress <= 0)
                 {
