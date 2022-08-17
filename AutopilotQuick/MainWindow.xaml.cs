@@ -24,6 +24,7 @@ using PgpCore;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Media.Animation;
 using AutopilotQuick.LogMan;
 using ControlzEx.Theming;
 using MahApps.Metro.Controls;
@@ -48,7 +49,7 @@ namespace AutopilotQuick
         public MainWindow()
         {
             InitializeComponent();
-            context = new UserDataContext(DialogCoordinator.Instance);
+            context = new UserDataContext(DialogCoordinator.Instance, this);
             DataContext = context;
             WimMan.getInstance().SetContext(context);
             context.PropertyChanged += ContextOnPropertyChanged;
@@ -78,6 +79,7 @@ namespace AutopilotQuick
             {
                 Updated = false;
             }
+            
             
 
         }
@@ -164,7 +166,7 @@ namespace AutopilotQuick
             var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
             var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
             var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
-
+            
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
@@ -504,6 +506,17 @@ namespace AutopilotQuick
                 shutdownProcess.WaitForExit();
             }
             _taskManagerPauseTokenSource.IsPaused = false;
+        }
+
+        private bool runningAlready = false;
+        private void F10KeyPressed_OnExecuted(object? sender, object e)
+        {
+            if (!runningAlready)
+            {
+                this.BeginStoryboard(RainbowStoryBoard);
+                runningAlready = true;
+            }
+            
         }
     }
 }
