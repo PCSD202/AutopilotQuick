@@ -2,14 +2,26 @@
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AutopilotQuick.WMI;
+using Microsoft.Graph;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 using NLog;
+using ORMi;
 
 namespace AutopilotQuick.Steps;
 
 public class RemoveDeviceFromAutopilotStep : StepBaseEx
 {
     public readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    
+    private int CurrentStep = 0;
+    private int MaxSteps = 6;
+    private void IncProgress()
+    {
+        CurrentStep++;
+        Progress = ((double)CurrentStep / MaxSteps) * 100;
+    }
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
     {
         if (!IsEnabled)
@@ -19,7 +31,7 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
             return new StepResult(true, "Removing device from ap - DISABLED");
         }
 
-        if (!context.TakeHomeToggleOn)
+        if (!context.TakeHomeToggleOn && false)
         {
             Progress = 100;
             Title = "Removing device from ap - DISABLED";
@@ -27,65 +39,77 @@ public class RemoveDeviceFromAutopilotStep : StepBaseEx
         }
         Title = "Removing device from autopilot";
         Progress = 0;
-        Message = "Extracting files";
-        IsIndeterminate = true;
-        var scriptDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "ScriptsTemp");
-        Directory.CreateDirectory(scriptDir);
-        var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+        IsIndeterminate = false;
         
-        var takehomeCredsCacher = new Cacher("http://nettools.psd202.org/AutoPilotFast/TakeHomeCreds.xml",
-            "TakeHomeCreds.xml", context);
-
-
-        if (!(takehomeCredsCacher.FileCached && takehomeCredsCacher.IsUpToDate))
+        Message = "Looking up service tag...";
+        IncProgress();
+        WMIHelper helper = new WMIHelper("root\\CimV2");
+        var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+        
+        Message = "Loading credentials...";
+        IncProgress();
+        //Gets the decrypted credentials from the encrypted file
+        var GraphCreds = await GraphHelper.GetGraphCreds(context);
+        Logger.Info($"Credentials Loaded");
+        
+        WaitWhilePaused(pauseToken);
+        Message = "Connecting to Microsoft Graph...";
+        IncProgress();
+        var graphClient = GraphHelper.ConnectToMSGraph(GraphCreds);
+        Logger.Info($"Connected to MSGraph");
+        
+        WaitWhilePaused(pauseToken);
+        Message = $"Looking up ({serviceTag})'s autopilot record...";
+        IncProgress();
+        Logger.Info($"Looking up autopilot record for device");
+        var autopilotRecord = await GraphHelper.GetWindowsAutopilotDevice(serviceTag, graphClient, Logger);
+        if (autopilotRecord is null)
         {
-            takehomeCredsCacher.DownloadUpdate();
+            Progress = 100;
+            Message = "No autopilot record found for device";
+            return new StepResult(true, "No autopilot record found for device");
         }
+        Logger.Info($"Found autopilot record for device: {JsonConvert.SerializeObject(autopilotRecord)}");
         
-        foreach (var fileName in files.Where(x => x.Contains("TakeHome")))
+        WaitWhilePaused(pauseToken);
+        Message = $"Looking up ({serviceTag})'s intune object...";
+        IncProgress();
+        Logger.Info($"Looking up intune object with id: {autopilotRecord.ManagedDeviceId}");
+        var intuneObject = await GraphHelper.GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient, Logger);
+        if (intuneObject is not null)
         {
-            using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(fileName))
+            Logger.Info($"Found intune object for device: {JsonConvert.SerializeObject(intuneObject)}");
+        
+        
+            WaitWhilePaused(pauseToken);
+            Message = "Deleting intune object...";
+            try
             {
-                using (var file = new FileStream(
-                           Path.Combine(scriptDir, fileName.Replace("AutopilotQuick.Resources.TakeHome.", "")),
-                           FileMode.Create, FileAccess.Write))
-                {
-
-                    resource.CopyTo(file);
-                }
+                Logger.Info($"Deleting intune object...");
+                await graphClient.DeviceManagement.ManagedDevices[autopilotRecord.ManagedDeviceId].Request().DeleteAsync();
+            }
+            catch (ServiceException e)
+            {
+                Logger.Error($"Got error trying to delete intune object id: {autopilotRecord.ManagedDeviceId}");
+                Logger.Error(e);
             }
         }
+        Logger.Info("Deleting Autopilot record...");
+        Message = "Deleting Autopilot record...";
+        IncProgress();
+        try
+        {
+            await graphClient.DeviceManagement.WindowsAutopilotDeviceIdentities[autopilotRecord.Id].Request()
+                .DeleteAsync();
+        }
+        catch (ServiceException e)
+        {
+            Logger.Error($"Got error trying to delete autopilot record id: {autopilotRecord.Id}");
+            Logger.Error(e);
+            return new StepResult(false, "Failed to delete autopilot record");
+        }
 
-        Progress = 50;
-        Message = "Running scripts...";
-        var output = InvokePowershellScriptAndGetResult($@"
-    function Get-Key{{
-        $encoder = new-object System.Text.UTF8Encoding
-        #Turns that key into a byte array so the securestring doesn't get angry
-        return $encoder.Getbytes('{"SpPMOYjwbiruhLlZeWXmNyIsgvqxkRfT"}')
-    }}
-    function Decode-SecString(){{
-        param
-        (
-        [Parameter(Mandatory=$true)]
-        $secString
-        )
-        $decrypted = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secString)
-        $decryptedPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($decrypted)
-        return $decryptedPassword
-    }}
-    $key = Get-Key
-    $credStore = Import-Clixml -Path {takehomeCredsCacher.FilePath}
-    $appid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.AppID -Key $key)
-    $tenantid = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.TenantID -Key $key)
-    $clientSecret = Decode-SecString -secString (ConvertTo-SecureString -String $credStore.ClientSecret -Key $key)
-    . {Path.TrimEndingDirectorySeparator(scriptDir)}\AutopilotCleanup.ps1
-    Cleanup-Autopilot -appid $appid -tenantid $tenantid -clientsecret $clientSecret
-    'dism.exe /Image=W:\ /Set-ProductKey:8PTT6-RNW4C-6V7J2-C2D3X-MHBPB' | Invoke-Expression
-    ");
-        Progress = 100;
-        Message = "Finished";
-        Logger.Debug("Autopilot Script output: "+output);
-        return new StepResult(true, "Finished removing device");
+
+        return new StepResult(true, "Removed device from autopilot");
     }
 }
