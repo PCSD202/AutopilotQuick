@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
 using NLog;
@@ -27,7 +28,7 @@ W:\Windows\System32\Reagentc /Setreimage /Path R:\Recovery\WindowsRE /Target W:\
 W:\Windows\System32\Reagentc /Info /Target W:\Windows
 ";
                 Progress = 50;
-                var output = InvokePowershellScriptAndGetResult(script);
+                var output = await InvokePowershellScriptAndGetResultAsync(script, CancellationToken.None);
                 Logger.Info($"Output: {Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
                 Progress = 100;
             }

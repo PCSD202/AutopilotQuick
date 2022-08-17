@@ -36,16 +36,28 @@ namespace AutopilotQuick.Steps
                         Message = "Copying sharedpc autopilot config to windows";
                         Thread.Sleep(3000);
                     }
-                    await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceLocation);
-                    await using var file = new FileStream(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json", FileMode.Create, FileAccess.Write);
-                    if (resource != null)
+
+                    try
                     {
-                        await resource.CopyToAsync(file);
+                        await using var resource =
+                            Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceLocation);
+                        await using var file =
+                            new FileStream(@"W:\windows\Provisioning\Autopilot\AutopilotConfigurationFile.json",
+                                FileMode.Create, FileAccess.Write);
+                        if (resource != null)
+                        {
+                            await resource.CopyToAsync(file);
+                        }
+                        else
+                        {
+                            Logger.Error("Could not find the autopilot config internally. This is a issue.");
+                        }
                     }
-                    else
+                    catch (DirectoryNotFoundException e)
                     {
-                        Logger.Error("Could not find the autopilot config internally. This is a issue.");
+                        return new StepResult(false, "Could not find W drive");
                     }
+                    
                     
                 }
                 else

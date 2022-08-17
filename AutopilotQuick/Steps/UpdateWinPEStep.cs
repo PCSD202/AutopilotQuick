@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
 using Nito.AsyncEx;
@@ -15,7 +16,7 @@ public class UpdateWinPEStep : StepBaseEx
     public new bool Critical = false;
 
     
-    public string MountWinPEISO()
+    public async Task<string> MountWinPEISO()
     {
         var script = @$"$ISOFile = '{WinPEISOCache.FilePath}'";
         script = script + @"
@@ -36,7 +37,7 @@ $ISO = (Compare-Object -ReferenceObject $Volumes -DifferenceObject (Get-Volume).
 
 Write-Host $ISO;
 ";
-        var output = InvokePowershellScriptAndGetResult(script);
+        var output = await InvokePowershellScriptAndGetResultAsync(script, CancellationToken.None);
         Logger.Info($"MountWinPEOutput: {output}");
         return output.Trim();
     }
@@ -107,7 +108,7 @@ Write-Host $ISO;
 
         IsIndeterminate = true;
         Message = "Mounting WinPE ISO";
-        var DriveOfEnvironmentISO = MountWinPEISO();
+        var DriveOfEnvironmentISO = await MountWinPEISO();
         Logger.Info($"Environment ISO mounted to {DriveOfEnvironmentISO}:\\");
 
         Message = "Finding Environment Disk";
@@ -118,8 +119,8 @@ Write-Host $ISO;
         Logger.Info("Starting to robocopy");
 
         Title = "Updating Flash Drive OS";
-        var output = InvokePowershellScriptAndGetResult(
-            $"robocopy {DriveOfEnvironmentISO}:\\ '{EnvironmentDrive}' *.* /e /ndl /njh /njs /np /r:0 /w:0 /b /zb");
+        var output = await InvokePowershellScriptAndGetResultAsync(
+            $"robocopy {DriveOfEnvironmentISO}:\\ '{EnvironmentDrive}' *.* /e /ndl /njh /njs /np /r:0 /w:0 /b /zb", CancellationToken.None);
         Logger.Info($"Robocopy Output: {output}");
         Message = "Updated flash drive successfully";
         Progress = 100;

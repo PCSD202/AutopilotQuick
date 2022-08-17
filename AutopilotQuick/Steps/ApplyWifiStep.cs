@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
 using NLog;
@@ -29,15 +30,11 @@ namespace AutopilotQuick.Steps
                 Message = "";
                 var DismTempDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "TempDism");
                 Directory.CreateDirectory(DismTempDir);
-                using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.Wifi.ppkg"))
-                {
-                    using (var file = new FileStream(Path.Combine(DismTempDir, "Wifi.ppkg"), FileMode.Create, FileAccess.Write))
-                    {
+                await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.Wifi.ppkg");
+                await using var file = new FileStream(Path.Combine(DismTempDir, "Wifi.ppkg"), FileMode.Create, FileAccess.Write);
+                await resource.CopyToAsync(file);
 
-                        resource.CopyTo(file);
-                    }
-                }
-                var output = InvokePowershellScriptAndGetResult(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Wifi.ppkg")}");
+                var output = await InvokePowershellScriptAndGetResultAsync(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Wifi.ppkg")}", CancellationToken.None);
                 Logger.Debug($"Apply Wifi step: {output}");
             }
 
