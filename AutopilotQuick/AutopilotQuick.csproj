@@ -56,5 +56,9 @@
     <None Remove="Resources\sharedpc.json" />
     <EmbeddedResource Include="Resources\sharedpc.json" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Controls" />
+  </ItemGroup>
 
 </Project>
