@@ -50,16 +50,19 @@
 
             <Viewbox Width="22" Height="22" UseLayoutRounding="True">
                 <StackPanel Orientation="Vertical">
-                    <Border Background="#00c000" CornerRadius="2,2,0,0" Padding="2" Width="20" Height="7" Margin="0,-2,0,-2" HorizontalAlignment="Center"/>
-                    <Border BorderBrush="#00c000" BorderThickness="2" CornerRadius="5" Padding="2" Width="50" Height="100">
+                    <Border Background="{StaticResource ProgressBrush}" CornerRadius="2,2,0,0" Padding="2" Width="20" Height="7" Margin="0,-2,0,-2" HorizontalAlignment="Center"/>
+                    <Border BorderBrush="{StaticResource ProgressBrush}" BorderThickness="2" CornerRadius="5" Padding="2" Width="50" Height="100">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Border Height="{Binding BatteryPercent}" Grid.Row="1" Background="#00c000" CornerRadius="2" Padding="2" />
-
-                            <iconPacks:PackIconBootstrapIcons Visibility="{Binding IsCharging,Converter={StaticResource BooleanToVisibilityConverter}}" Grid.Row="0" Grid.RowSpan="2" Foreground="White" Kind="LightningChargeFill" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4" VerticalContentAlignment="Stretch" Width="42" Height="42" UseLayoutRounding="True" />
+                            <Border Height="{Binding BatteryPercent}" Grid.Row="1" Background="{StaticResource ProgressBrush}" CornerRadius="2" Padding="2" />
+                            <iconPacks:PackIconBootstrapIcons Visibility="{Binding IsCharging,Converter={StaticResource BooleanToVisibilityConverter}}" Grid.Row="0" Grid.RowSpan="2" Foreground="White" Kind="LightningChargeFill" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4" VerticalContentAlignment="Stretch" Width="42" Height="42" UseLayoutRounding="True">
+                                <iconPacks:PackIconBootstrapIcons.Effect>
+                                    <DropShadowEffect ShadowDepth="0" Opacity="1" BlurRadius="4" Color="Black"/>
+                                </iconPacks:PackIconBootstrapIcons.Effect>
+                            </iconPacks:PackIconBootstrapIcons>
                         </Grid>
                     </Border>
                 </StackPanel>
