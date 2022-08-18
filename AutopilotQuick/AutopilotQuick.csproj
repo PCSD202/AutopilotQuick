@@ -44,6 +44,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageReference Include="NLog" Version="5.0.0" />
+    <PackageReference Include="NLog.StructuredLogging.Json" Version="4.0.0" />
     <PackageReference Include="Octokit" Version="0.51.0" />
     <PackageReference Include="ORMi" Version="3.2.0.1" />
     <PackageReference Include="PgpCore" Version="5.5.0" />
@@ -55,10 +56,6 @@
   <ItemGroup>
     <None Remove="Resources\sharedpc.json" />
     <EmbeddedResource Include="Resources\sharedpc.json" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <Folder Include="Controls" />
   </ItemGroup>
 
 </Project>

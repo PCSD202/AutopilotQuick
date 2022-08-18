@@ -10,10 +10,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using AutopilotQuick.LogMan;
 using AutopilotQuick.WMI;
+using DiskQueue;
 using NLog;
 using NLog.Config;
 using NLog.LayoutRenderers;
+using NLog.StructuredLogging.Json;
 using NLog.Targets;
 using ORMi;
 using Application = System.Windows.Application;
@@ -25,12 +28,14 @@ namespace AutopilotQuick
     /// </summary>
     public partial class App : Application
     {
+        public static readonly IPersistentQueue LogQueue =
+            new PersistentQueue(
+                Path.Join(Path.Join(Path.GetDirectoryName(Environment.ProcessPath), "Logs"), "LogQueue"));
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             AllocConsole();
-            Console.WriteLine("Starting up");
             SetupLoggingConfig();
             
             for (int i = 0; i != e.Args.Length; ++i)
@@ -93,8 +98,17 @@ namespace AutopilotQuick
                 Footer =
                     $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
+            ConfigurationItemFactory.Default.LayoutRenderers.RegisterDefinition("structuredlogging", typeof(StructuredLoggingLayoutRenderer));
+            ConfigurationItemFactory.Default.Targets.RegisterDefinition("DiskQueue", typeof(LogDiskQueueTarget));
+            var logToQueue = new LogDiskQueueTarget()
+            {
+                Layout = "${structuredlogging}",
+                DiskQueue = App.LogQueue
+                
+            };
+            LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logToQueue);
             LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
-            LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logConsole);
+            //LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logConsole);
             NLog.LogManager.Configuration = LoggingConfig;
         }
         public static string GetExecutablePath()
