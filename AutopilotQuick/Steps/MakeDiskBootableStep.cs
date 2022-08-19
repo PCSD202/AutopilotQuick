@@ -5,15 +5,19 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps
 {
     internal class MakeDiskBootableStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override string Name() => "Make disk bootable step";
+        public readonly ILogger Logger = App.GetLogger<FormatStep>();
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (IsEnabled)
             {
@@ -29,7 +33,7 @@ W:\Windows\System32\Reagentc /Info /Target W:\Windows
 ";
                 Progress = 50;
                 var output = await InvokePowershellScriptAndGetResultAsync(script, CancellationToken.None);
-                Logger.Info($"Output: {Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
+                Logger.LogInformation("Output: {output}", Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd());
                 Progress = 100;
             }
 

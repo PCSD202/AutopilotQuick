@@ -7,9 +7,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
-using NLog;
 using ORMi;
 using Polly;
 using Polly.Retry;
@@ -18,30 +21,37 @@ namespace AutopilotQuick.Steps
 {
     internal class FormatStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        public override string Name() => "Format disk step";
+        public readonly ILogger Logger = App.GetLogger<FormatStep>();
         public int IdentifyDriveToImage()
         {
-            Message = "Identifying drive to image...";
-            IsIndeterminate = true;
-            try
+            using (App.telemetryClient.StartOperation<RequestTelemetry>("Identifying drive to format"))
             {
-                WMIHelper helper = new WMIHelper("root\\CimV2");
-                DiskDrive diskToSelect = helper.Query<DiskDrive>().First(x => x.InterfaceType != "USB" && x.MediaLoaded);
-                
-                return (int)diskToSelect.Index;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                return -1;
+                Message = "Identifying drive...";
+                IsIndeterminate = true;
+                try
+                {
+                    WMIHelper helper = new WMIHelper("root\\CimV2");
+                    DiskDrive diskToSelect = helper.Query<DiskDrive>().First(x => x.InterfaceType != "USB" && x.MediaLoaded);
+                    Logger.LogInformation("Identified drive {@drive} to format", diskToSelect);
+                    return (int)diskToSelect.Index;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Got exception while identifying drive to image");
+                    App.GetTelemetryClient().TrackException(ex);
+                    return -1;
+                }      
             }
         }
 
         public bool FormatDrive(int DriveToImage)
         {
-            try
+            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Formatting drive"))
             {
-                var diskpartScript = $@"
+                try
+                {
+                    var diskpartScript = $@"
 select disk {DriveToImage}
 clean
 convert gpt
@@ -72,62 +82,72 @@ set id = 'de94bba4-06d1-4d40-a16a-bfd50179d6ac'
 gpt attributes = 0x8000000000000001
 exit
 ";
-                Message = $"Identified drive {DriveToImage}, running diskpart";
-                var diskpartOutput = RunDiskpartScript(diskpartScript);
-                Logger.Debug($"Diskpart output: {Regex.Replace(diskpartOutput, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
+                    Message = $"Identified drive {DriveToImage}, running diskpart";
+                    var diskpartOutput = RunDiskpartScript(diskpartScript);
+                    Logger.LogInformation(
+                        $"Diskpart output: {Regex.Replace(diskpartOutput, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
 
-                if (diskpartOutput != null && diskpartOutput.Split(" ")
-                        .Count(x => x.ToLower() == "successfully" || x.ToLower() == "succeeded") >= 14)
-                {
-                    Message = $"Successfully formated drive {DriveToImage}";
-                    return true;
+                    if (diskpartOutput != null && diskpartOutput.Split(" ")
+                            .Count(x => x.ToLower() == "successfully" || x.ToLower() == "succeeded") >= 14)
+                    {
+                        Message = $"Successfully formated drive {DriveToImage}";
+                        return true;
+                    }
+
+                    return false;
                 }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                Message = $"Failed to format disk, check logs.";
-                Progress = 100;
-                IsIndeterminate = false;
-                return false;
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Got error while trying to format disk");
+                    Message = $"Failed to format disk, check logs.";
+                    Progress = 100;
+                    IsIndeterminate = false;
+                    return false;
+                }
             }
         }
 
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (IsEnabled)
             {
                 Title = "Formatting drive";
                 Progress = 0;
                 IsIndeterminate = false;
-
-                
-                RetryPolicy policy = RetryPolicy.Handle<DriveNotFoundException>()
-                    .WaitAndRetry(5, i => TimeSpan.FromSeconds(5));
-                var result = policy.ExecuteAndCapture(() =>
+                int DriveToImage = -1;
+                try
                 {
-                    Progress = 0;
-                    int DriveToImage = IdentifyDriveToImage();
+                    DriveToImage = IdentifyDriveToImage();
                     if (DriveToImage == -1)
                     {
                         throw new DriveNotFoundException();
                     }
+                }
+                catch (DriveNotFoundException)
+                {
+                    return new StepResult(false, "Failed to identify a drive to format. This could be because of a bad hard drive, or not having one installed.");
+                }
+                
 
-                    Progress = 50;
+                Progress = 50;
+                try
+                {
                     var result = FormatDrive(DriveToImage);
                     if (!result)
                     {
                         throw new DriveNotFoundException();
                     }
-                    return;
-                });
-                
-                if (result.Outcome == OutcomeType.Failure)
-                {
-                    return new StepResult(false, "Failed to identify or format a drive to image. This could be because of a bad hard drive, or not having one installed.");
                 }
+                catch (DriveNotFoundException)
+                {
+                    return new StepResult(false, "Failed to format drive. This could be because of a bad hard drive, or not having one installed.");
+                }
+                
+                
+                
+                
+                
             }
             else
             {
