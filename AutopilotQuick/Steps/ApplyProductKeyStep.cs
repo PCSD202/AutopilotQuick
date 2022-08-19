@@ -1,14 +1,18 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps;
 
 public class ApplyProductKeyStep : StepBaseEx
 {
-    public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override string Name() => "Apply ProductKey step";
+    public readonly ILogger Logger = App.GetLogger<ApplyProductKeyStep>();
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         if (!context.TakeHomeToggleOn)
         {
@@ -20,7 +24,7 @@ public class ApplyProductKeyStep : StepBaseEx
         IsIndeterminate = true;
         Message = "Running dism...";
         var output = await InvokePowershellScriptAndGetResultAsync("dism.exe /Image=W:\\ /Set-ProductKey:8PTT6-RNW4C-6V7J2-C2D3X-MHBPB", CancellationToken.None);
-        Logger.Debug("Dism Script output: "+output);
+        Logger.LogDebug("Dism Script output: {output}",output);
         Progress = 100;
         return new StepResult(true, "Applied windows product key");
     }

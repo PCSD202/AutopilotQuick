@@ -161,12 +161,11 @@ namespace AutopilotQuick
             
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            
-            var LoggingTask = Task.Factory.StartNew(() => DurableAzureBackgroundTask.getInstance().Run(context, cancellationToken), TaskCreationOptions.LongRunning);
-            var BatteryManTask = Task.Factory.StartNew(() => BatteryMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
+            DurableAzureBackgroundTask.getInstance().StartTimer(context);
+            BatteryMan.getInstance().StartTimer();
+            InternetMan.getInstance().StartTimer();
             var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
-            var InternetManTask = Task.Factory.StartNew(() => InternetMan.getInstance().RunLoop(), TaskCreationOptions.LongRunning);
-            
+
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)

@@ -2,16 +2,20 @@
 using System.Threading.Tasks;
 using System.Windows;
 using Humanizer;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps;
 
 public class InitializePowershellStep : StepBaseEx
 {
-    public readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    public override string Name() => "Initialize powershell step";
+    public readonly ILogger Logger = App.GetLogger<FormatStep>();
     public new bool Critical = false;
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         Title = "Initializing powershell";
         Message = "Starting powershell, please wait...";
@@ -27,7 +31,7 @@ public class InitializePowershellStep : StepBaseEx
         }
         else
         {
-            Logger.Error($"Failed to initialize powershell. Output: {output}, Expected: 'Started' ");
+            Logger.LogError("Failed to initialize powershell. Output: {output}, Expected: 'Started' ", output);
             return new StepResult(false, "Powershell failed to initialize.");
         }
 
