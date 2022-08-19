@@ -2,15 +2,19 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutopilotQuick.LogMan;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps;
 
 public class FinalizeSyncingLogsStep : StepBaseEx
 {
-    public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override string Name() => "Finalize log syncing step";
+    public readonly ILogger Logger = App.GetLogger<FinalizeSyncingLogsStep>();
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         Title = "Synchronizing logs with azure";
         Message = "Checking for internet";
@@ -40,7 +44,7 @@ public class FinalizeSyncingLogsStep : StepBaseEx
             {
                 DurableAzureBackgroundTask.getInstance().SyncLogs();
             }
-            catch (Exception e) { Logger.Error(e); }
+            catch (Exception e) { Logger.LogError(e, "Caught error while finalizing log sync"); }
         }
         
         

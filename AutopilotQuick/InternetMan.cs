@@ -7,7 +7,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
-using NLog;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
 using Octokit;
 
 namespace AutopilotQuick
@@ -16,7 +18,7 @@ namespace AutopilotQuick
     {
         private static readonly InternetMan instance = new();
 
-        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger _logger = App.GetLogger<InternetMan>();
         public static InternetMan getInstance()
         {
             return instance;
@@ -24,6 +26,20 @@ namespace AutopilotQuick
         public bool IsConnected { get; private set; } = false;
         public event EventHandler InternetBecameAvailable;
 
+        private Timer _timer = null;
+        
+        public void StartTimer()
+        {
+            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting InternetMan service"))
+            {
+                var tClient = App.GetTelemetryClient();
+                tClient.TrackEvent("InternetManServiceServiceStarted");
+                _logger.LogInformation("Internet man service started");
+                _timer = new Timer(Run, null, 0, 1000);
+            }
+            
+        }
+        
         public static void WaitForInternet(UserDataContext context) {
             Task task = Task.Run(async () => await InternetMan.WaitForInternetAsync(context));
             task.Wait();
@@ -79,28 +95,23 @@ namespace AutopilotQuick
             }
         }
 
-        public void RunLoop()
+        public void Run(Object? o)
         {
-            while (true)
+            var internet = CheckForInternetConnection(500) & CheckForHTTPSConnection(500);
+            if (internet && !IsConnected)
             {
-                var internet = CheckForInternetConnection(1000) & CheckForHTTPSConnection(1000);
-                if (internet && !IsConnected)
-                {
-                    _logger.Info("I decree internet is available");
-                    IsConnected = internet;
-                    InternetBecameAvailable?.Invoke(this, new EventArgs());
-                    
-                }
-                else if(!internet && IsConnected)
-                {
-                    _logger.Info("Where did the internet go? Nobody knows.");
-                }
+                App.GetTelemetryClient().TrackEvent("InternetAvailable");
+                _logger.LogInformation("I decree internet is available");
                 IsConnected = internet;
-                
-                Task.Delay(IsConnected?1000*10:1000).Wait();
-            }
+                InternetBecameAvailable?.Invoke(this, new EventArgs());
             
-
+            }
+            else if(!internet && IsConnected)
+            {
+                _logger.LogInformation("Where did the internet go? Nobody knows.");
+                App.GetTelemetryClient().TrackEvent("InternetLost");
+            }
+            IsConnected = internet;
         }
     }
 }

@@ -11,8 +11,10 @@ using System.Threading.Tasks;
 using System.Windows.Navigation;
 using AutopilotQuick.WMI;
 using Humanizer;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 using ORMi;
 using Polly;
 using Polly.Timeout;
@@ -21,8 +23,10 @@ namespace AutopilotQuick.Steps
 {
     internal class ApplyDellBiosSettingsStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override string Name() => "Apply dell bios settings step";
+        public readonly ILogger Logger = App.GetLogger<ApplyDellBiosSettingsStep>();
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             Title = "Applying dell bios settings";
             if (IsEnabled)
@@ -73,7 +77,7 @@ cd {dellBiosSettingsDir}
                 Message = $"This device is a {model}, applying bios settings";
                 var timeoutPolicy = Policy.TimeoutAsync(1.Minutes(), async (context1, timespan, task) =>
                 {
-                    Logger.Error($"{context1.PolicyKey}: execution timed out after {timespan.TotalSeconds} seconds.");
+                    Logger.LogError("{policy}: execution timed out after {seconds} seconds.",context1.PolicyKey, timespan.TotalSeconds);
                     return;
                 });
                 string output = "";
@@ -85,9 +89,9 @@ cd {dellBiosSettingsDir}
                 }
                 catch (TimeoutRejectedException)
                 {
-                    Logger.Error("Task exceeded timeout");
+                    Logger.LogError("Task exceeded timeout");
                 }
-                Logger.Debug($"Dell bios output: {Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd()}");
+                Logger.LogDebug("Dell bios output: {biosOutput}", Regex.Replace(output, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd());
                 Message = "Done";
                 Progress = 100;
             }

@@ -11,8 +11,10 @@ using System.Windows;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using DiskQueue;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NLog;
 
 namespace AutopilotQuick.LogMan
 {
@@ -23,7 +25,8 @@ namespace AutopilotQuick.LogMan
         {
             return instance;
         }
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        private static readonly ILogger Logger = App.GetLogger<DurableAzureBackgroundTask>();
         
         public ShareClient Share;
         public Cacher AzureLogSettingsCache;
@@ -45,15 +48,29 @@ namespace AutopilotQuick.LogMan
         }
 
         public bool Stopped = false;
-        private bool ShouldStop = false;
         public void Stop()
         {
-            ShouldStop = true;
+            _timer.Dispose();
+        }
+
+        private UserDataContext context = null;
+        private Timer _timer = null;
+        
+        public void StartTimer(UserDataContext context)
+        {
+            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting legacy log upload service"))
+            {
+                this.context = context;
+                var tClient = App.GetTelemetryClient();
+                tClient.TrackEvent("LogUploadServiceStarted");
+                Logger.LogInformation("Log upload service started");
+                _timer = new Timer(Run, null, 0, 1000);
+            }
+            
         }
         
-        public void Run(UserDataContext context, CancellationToken ct)
+        public void Run(object? o)
         {
-            Logger.Info("Log upload service started");
             try
             {
                 AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
@@ -70,28 +87,22 @@ namespace AutopilotQuick.LogMan
                     InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
 
-                while (!ct.IsCancellationRequested && !ShouldStop)
+                if (InternetMan.getInstance().IsConnected)
                 {
-                    if (InternetMan.getInstance().IsConnected)
+                    try
                     {
-                        try
-                        {
-                            SyncLogs();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error(ex);
-                        }
-
+                        SyncLogs();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Got exception while trying to sync logs");
                     }
 
-                    Thread.Sleep(1000);
                 }
-
             }
             catch (Exception e)
             {
-                Logger.Error(e);
+                Logger.LogError(e, "Got exception while trying to sync logs");
             }
             finally
             {

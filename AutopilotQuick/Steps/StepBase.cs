@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Nito.AsyncEx;
 using NLog;
 
@@ -12,7 +14,7 @@ namespace AutopilotQuick.Steps
     {
         public event EventHandler<StepStatus> StepUpdated;
 
-        
+        public abstract string Name();
         public bool IsEnabled => TaskManager.getInstance().Enabled;
 
         private StepStatus _status { get; set; } = new StepStatus(0, true, "Please wait...", "");
@@ -54,6 +56,7 @@ namespace AutopilotQuick.Steps
 
         public readonly record struct StepResult(bool Success, string Message);
 
-        public abstract Task<StepResult> Run(UserDataContext context, PauseToken pauseToken);
+        public abstract Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation);
     }
 }

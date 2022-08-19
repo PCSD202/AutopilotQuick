@@ -1,4 +1,4 @@
-﻿using NLog;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
+using Timer = System.Threading.Timer;
 
 namespace AutopilotQuick
 {
@@ -15,7 +19,7 @@ namespace AutopilotQuick
         private static readonly BatteryMan instance = new();
         public event EventHandler<BatteryUpdatedEventData> BatteryUpdated;
 
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger Logger = App.GetLogger<BatteryMan>();
         public static BatteryMan getInstance()
         {
             return instance;
@@ -45,18 +49,23 @@ namespace AutopilotQuick
         }
         
         public bool ShouldStop { get; set; } = false;
-        public void RunLoop()
+        
+        
+        private Timer _timer = null;
+        
+        public void StartTimer()
         {
-            while (!ShouldStop)
+            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting Battery management service"))
             {
-                PowerStatus pwr = SystemInformation.PowerStatus;
-
-                BatteryPercent = (int)Math.Round(pwr.BatteryLifePercent * 100, 0);
-
-                IsCharging = pwr.PowerLineStatus == PowerLineStatus.Online;
-                Thread.Sleep(500);
+                var tClient = App.GetTelemetryClient();
+                _timer = new Timer(Run, null, 0, 100);
             }
-            
+        }
+        public void Run(Object? o)
+        {
+            PowerStatus pwr = SystemInformation.PowerStatus;
+            BatteryPercent = (int)Math.Round(pwr.BatteryLifePercent * 100, 0);
+            IsCharging = pwr.PowerLineStatus == PowerLineStatus.Online;
         }
         public readonly record struct BatteryUpdatedEventData(int BatteryPercent, bool IsCharging);
     }

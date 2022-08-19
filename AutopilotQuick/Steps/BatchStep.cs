@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Nito.AsyncEx;
 using NLog;
 
@@ -10,6 +12,7 @@ namespace AutopilotQuick.Steps;
 
 public class BatchStep : StepBaseEx
 {
+    public override string Name() => "Batch step";
     public readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private List<StepBaseEx> Steps = new List<StepBaseEx>();
     public BatchStep(List<StepBaseEx> StepsToRun)
@@ -58,12 +61,13 @@ public class BatchStep : StepBaseEx
     private List<Task<StepResult>> StepTasks = new();
 
     private Dictionary<StepBase, Task<StepResult>> StepTaskMapping = new Dictionary<StepBase, Task<StepResult>>();
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         foreach (var step in Steps)
         {
             //Add the step run function to the StepTasks list
-            var tas = step.Run(context, pauseToken);
+            var tas = step.Run(context, pauseToken, StepOperation);
             
             StepTasks.Add(tas);
             StepTaskMapping.Add(step, tas);

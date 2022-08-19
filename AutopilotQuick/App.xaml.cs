@@ -7,16 +7,30 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using AutopilotQuick.WMI;
+using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
+using Microsoft.ApplicationInsights.WorkerService;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Config;
+using NLog.Extensions.Logging;
 using NLog.LayoutRenderers;
 using NLog.Targets;
 using ORMi;
 using Application = System.Windows.Application;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace AutopilotQuick
 {
@@ -25,13 +39,24 @@ namespace AutopilotQuick
     /// </summary>
     public partial class App : Application
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        public static IServiceProvider ServiceProvider = null!;
+
+        public static TelemetryClient telemetryClient;
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             AllocConsole();
             Console.WriteLine("Starting up");
+            ServiceProvider = SetupAzureAppInsights();
             SetupLoggingConfig();
+            var _logger = GetLogger<App>();
+            var telemetryClient = GetTelemetryClient();
+            
+            InternetMan.getInstance().InternetBecameAvailable += (sender, args) =>
+            {
+                FlushTelemetry();
+            };
+
             
             for (int i = 0; i != e.Args.Length; ++i)
             {
@@ -48,18 +73,96 @@ namespace AutopilotQuick
             this.MainWindow = mainWindow;
             mainWindow.Closed += (sender, args2) =>
             {
+                FlushTelemetry();
                 Environment.Exit(0);
             };
 
             Application.Current.Exit += (sender, args) =>
             {
+                FlushTelemetry();
                 MainWindow.Close();
             };
             App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.Show();
         }
-        
 
+        public static string SessionID = $"{Guid.NewGuid()}";
+        public class MyTelemetryInitializer : ITelemetryInitializer
+        {
+            public void Initialize(ITelemetry telemetry)
+            {
+                telemetry.Context.User.Id = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+                telemetry.Context.GlobalProperties["DeviceID"] = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+                telemetry.Context.Session.Id = SessionID;
+            }
+        }
+
+        public IServiceProvider SetupAzureAppInsights()
+        {
+            // Create the DI container.
+            IServiceCollection services = new ServiceCollection();
+            
+
+            var options = new ApplicationInsightsServiceOptions()
+            {
+                ConnectionString = "InstrumentationKey=0a61199e-61f5-4c00-a8ed-c802260b9665;IngestionEndpoint=https://northcentralus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://northcentralus.livediagnostics.monitor.azure.com/",
+                EnableDependencyTrackingTelemetryModule = false,
+                EnablePerformanceCounterCollectionModule = false,
+                EnableAdaptiveSampling = false
+            };
+            services.AddSingleton<ITelemetryInitializer, MyTelemetryInitializer>();
+
+            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var telemetryChannel = new ServerTelemetryChannel();
+            telemetryChannel.StorageFolder = Path.Combine(appFolder, "logs", "ApplicationInsights");
+            Directory.CreateDirectory(telemetryChannel.StorageFolder);
+            services.AddSingleton(typeof(ITelemetryChannel), telemetryChannel);
+            
+            services.AddApplicationInsightsTelemetryWorkerService(options);
+            
+            // Being a regular console app, there is no appsettings.json or configuration providers enabled by default.
+            // Hence instrumentation key/ connection string and any changes to default logging level must be specified here.
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder
+                    .AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                        "", LogLevel.Information);
+                loggingBuilder.AddNLog();
+            });
+            
+            // Build ServiceProvider.
+            IServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Obtain logger instance from DI.
+            ILogger<App> logger = serviceProvider.GetRequiredService<ILogger<App>>();
+
+            // Obtain TelemetryClient instance from DI, for additional manual tracking or to flush.
+            var telemetryClient = serviceProvider.GetRequiredService<TelemetryClient>();
+
+            App.telemetryClient = telemetryClient;
+            return serviceProvider;
+        }
+
+        public static ILogger<T> GetLogger<T>()
+        {
+            return ServiceProvider.GetRequiredService<ILogger<T>>();
+        }
+
+        public static TelemetryClient GetTelemetryClient()
+        {
+            return telemetryClient;
+        }
+        
+        public static bool FlushTelemetry()
+        {
+            var telemetryClient = GetTelemetryClient();
+            return telemetryClient.FlushAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
+        public static Task<bool> FlushTelemetryAsync(CancellationToken ct)
+        {
+            var telemetryClient = GetTelemetryClient();
+            return telemetryClient.FlushAsync(CancellationToken.None);
+        }
 
         public void SetupLoggingConfig()
         {
@@ -93,8 +196,8 @@ namespace AutopilotQuick
                 Footer =
                     $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
-            LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
-            LoggingConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logConsole);
+            LoggingConfig.AddRule( NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
+            LoggingConfig.AddRule( NLog.LogLevel.Debug,  NLog.LogLevel.Fatal, logConsole);
             NLog.LogManager.Configuration = LoggingConfig;
         }
         public static string GetExecutablePath()
