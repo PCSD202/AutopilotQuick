@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
 using NLog;
-using NLog.StructuredLogging.Json;
 using Octokit;
 
 namespace AutopilotQuick
@@ -88,7 +87,6 @@ namespace AutopilotQuick
                 if (internet && !IsConnected)
                 {
                     _logger.Info("I decree internet is available");
-                    _logger.ExtendedInfo("Internet Available");
                     IsConnected = internet;
                     InternetBecameAvailable?.Invoke(this, new EventArgs());
                     
@@ -96,7 +94,6 @@ namespace AutopilotQuick
                 else if(!internet && IsConnected)
                 {
                     _logger.Info("Where did the internet go? Nobody knows.");
-                    _logger.ExtendedInfo("Internet Lost");
                 }
                 IsConnected = internet;
                 
