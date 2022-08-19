@@ -99,7 +99,7 @@ namespace AutopilotQuick
             new MakeDiskBootableStep(),
             new RemoveUnattendXMLStep(),
             new IntuneCleanupStep(),
-            new UpdateWinPEStep(),
+            //new UpdateWinPEStep(),
             new FinalizeSyncingLogsStep(),
             new RebootStep(),
         };
