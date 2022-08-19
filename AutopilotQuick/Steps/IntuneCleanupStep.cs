@@ -7,10 +7,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
 using Azure.Identity;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
-using NLog;
 using ORMi;
 using File = System.IO.File;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -19,8 +21,8 @@ namespace AutopilotQuick.Steps;
 
 public class IntuneCleanupStep : StepBaseEx
 {
-    public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    
+    public readonly ILogger Logger = App.GetLogger<FormatStep>();
+    public override string Name() => "Intune cleanup step";
     private int CurrentStep = 0;
     private int MaxSteps = 7;
     private void IncProgress()
@@ -29,7 +31,8 @@ public class IntuneCleanupStep : StepBaseEx
         Progress = ((double)CurrentStep / MaxSteps) * 100;
     }
     
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         if (!IsEnabled)
         {
@@ -62,18 +65,18 @@ public class IntuneCleanupStep : StepBaseEx
         IncProgress();
         //Gets the decrypted credentials from the encrypted file
         var GraphCreds = await GraphHelper.GetGraphCreds(context);
-        Logger.Info($"Credentials Loaded");
+        Logger.LogInformation($"Credentials Loaded");
         
         WaitWhilePaused(pauseToken);
         Message = "Connecting to Microsoft Graph...";
         IncProgress();
         var graphClient = GraphHelper.ConnectToMSGraph(GraphCreds);
-        Logger.Info($"Connected to MSGraph");
+        Logger.LogInformation($"Connected to MSGraph");
         
         WaitWhilePaused(pauseToken);
         Message = $"Looking up ({serviceTag})'s autopilot record...";
         IncProgress();
-        Logger.Info($"Looking up autopilot record for device");
+        Logger.LogInformation($"Looking up autopilot record for device");
         var autopilotRecord = await GraphHelper.GetWindowsAutopilotDevice(serviceTag, graphClient, Logger);
 
         if (autopilotRecord is null)
@@ -82,12 +85,12 @@ public class IntuneCleanupStep : StepBaseEx
             Message = "No autopilot record found for device";
             return new StepResult(true, "No autopilot record found for device");
         }
-        Logger.Info($"Found autopilot record for device: {JsonConvert.SerializeObject(autopilotRecord)}");
+        Logger.LogInformation("Found autopilot record for device: {autopilotRecord}", autopilotRecord);
         
         WaitWhilePaused(pauseToken);
         Message = $"Looking up ({serviceTag})'s intune object...";
         IncProgress();
-        Logger.Info($"Looking up intune object with id: {autopilotRecord.ManagedDeviceId}");
+        Logger.LogInformation("Looking up intune object with id: {id}", autopilotRecord.ManagedDeviceId);
         var intuneObject = await GraphHelper.GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient, Logger);
 
         if (intuneObject is null)
@@ -96,19 +99,19 @@ public class IntuneCleanupStep : StepBaseEx
             Message = "No intune object found for device";
             return new StepResult(true, "No intune object found for device");
         }
-        Logger.Info($"Found intune object for device: {JsonConvert.SerializeObject(intuneObject)}");
+        Logger.LogInformation($"Found intune object for device: {intuneObject}", intuneObject);
 
         WaitWhilePaused(pauseToken);
         Message = "Deleting intune object...";
         IncProgress();
         try
         {
-            Logger.Info($"Deleting intune object...");
+            Logger.LogInformation($"Deleting intune object...");
             await graphClient.DeviceManagement.ManagedDevices[autopilotRecord.ManagedDeviceId].Request().DeleteAsync();
         }
         catch (ServiceException e)
         {
-            Logger.Info($"Got error trying to delete intune object id: {autopilotRecord.ManagedDeviceId}");
+            Logger.LogError(e, "Got error trying to delete intune object id: {id}", autopilotRecord.ManagedDeviceId);
         }
 
         IncProgress();

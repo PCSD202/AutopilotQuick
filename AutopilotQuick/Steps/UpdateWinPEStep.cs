@@ -1,25 +1,33 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
+using RoboSharp;
 
 namespace AutopilotQuick.Steps;
 
 public class UpdateWinPEStep : StepBaseEx
 {
-    public readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    public readonly ILogger Logger = App.GetLogger<UpdateWinPEStep>();
     private Cacher WinPEISOCache;
 
     public new bool Critical = false;
 
-    
+    public override string Name() => "Update WinPE step";
+
     public async Task<string> MountWinPEISO()
     {
-        var script = @$"$ISOFile = '{WinPEISOCache.FilePath}'";
-        script = script + @"
+        using (App.telemetryClient.StartOperation<RequestTelemetry>("Mounting WinPE ISO"))
+        {
+            var script = @$"$ISOFile = '{WinPEISOCache.FilePath}'";
+            script = script + @"
 #=================================================
 Write-Verbose 'Getting Volumes ...'
 #=================================================
@@ -37,36 +45,47 @@ $ISO = (Compare-Object -ReferenceObject $Volumes -DifferenceObject (Get-Volume).
 
 Write-Host $ISO;
 ";
-        var output = await InvokePowershellScriptAndGetResultAsync(script, CancellationToken.None);
-        Logger.Info($"MountWinPEOutput: {output}");
-        return output.Trim();
+            var output = await InvokePowershellScriptAndGetResultAsync(script, CancellationToken.None);
+            Logger.LogInformation("MountWinPEOutput: {output}", output);
+            return output.Trim();
+        }
     }
 
     public string FindEnvironmentDisk()
     {
-        var EnvironmentDrive = Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
-        if (EnvironmentDrive is not null)
+        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Finding environment disk"))
         {
-            var EDriveStr = Convert.ToString(EnvironmentDrive);
-            Logger.Info($"Identified Environment drive as {EDriveStr}");
-            if (EDriveStr is not null)
+            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue(
+                "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
+            if (EnvironmentDrive is not null)
             {
-                return EDriveStr;
+                var EDriveStr = Convert.ToString(EnvironmentDrive);
+                Logger.LogInformation("Identified Environment drive as {drive}", EDriveStr);
+                if (EDriveStr is not null)
+                {
+                    t.Telemetry.Success = true;
+                    return EDriveStr;
+                }
+
+                t.Telemetry.Success = false;
+                Logger.LogError($"Failed to convert Drive to String");
+                return "";
             }
-            Logger.Info($"Failed to convert Drive to String");
+
+            t.Telemetry.Success = false;
+            Logger.LogError($"Failed to find environment drive.");
             return "";
         }
-        Logger.Info($"Failed to find environment drive.");
-        return "";
     }
     
-    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
     {
         WinPEISOCache = new Cacher(
             "http://nettools.psd202.org/AutoPilotFast/OSDCloud_NoPrompt.iso", 
             "OSDImage.iso", context);
         
-        var startTime = Stopwatch.StartNew();
+        
         if (!IsEnabled || (!InternetMan.getInstance().IsConnected && !InternetMan.CheckForInternetConnection()))
         {
             Title = "Updating environment - DISABLED";
@@ -80,11 +99,11 @@ Write-Host $ISO;
 
         Progress = 25;
         Message = "Making sure downloaded environment ISO is up to date";
-        bool Updated = false;
+        bool Updated = true;
         if (!WinPEISOCache.IsUpToDate)
         {
             Message = "Downloading updated environment ISO";
-            Logger.Info("Downloading updated WinPEISO");
+            Logger.LogInformation("Downloading updated WinPEISO");
             await WinPEISOCache.DownloadUpdateAsync();
             Updated = true;
             Message = "Downloaded updated environment ISO";
@@ -94,7 +113,7 @@ Write-Host $ISO;
         {
             return new StepResult(true, "Skipped updating, no new OS file");
         }
-
+        
         var SavedLastModified = WinPEISOCache.GetCachedFileLastModified(); //Temporarily reset the lastModified
         WinPEISOCache.SetCachedFileLastModified(DateTime.MinValue); //To trigger a re-download and update if we're interupted
         
@@ -102,32 +121,46 @@ Write-Host $ISO;
         Message = "Making sure the environment ISO is downloaded";
         if (!WinPEISOCache.FileCached)
         {
-            Logger.Error("WinPEISO is not downloaded, this means something went wrong.");
+            Logger.LogError("WinPEISO is not downloaded, this means something went wrong.");
             return new StepResult(false, "Failed to update WinPE, File does not exist.");
         }
 
         IsIndeterminate = true;
         Message = "Mounting WinPE ISO";
         var DriveOfEnvironmentISO = await MountWinPEISO();
-        Logger.Info($"Environment ISO mounted to {DriveOfEnvironmentISO}:\\");
+        Logger.LogInformation("Environment ISO mounted to {driveLetter}:\\", DriveOfEnvironmentISO);
 
         Message = "Finding Environment Disk";
         var EnvironmentDrive = FindEnvironmentDisk();
-        Logger.Info($"Environment drive has drive letter: {EnvironmentDrive}");
-        Logger.Info($"Identification took {startTime.Elapsed.Humanize(3)}.");
+        Logger.LogInformation("Environment drive has drive letter: {driveLetter}", EnvironmentDrive);
         Message = "Attempting update...";
-        Logger.Info("Starting to robocopy");
+        Logger.LogInformation("Starting to robocopy");
 
         Title = "Updating Flash Drive OS";
-        var output = await InvokePowershellScriptAndGetResultAsync(
-            $"robocopy {DriveOfEnvironmentISO}:\\ '{EnvironmentDrive}' *.* /e /ndl /njh /njs /np /r:0 /w:0 /b /zb", CancellationToken.None);
-        Logger.Info($"Robocopy Output: {output}");
+        
+        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Robocopying OS to disk"))
+        {
+            
+            CodePagesEncodingProvider.Instance.GetEncoding(437);
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var command = new RoboCommand($"{DriveOfEnvironmentISO}:\\", $"{EnvironmentDrive}",
+                CopyOptions.CopyActionFlags.Mirror, SelectionOptions.SelectionFlags.Default);
+            command.OnCopyProgressChanged += (sender, args) =>
+            {
+                Message = $"Copying new OS. {args.CurrentFileProgress/100:P0} FILE: {args.CurrentFile.Name}";
+                Progress = args.CurrentFileProgress;
+            };
+            await command.Start();
+            
+            Logger.LogInformation("Output: {@robocopyOutput}", command.GetResults());
+            t.Telemetry.Success = command.GetResults().Status.Successful;
+        }
+
         Message = "Updated flash drive successfully";
         Progress = 100;
-        Logger.Info($"Update step took {startTime.Elapsed.Humanize(3)}");
-        
+
         //Restore the last-modified parameter so we do not re-download and update
         WinPEISOCache.SetCachedFileLastModified(SavedLastModified);
-        return new StepResult(true, $"Applied update in {startTime.Elapsed.Humanize(3)}");
+        return new StepResult(true, $"Applied update");
     }
 }

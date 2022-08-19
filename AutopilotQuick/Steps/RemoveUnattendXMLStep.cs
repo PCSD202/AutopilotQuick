@@ -4,15 +4,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps
 {
     internal class RemoveUnattendXMLStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override string Name() => "Remove UnattendXML step";
+        public readonly ILogger Logger = App.GetLogger<RemoveUnattendXMLStep>();
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             Title = "Removing Unattend XML file";
             Progress = 0;

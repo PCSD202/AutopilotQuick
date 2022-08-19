@@ -6,15 +6,19 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
 
 namespace AutopilotQuick.Steps
 {
     internal class ApplyWifiStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override string Name() => "Apply wifi step";
+        public readonly ILogger Logger = App.GetLogger<ApplyWifiStep>();
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (!IsEnabled)
             {
@@ -35,7 +39,7 @@ namespace AutopilotQuick.Steps
                 await resource.CopyToAsync(file);
 
                 var output = await InvokePowershellScriptAndGetResultAsync(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Wifi.ppkg")}", CancellationToken.None);
-                Logger.Debug($"Apply Wifi step: {output}");
+                Logger.LogDebug("Apply Wifi step: {output}", output);
             }
 
             return new StepResult(true, "Successfully applied wifi settings");

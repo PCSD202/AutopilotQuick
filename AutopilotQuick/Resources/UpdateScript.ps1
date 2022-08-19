@@ -19,8 +19,7 @@ $ImportantFiles = @(
 
 $ImportantFolders = @(
     "Cache",
-    "logs", "Update",
-    "Modules"
+    "logs", "Update"
 )
 
 $XFArg = "/XF"

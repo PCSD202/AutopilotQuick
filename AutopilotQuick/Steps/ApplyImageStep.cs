@@ -4,16 +4,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Microsoft.Wim;
 using Nito.AsyncEx;
-using NLog;
+
 
 namespace AutopilotQuick.Steps
 {
     internal class ApplyImageStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
+        public readonly ILogger Logger = App.GetLogger<ApplyImageStep>();
+        public override string Name() => "Apply image step";
 
         private WimMessageResult ImageCallback(WimMessageType messageType, object message, object userData)
         {
@@ -72,7 +75,8 @@ namespace AutopilotQuick.Steps
 
         }
 
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (!InternetMan.getInstance().IsConnected)
             {
@@ -125,7 +129,7 @@ namespace AutopilotQuick.Steps
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error(ex);
+                            Logger.LogError(ex, "Got error while applying image");
                         }
                         finally
                         {
@@ -137,7 +141,7 @@ namespace AutopilotQuick.Steps
                 }
                 catch (Exception e)
                 {
-                    Logger.Error(e);
+                    Logger.LogError(e, "Caught error while applying windows");
                 }
 
                 if (wimCache.FileCached && !_updatedImageAvailable)
@@ -147,7 +151,7 @@ namespace AutopilotQuick.Steps
                 _updatedImageAvailable = false;
                 wimCache.DownloadUpdate();
                 InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-                return await Run(context, pauseToken);
+                return await Run(context, pauseToken, StepOperation);
             }
             else
             {

@@ -7,16 +7,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
+
 using ORMi;
 
 namespace AutopilotQuick.Steps
 {
     internal class ApplyAutopilotConfigurationStep : StepBaseEx
     {
-        public readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken)
+        public override string Name() => "Apply autopilot configuration step";
+        public readonly ILogger Logger = App.GetLogger<ApplyAutopilotConfigurationStep>();
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+            IOperationHolder<RequestTelemetry> StepOperation)
         {
             Title = "Applying Autopilot configuration";
             Message = "";
@@ -50,7 +55,7 @@ namespace AutopilotQuick.Steps
                         }
                         else
                         {
-                            Logger.Error("Could not find the autopilot config internally. This is a issue.");
+                            Logger.LogError("Could not find the autopilot config internally. This is a issue.");
                         }
                     }
                     catch (DirectoryNotFoundException e)

@@ -6,10 +6,10 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
-using NLog;
 using File = System.IO.File;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -25,7 +25,7 @@ public static class GraphHelper
     
     public static async Task<WindowsAutopilotDeviceIdentity?> GetWindowsAutopilotDevice(string Serial, GraphServiceClient client, ILogger? Logger = null)
     {
-        Logger ??= LogManager.GetCurrentClassLogger();
+        Logger ??= App.GetLogger<App>();
         try
         {
             var devices = await client.DeviceManagement.WindowsAutopilotDeviceIdentities.Request()
@@ -38,15 +38,14 @@ public static class GraphHelper
             {
                 return null;
             }
-            Logger.Error($"Got error while trying to look up autopilot record with st {Serial}");
-            Logger.Error(e);
+            Logger.LogError(e, "Got error while trying to look up autopilot record with st {Serial}", Serial);
             return null;
         }
     }
     
     public static async Task<ManagedDevice?> GetIntuneObject(string ManagedDeviceID, GraphServiceClient client, ILogger? Logger = null)
     {
-        Logger ??= LogManager.GetCurrentClassLogger();
+        Logger ??= App.GetLogger<App>();
         try
         {
             var device = await client.DeviceManagement.ManagedDevices[ManagedDeviceID].Request().GetAsync();
@@ -58,8 +57,7 @@ public static class GraphHelper
             {
                 return null;
             }
-            Logger.Error($"Got error while trying to look up intune object with id: {ManagedDeviceID}");
-            Logger.Error(e);
+            Logger.LogError(e,"Got error while trying to look up intune object with id: {id}",ManagedDeviceID);
             return null;
         }
         
