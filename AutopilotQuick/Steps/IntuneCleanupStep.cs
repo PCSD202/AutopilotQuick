@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
 using Azure.Identity;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace AutopilotQuick.Steps;
 
 public class IntuneCleanupStep : StepBaseEx
 {
-    public readonly ILogger Logger = App.GetLogger<FormatStep>();
+    public readonly ILogger Logger = App.GetLogger<IntuneCleanupStep>();
     public override string Name() => "Intune cleanup step";
     private int CurrentStep = 0;
     private int MaxSteps = 7;
@@ -53,65 +54,89 @@ public class IntuneCleanupStep : StepBaseEx
         Progress = 0;
         IsIndeterminate = false;
         
-        
-        WaitWhilePaused(pauseToken);
         Message = "Looking up service tag...";
         IncProgress();
-        WMIHelper helper = new WMIHelper("root\\CimV2");
-        var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+        var serviceTag = GetServiceTag(pauseToken);
         
+        
+        var CredentialStep = App.telemetryClient.StartOperation<RequestTelemetry>("Loading credentials");
         WaitWhilePaused(pauseToken);
         Message = "Loading credentials...";
         IncProgress();
         //Gets the decrypted credentials from the encrypted file
         var GraphCreds = await GraphHelper.GetGraphCreds(context);
         Logger.LogInformation($"Credentials Loaded");
+        CredentialStep.Telemetry.Success = true;
+        CredentialStep.Dispose();
         
+        var MicrosoftGraphStep = App.telemetryClient.StartOperation<RequestTelemetry>("Connecting to MsGraph");
         WaitWhilePaused(pauseToken);
         Message = "Connecting to Microsoft Graph...";
         IncProgress();
         var graphClient = GraphHelper.ConnectToMSGraph(GraphCreds);
         Logger.LogInformation($"Connected to MSGraph");
+        MicrosoftGraphStep.Telemetry.Success = true;
+        MicrosoftGraphStep.Dispose();
         
+        var LookupAutopilotRecord = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up device autopilot record");
         WaitWhilePaused(pauseToken);
         Message = $"Looking up ({serviceTag})'s autopilot record...";
         IncProgress();
         Logger.LogInformation($"Looking up autopilot record for device");
         var autopilotRecord = await GraphHelper.GetWindowsAutopilotDevice(serviceTag, graphClient, Logger);
-
+        LookupAutopilotRecord.Telemetry.Success = autopilotRecord is not null;
+        LookupAutopilotRecord.Telemetry.Properties["AutopilotRecord"] = JsonConvert.SerializeObject(autopilotRecord);
+        
         if (autopilotRecord is null)
         {
             Progress = 100;
             Message = "No autopilot record found for device";
+            LookupAutopilotRecord.Dispose();
             return new StepResult(true, "No autopilot record found for device");
         }
-        Logger.LogInformation("Found autopilot record for device: {autopilotRecord}", autopilotRecord);
+        Logger.LogInformation("Found autopilot record for device: {@autopilotRecord}", autopilotRecord);
+        LookupAutopilotRecord.Dispose();
         
-        WaitWhilePaused(pauseToken);
-        Message = $"Looking up ({serviceTag})'s intune object...";
-        IncProgress();
-        Logger.LogInformation("Looking up intune object with id: {id}", autopilotRecord.ManagedDeviceId);
-        var intuneObject = await GraphHelper.GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient, Logger);
+        using (var operation = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up device intune record"))
+        {
+            WaitWhilePaused(pauseToken);
+            Message = $"Looking up ({serviceTag})'s intune object...";
+            IncProgress();
+            Logger.LogInformation("Looking up intune object with id: {id}", autopilotRecord.ManagedDeviceId);
+            var intuneObject = await GraphHelper.GetIntuneObject(autopilotRecord.ManagedDeviceId, graphClient, Logger);
+            operation.Telemetry.Success = intuneObject is not null;
+            operation.Telemetry.Properties["IntuneRecord"] = JsonConvert.SerializeObject(intuneObject);
 
-        if (intuneObject is null)
-        {
-            Progress = 100;
-            Message = "No intune object found for device";
-            return new StepResult(true, "No intune object found for device");
-        }
-        Logger.LogInformation($"Found intune object for device: {intuneObject}", intuneObject);
+            if (intuneObject is null)
+            {
+                Progress = 100;
+                Message = "No intune object found for device";
+                return new StepResult(true, "No intune object found for device");
+            }
 
-        WaitWhilePaused(pauseToken);
-        Message = "Deleting intune object...";
-        IncProgress();
-        try
-        {
-            Logger.LogInformation($"Deleting intune object...");
-            await graphClient.DeviceManagement.ManagedDevices[autopilotRecord.ManagedDeviceId].Request().DeleteAsync();
+            Logger.LogInformation("Found intune object for device: {@intuneObject}", intuneObject);
+            operation.Dispose();
         }
-        catch (ServiceException e)
+
+        using (var DeleteIntuneRecord = App.telemetryClient.StartOperation<RequestTelemetry>("Deleting intune record"))
         {
-            Logger.LogError(e, "Got error trying to delete intune object id: {id}", autopilotRecord.ManagedDeviceId);
+            WaitWhilePaused(pauseToken);
+            Message = "Deleting intune object...";
+            IncProgress();
+            DeleteIntuneRecord.Telemetry.Properties["ID"] = autopilotRecord.ManagedDeviceId;
+            try
+            {
+                Logger.LogInformation($"Deleting intune object...");
+                await graphClient.DeviceManagement.ManagedDevices[autopilotRecord.ManagedDeviceId].Request()
+                    .DeleteAsync();
+                DeleteIntuneRecord.Telemetry.Success = true;
+            }
+            catch (ServiceException e)
+            {
+                Logger.LogError(e, "Got error trying to delete intune object id: {id}",
+                    autopilotRecord.ManagedDeviceId);
+                DeleteIntuneRecord.Telemetry.Success = false;
+            }
         }
 
         IncProgress();

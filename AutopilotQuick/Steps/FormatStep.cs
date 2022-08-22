@@ -25,7 +25,7 @@ namespace AutopilotQuick.Steps
         public readonly ILogger Logger = App.GetLogger<FormatStep>();
         public int IdentifyDriveToImage()
         {
-            using (App.telemetryClient.StartOperation<RequestTelemetry>("Identifying drive to format"))
+            using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Identifying drive to format"))
             {
                 Message = "Identifying drive...";
                 IsIndeterminate = true;
@@ -33,7 +33,12 @@ namespace AutopilotQuick.Steps
                 {
                     WMIHelper helper = new WMIHelper("root\\CimV2");
                     DiskDrive diskToSelect = helper.Query<DiskDrive>().First(x => x.InterfaceType != "USB" && x.MediaLoaded);
+                    t.Telemetry.Properties["Drive"] = JsonConvert.SerializeObject(diskToSelect);
                     Logger.LogInformation("Identified drive {@drive} to format", diskToSelect);
+                    App.telemetryClient.TrackEvent("DriveToFormatIdentified", new Dictionary<string, string>()
+                    {
+                        {"Drive", JsonConvert.SerializeObject(diskToSelect)}
+                    });
                     return (int)diskToSelect.Index;
                 }
                 catch (Exception ex)
@@ -107,8 +112,7 @@ exit
             }
         }
 
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
-            IOperationHolder<RequestTelemetry> StepOperation)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (IsEnabled)
             {
@@ -119,6 +123,7 @@ exit
                 try
                 {
                     DriveToImage = IdentifyDriveToImage();
+                    StepOperation.Telemetry.Properties["DriveNumber"] = $"{DriveToImage}";
                     if (DriveToImage == -1)
                     {
                         throw new DriveNotFoundException();
@@ -143,11 +148,6 @@ exit
                 {
                     return new StepResult(false, "Failed to format drive. This could be because of a bad hard drive, or not having one installed.");
                 }
-                
-                
-                
-                
-                
             }
             else
             {
