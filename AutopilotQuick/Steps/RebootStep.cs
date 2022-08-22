@@ -35,10 +35,12 @@ namespace AutopilotQuick.Steps
                 StepOperation.Telemetry.Success = true;
                 StepOperation.Dispose();
                 TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
+                App.GetTelemetryClient().TrackEvent("Image successful");
                 TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
+                await Task.Run(() => CountDown(pauseToken, 5000));
                 formatProcess.Start();
-                formatProcess.WaitForExit();
+                await formatProcess.WaitForExitAsync();
                 Environment.Exit(0);
 
                 return new StepResult(true, "Imaging complete - Rebooting machine");
@@ -49,6 +51,7 @@ namespace AutopilotQuick.Steps
                 TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
                 TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
+                await Task.Run(() => CountDown(pauseToken, 5000));
             }
 
         }
