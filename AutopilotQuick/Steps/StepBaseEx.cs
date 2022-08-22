@@ -6,11 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AutopilotQuick.WMI;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using NLog;
+using ORMi;
 using Polly;
 using Polly.Retry;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -21,11 +23,34 @@ namespace AutopilotQuick.Steps
     {
         public void WaitWhilePaused(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
-            var oldStatus = Status;
-            Message = "Paused, waiting to resume";
-            IsIndeterminate = true;
-            pauseToken.WaitWhilePaused();
-            Status = oldStatus;
+            using (App.telemetryClient.StartOperation<RequestTelemetry>("Paused"))
+            {
+                var oldStatus = Status;
+                Message = "Paused, waiting to resume";
+                IsIndeterminate = true;
+                pauseToken.WaitWhilePaused();
+                Status = oldStatus;
+            }
+        }
+        
+        public string GetDeviceModel(PauseToken pauseToken) {
+            WaitWhilePaused(pauseToken);
+            using var modelLookup = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up model");
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
+            modelLookup.Telemetry.Success = true;
+            modelLookup.Telemetry.Properties["Model"] = model;
+            return model;
+        }
+        
+        public string GetServiceTag(PauseToken pauseToken) {
+            WaitWhilePaused(pauseToken);
+            using var serviceTagLookup = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up service tag");
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+            serviceTagLookup.Telemetry.Success = true;
+            serviceTagLookup.Telemetry.Properties["ServiceTag"] = serviceTag;
+            return serviceTag;
         }
 
         public async Task CountDown(PauseToken pauseToken, double ms)
@@ -53,7 +78,7 @@ namespace AutopilotQuick.Steps
         
         public string InvokePowershellScriptAndGetResult(string script)
         {
-            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
+            using (var powershellTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
             {
                 var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
                     $"script-{Guid.NewGuid()}.ps1");
@@ -68,13 +93,14 @@ namespace AutopilotQuick.Steps
                 var output = formatProcess.StandardOutput.ReadToEnd().Trim();
                 formatProcess.WaitForExit();
                 File.Delete(psscriptPath);
+                powershellTele.Telemetry.Properties["Output"] = output;
                 return output;
             }
         }
         
         public async Task<string> InvokePowershellScriptAndGetResultAsync(string script, CancellationToken cancellationToken)
         {
-            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
+            using (var powershellTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
             {
                 var lines = new StringBuilder();
                 var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
@@ -96,6 +122,7 @@ namespace AutopilotQuick.Steps
                         lines.AppendLine(line);
                     }
                     await powerShellProcess.WaitForExitAsync(cancellationToken);
+                    powershellTele.Telemetry.Properties["Output"] = lines.ToString().Trim();
                     return lines.ToString().Trim();
                 }
                 finally
@@ -113,7 +140,7 @@ namespace AutopilotQuick.Steps
         
         public string RunDiskpartScript(string Script)
         {
-            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Diskpart script"))
+            using (var diskpartScriptTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Diskpart script"))
             {
                 var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
                     $"diskpart-(${Guid.NewGuid()}).txt");
@@ -144,6 +171,7 @@ namespace AutopilotQuick.Steps
                 var output = diskpartProcess.StandardOutput.ReadToEnd();
                 diskpartProcess.WaitForExit();
                 File.Delete(diskpartScriptPath);
+                diskpartScriptTele.Telemetry.Properties["Output"] = output;
                 return output;
             }
         }

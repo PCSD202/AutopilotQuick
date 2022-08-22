@@ -82,10 +82,14 @@ namespace AutopilotQuick
         }
 
         private void WaitForPause(PauseToken pauseToken) {
-            InvokeCurrentTaskNameChanged("Paused");
-            InvokeCurrentTaskMessageChanged("Waiting for unpause");
-            InvokeCurrentTaskProgressChanged(0, true);
-            pauseToken.WaitWhilePaused();
+            if (!pauseToken.IsPaused) return;
+            using (App.telemetryClient.StartOperation<RequestTelemetry>("Paused"))
+            {
+                InvokeCurrentTaskNameChanged("Paused");
+                InvokeCurrentTaskMessageChanged("Waiting for unpause");
+                InvokeCurrentTaskProgressChanged(0, true);
+                pauseToken.WaitWhilePaused();
+            }
         }
         private UserDataContext _context;
 
@@ -108,7 +112,7 @@ namespace AutopilotQuick
         };
         
         private int CurrentStep = 1;
-        
+        public IOperationHolder<RequestTelemetry> TaskManOp;
 
         public void Run(UserDataContext context, PauseToken pauseToken)
         {
@@ -119,11 +123,11 @@ namespace AutopilotQuick
             }
             
             var telemetryClient = App.GetTelemetryClient();
+            TaskManOp = telemetryClient.StartOperation<RequestTelemetry>("Image");
             try
             {
                 foreach (var step in Steps)
                 {
-                    Logger.LogInformation($"Is Paused: {pauseToken.IsPaused}");
                     WaitForPause(pauseToken);
                     InvokeCurrentTaskMessageChanged("");
                     InvokeCurrentTaskNameChanged("");
@@ -131,6 +135,7 @@ namespace AutopilotQuick
                     var s = Stopwatch.StartNew();
                     step.StepUpdated += StepOnStepUpdated;
                     var ImageOp = telemetryClient.StartOperation<RequestTelemetry>(step.Name());
+                    ImageOp.Telemetry.Success = false;
                     try
                     {
                         var result = step.Run(context, pauseToken, ImageOp).ConfigureAwait(true).GetAwaiter()
@@ -196,7 +201,9 @@ namespace AutopilotQuick
             }
             finally
             {
+                TaskManOp.Dispose();
             }
+            
         }
 
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
