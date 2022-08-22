@@ -136,6 +136,7 @@ namespace AutopilotQuick
                 EnableDependencyTrackingTelemetryModule = false,
                 EnablePerformanceCounterCollectionModule = false,
                 EnableAdaptiveSampling = false,
+                EnableQuickPulseMetricStream = true,
                 #if PUBLISH
                 DeveloperMode = false
                 #endif
