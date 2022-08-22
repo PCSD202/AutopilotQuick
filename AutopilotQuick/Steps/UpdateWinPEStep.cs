@@ -99,7 +99,7 @@ Write-Host $ISO;
 
         Progress = 25;
         Message = "Making sure downloaded environment ISO is up to date";
-        bool Updated = true;
+        bool Updated = false;
         if (!WinPEISOCache.IsUpToDate)
         {
             Message = "Downloading updated environment ISO";
