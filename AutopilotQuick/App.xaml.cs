@@ -42,6 +42,8 @@ namespace AutopilotQuick
         public static IServiceProvider ServiceProvider = null!;
 
         public static TelemetryClient telemetryClient;
+
+        public static string SessionID = $"{Guid.NewGuid()}";
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -86,13 +88,38 @@ namespace AutopilotQuick
             mainWindow.Show();
         }
 
-        public static string SessionID = $"{Guid.NewGuid()}";
+        
         public class MyTelemetryInitializer : ITelemetryInitializer
         {
+            public static string SessionID = App.SessionID;
+            public string? model = null;
+            public string? serviceTag = null;
+            public string? version = null;
             public void Initialize(ITelemetry telemetry)
             {
+                if (model is null)
+                {
+                    WMIHelper helper = new WMIHelper("root\\CimV2");
+                    model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
+                }
+
+                if (serviceTag is null)
+                {
+                    WMIHelper helper = new WMIHelper("root\\CimV2");
+                    serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+                }
+
+                if (version is null)
+                {
+                    FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
+                    version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
+                }
+                
                 telemetry.Context.User.Id = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
                 telemetry.Context.GlobalProperties["DeviceID"] = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+                telemetry.Context.GlobalProperties["ServiceTag"] = serviceTag;
+                telemetry.Context.GlobalProperties["Model"] = model;
+                telemetry.Context.Component.Version = version;
                 telemetry.Context.Session.Id = SessionID;
             }
         }
@@ -108,7 +135,13 @@ namespace AutopilotQuick
                 ConnectionString = "InstrumentationKey=0a61199e-61f5-4c00-a8ed-c802260b9665;IngestionEndpoint=https://northcentralus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://northcentralus.livediagnostics.monitor.azure.com/",
                 EnableDependencyTrackingTelemetryModule = false,
                 EnablePerformanceCounterCollectionModule = false,
-                EnableAdaptiveSampling = false
+                EnableAdaptiveSampling = false,
+                #if PUBLISH
+                DeveloperMode = false
+                #endif
+                #if !PUBLISH
+                DeveloperMode = true
+                #endif
             };
             services.AddSingleton<ITelemetryInitializer, MyTelemetryInitializer>();
 

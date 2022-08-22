@@ -15,7 +15,7 @@ namespace AutopilotQuick.Steps
     internal class MakeDiskBootableStep : StepBaseEx
     {
         public override string Name() => "Make disk bootable step";
-        public readonly ILogger Logger = App.GetLogger<FormatStep>();
+        public readonly ILogger Logger = App.GetLogger<MakeDiskBootableStep>();
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
             IOperationHolder<RequestTelemetry> StepOperation)
         {
