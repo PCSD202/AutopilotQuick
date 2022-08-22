@@ -30,6 +30,11 @@
                 <local:SimpleMainWindowCommand Executed="F10KeyPressed_OnExecuted"/>
             </KeyBinding.Command>
         </KeyBinding>
+        <KeyBinding Key="F7">
+            <KeyBinding.Command>
+                <local:SimpleMainWindowCommand Executed="F7KeyPressed_OnExecuted"/>
+            </KeyBinding.Command>
+        </KeyBinding>
     </Window.InputBindings>
 
     <mah:MetroWindow.RightWindowCommands>
@@ -91,7 +96,6 @@
             <RowDefinition Height="3*"></RowDefinition>
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
-        
 
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>

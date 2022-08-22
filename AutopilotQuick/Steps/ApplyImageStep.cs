@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ namespace AutopilotQuick.Steps
 
             switch (messageType)
             {
-                case WimMessageType.Progress:  // Some progress is being sent
+                case WimMessageType.Progress: // Some progress is being sent
 
                     // Get the message as a WimMessageProgress object
                     WimMessageProgress progressMessage = (WimMessageProgress)message;
@@ -39,17 +40,17 @@ namespace AutopilotQuick.Steps
 
                     break;
 
-                case WimMessageType.Warning:  // A warning is being sent
+                case WimMessageType.Warning: // A warning is being sent
 
                     // Get the message as a WimMessageProgress object
                     WimMessageWarning warningMessage = (WimMessageWarning)message;
 
                     // Print the file and error code
-                   Message = $"Warning: {warningMessage.Path} ({warningMessage.Win32ErrorCode})";
+                    Message = $"Warning: {warningMessage.Path} ({warningMessage.Win32ErrorCode})";
 
                     break;
 
-                case WimMessageType.Error:  // An error is being sent
+                case WimMessageType.Error: // An error is being sent
 
                     // Get the message as a WimMessageError object
                     WimMessageError errorMessage = (WimMessageError)message;
@@ -66,13 +67,13 @@ namespace AutopilotQuick.Steps
         }
 
         private bool _updatedImageAvailable = false;
+
         public void TaskManager_InternetBecameAvailable(object? sender, EventArgs e)
         {
             if (!_updatedImageAvailable)
             {
                 _updatedImageAvailable = !WimMan.getInstance().GetCacherForModel().IsUpToDate;
             }
-
         }
 
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
@@ -86,7 +87,7 @@ namespace AutopilotQuick.Steps
             {
                 TaskManager_InternetBecameAvailable(this, EventArgs.Empty);
             }
-            
+
             var wimCache = WimMan.getInstance().GetCacherForModel();
             if (IsEnabled)
             {
@@ -108,15 +109,18 @@ namespace AutopilotQuick.Steps
                     {
                         if (Directory.Exists(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP")))
                         {
-                            Directory.Delete(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"), true);
+                            Directory.Delete(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"),
+                                true);
                         }
 
                         Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"));
                         // Always set a temporary path
-                        WimgApi.SetTemporaryPath(wimHandle, Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"));
+                        WimgApi.SetTemporaryPath(wimHandle,
+                            Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "TEMP"));
 
                         // Register a method to be called while actions are performed by WIMGAPi for this .wim file
                         WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
+
 
                         try
                         {
@@ -132,6 +136,7 @@ namespace AutopilotQuick.Steps
                             Logger.LogError(ex, "Got error while applying image");
                         }
                         finally
+
                         {
                             // Be sure to unregister the callback method
                             //
@@ -146,7 +151,7 @@ namespace AutopilotQuick.Steps
 
                 if (wimCache.FileCached && !_updatedImageAvailable)
                     return new StepResult(true, "Successfully applied image to drive");
-                
+
                 InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 _updatedImageAvailable = false;
                 wimCache.DownloadUpdate();

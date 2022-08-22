@@ -34,6 +34,8 @@ namespace AutopilotQuick.Steps
                 formatProcess.StartInfo.Arguments = "reboot";
                 StepOperation.Telemetry.Success = true;
                 StepOperation.Dispose();
+                TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
+                TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
                 formatProcess.Start();
                 formatProcess.WaitForExit();
@@ -44,6 +46,8 @@ namespace AutopilotQuick.Steps
             finally
             {
                 StepOperation.Dispose();
+                TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
+                TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
             }
 

@@ -40,6 +40,7 @@ namespace AutopilotQuick.Steps
 
                 var output = await InvokePowershellScriptAndGetResultAsync(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Wifi.ppkg")}", CancellationToken.None);
                 Logger.LogDebug("Apply Wifi step: {output}", output);
+                StepOperation.Telemetry.Properties["Output"] = output;
             }
 
             return new StepResult(true, "Successfully applied wifi settings");

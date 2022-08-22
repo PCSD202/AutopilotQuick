@@ -28,6 +28,8 @@ using System.Windows.Media.Animation;
 using AutopilotQuick.LogMan;
 using ControlzEx.Theming;
 using MahApps.Metro.Controls;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Nito.AsyncEx;
 using Application = System.Windows.Application;
 
@@ -205,25 +207,22 @@ namespace AutopilotQuick
 
         private async void UpdateWithPause()
         {
-            if (!Updating)
+            if (Updating) return;
+            using var t = App.telemetryClient.StartOperation<RequestTelemetry>("Checking for updates");
+            Updating = true;
+            Logger.Info("Pausing for update checking&applying");
+            _taskManagerPauseTokenSource.IsPaused = true;
+            try
             {
-                Updating = true;
-                Logger.Info("Pausing for update checking&applying");
-                _taskManagerPauseTokenSource.IsPaused = true;
-                try
-                {
-                    Logger.Info("Updating");
-                    await Update();
-                    Logger.Info("Done updating");
-                }
-                finally
-                {
-                    Logger.Info("unpausing done with update checking&applying");
-                    _taskManagerPauseTokenSource.IsPaused = false;
-                }
+                Logger.Info("Updating");
+                await Update();
+                Logger.Info("Done updating");
             }
-
-
+            finally
+            {
+                Logger.Info("unpausing done with update checking&applying");
+                _taskManagerPauseTokenSource.IsPaused = false;
+            }
         }
         private async void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
         {
@@ -516,6 +515,17 @@ namespace AutopilotQuick
                 runningAlready = true;
             }
             
+        }
+
+        private async void F7KeyPressed_OnExecuted(object? sender, object e)
+        {
+            Dispatcher.BeginInvoke(async () =>
+            {
+                await context.DialogCoordinator.ShowMessageAsync(context, "Debug Info",
+                    $"DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n" +
+                    $"SessionID: {App.SessionID}");
+            });
+
         }
     }
 }

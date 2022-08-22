@@ -127,6 +127,7 @@ Write-Host $ISO;
 
         IsIndeterminate = true;
         Message = "Mounting WinPE ISO";
+        
         var DriveOfEnvironmentISO = await MountWinPEISO();
         Logger.LogInformation("Environment ISO mounted to {driveLetter}:\\", DriveOfEnvironmentISO);
 
