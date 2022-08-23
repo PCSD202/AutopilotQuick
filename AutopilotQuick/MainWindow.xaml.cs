@@ -177,7 +177,7 @@ namespace AutopilotQuick
             DurableAzureBackgroundTask.getInstance().StartTimer(context);
             BatteryMan.getInstance().StartTimer();
             InternetMan.getInstance().StartTimer();
-            var TaskManagerTask = Task.Factory.StartNew(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
+            var TaskManagerTask = Task.Run(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), cancellationToken);
 
         }
 
