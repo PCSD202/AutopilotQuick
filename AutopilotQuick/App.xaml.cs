@@ -55,13 +55,7 @@ namespace AutopilotQuick
             SetupLoggingConfig();
             var _logger = GetLogger<App>();
             var telemetryClient = GetTelemetryClient();
-            
-            InternetMan.getInstance().InternetBecameAvailable += (sender, args) =>
-            {
-                FlushTelemetry();
-            };
 
-            
             for (int i = 0; i != e.Args.Length; ++i)
             {
                 if (e.Args[i] == "/run")
@@ -204,9 +198,6 @@ namespace AutopilotQuick
             
             // Build ServiceProvider.
             IServiceProvider serviceProvider = services.BuildServiceProvider();
-
-            // Obtain logger instance from DI.
-            ILogger<App> logger = serviceProvider.GetRequiredService<ILogger<App>>();
 
             // Obtain TelemetryClient instance from DI, for additional manual tracking or to flush.
             var telemetryClient = serviceProvider.GetRequiredService<TelemetryClient>();
