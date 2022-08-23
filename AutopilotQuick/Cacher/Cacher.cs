@@ -97,27 +97,34 @@ public class Cacher
 
     public DateTime GetLastModifiedFromWeb()
     {
-        InternetMan.WaitForInternet(_context); //We need internet connectivity
-        try
+        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Requesting last modified"))
         {
-            var request = new HttpRequestMessage(HttpMethod.Head, FileURL);
-            var response = client.Send(request);
-            var lastModified = response.Content.Headers.LastModified;
-            if (lastModified.HasValue)
+            t.Telemetry.Url = new Uri(FileURL);
+            InternetMan.WaitForInternet(_context); //We need internet connectivity
+            try
             {
-                return lastModified.Value.UtcDateTime;
+                var request = new HttpRequestMessage(HttpMethod.Head, FileURL);
+                var response = client.Send(request);
+                var lastModified = response.Content.Headers.LastModified;
+                if (lastModified.HasValue)
+                {
+                    t.Telemetry.Success = true;
+                    return lastModified.Value.UtcDateTime;
+                }
+                else
+                {
+                    t.Telemetry.Success = false;
+                    _logger.Error($"No Last-Modified header for {FileURL}");
+                    return DateTime.MaxValue;
+                }
             }
-            else
+            catch (Exception e)
             {
-                _logger.Error($"No Last-Modified header for {FileURL}");
+                t.Telemetry.Success = false;
+                _logger.Error($"Got error {e} while trying to get last modified from web for {FileURL}");
+
                 return DateTime.MaxValue;
             }
-        }
-        catch (Exception e)
-        {
-            _logger.Error($"Got error {e} while trying to get last modified from web for {FileURL}");
-
-            return DateTime.MaxValue;
         }
     }
 

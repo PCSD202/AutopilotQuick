@@ -55,8 +55,7 @@ Write-Host $ISO;
     {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Finding environment disk"))
         {
-            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue(
-                "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
+            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
             if (EnvironmentDrive is not null)
             {
                 var EDriveStr = Convert.ToString(EnvironmentDrive);
