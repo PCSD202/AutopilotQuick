@@ -100,6 +100,7 @@ namespace AutopilotQuick
             new DisableTakeHomeStep(),
             new ApplyProductKeyStep(),
             new RemoveDeviceFromAutopilotStep(),
+            new LogTakeHomeStep(),
             new ApplyDellBiosSettingsStep(),
             new ApplyAutopilotConfigurationStep(),
             new ApplyWifiStep(),
