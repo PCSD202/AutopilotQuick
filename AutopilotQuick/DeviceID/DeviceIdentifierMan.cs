@@ -4,6 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LazyCache;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Newtonsoft.Json;
 using NLog;
 using shortid;
@@ -30,6 +33,7 @@ namespace AutopilotQuick.DeviceID
             {
                 return null;
             }
+
             try
             {
                 IDOnDisk data = JsonConvert.DeserializeObject<IDOnDisk>(File.ReadAllText(FileDataPath));
@@ -37,7 +41,8 @@ namespace AutopilotQuick.DeviceID
             }
             catch (Exception e)
             {
-               Logger.Error($"Got error {e.Message} while trying to deserialize {FileDataPath}. Deleting json file.");
+                Logger.Error(
+                    $"Got error {e.Message} while trying to deserialize {FileDataPath}. Deleting json file.");
                 File.Delete(FileDataPath);
                 return null;
             }
@@ -50,6 +55,7 @@ namespace AutopilotQuick.DeviceID
                 ID = ID,
             };
             File.WriteAllText(FileDataPath, JsonConvert.SerializeObject(data, Formatting.Indented));
+            cache.Add("DeviceID", ID);
         }
 
         private string GenerateNewID()
@@ -59,11 +65,24 @@ namespace AutopilotQuick.DeviceID
             return id;
         }
 
+        IAppCache cache = new CachingService();
         public string GetDeviceIdentifier()
         {
-            if (ReadIDFromDisk() != null) return ReadIDFromDisk();
-            SetID(GenerateNewID());
-            return GetDeviceIdentifier();
+            if (cache.TryGetValue("DeviceID", out string deviceID))
+            {
+                return deviceID;
+            }
+
+            if (ReadIDFromDisk() is null)
+            {
+                SetID(GenerateNewID());
+            }
+            else
+            {
+                cache.Add("DeviceID", ReadIDFromDisk());
+            }
+
+            return ReadIDFromDisk();
 
 
         }

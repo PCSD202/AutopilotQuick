@@ -39,7 +39,7 @@ namespace AutopilotQuick.Steps
                     {
                         {"Drive", JsonConvert.SerializeObject(diskToSelect)}
                     });
-                    return (int)diskToSelect.Index;
+                    return (int)int.Parse(diskToSelect.DeviceID.Replace(@"\\.\PHYSICALDRIVE", ""));
                 }
                 catch (Exception ex)
                 {
