@@ -81,8 +81,19 @@ namespace AutopilotQuick
             {
                 Updated = false;
             }
-            
-            
+
+            if (!TaskManager.getInstance().Enabled)
+            {
+                ResizeMode = ResizeMode.CanResize;
+                WindowState = WindowState.Normal;
+                ShowCloseButton = true;
+            }
+            else
+            {
+                ResizeMode = ResizeMode.NoResize;
+                WindowState = WindowState.Maximized;
+                ShowCloseButton = false;
+            }
 
         }
 
@@ -521,9 +532,8 @@ namespace AutopilotQuick
         {
             Dispatcher.BeginInvoke(async () =>
             {
-                await context.DialogCoordinator.ShowMessageAsync(context, "Debug Info",
-                    $"DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n" +
-                    $"SessionID: {App.SessionID}");
+                var debugWindow = new DebugWindow(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(), App.SessionID, $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}");
+                debugWindow.Show();
             });
 
         }
