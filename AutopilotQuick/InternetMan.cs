@@ -35,7 +35,7 @@ namespace AutopilotQuick
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("InternetManServiceServiceStarted");
                 _logger.LogInformation("Internet man service started");
-                _timer = new Timer(Run, null, 0, 1000);
+                _timer = new Timer(Run, null, 1.Seconds(), 5.Seconds());
             }
             
         }
@@ -68,8 +68,8 @@ namespace AutopilotQuick
                 var request = (HttpWebRequest)WebRequest.Create(url);
                 request.KeepAlive = false;
                 request.Timeout = timeoutMs;
-                using (var response = (HttpWebResponse)request.GetResponse())
-                    return true;
+                using var response = (HttpWebResponse)request.GetResponse();
+                return true;
             }
             catch
             {
@@ -86,8 +86,8 @@ namespace AutopilotQuick
                 request.KeepAlive = false;
                 request.Timeout = timeoutMs;
 
-                using (var response = (HttpWebResponse)request.GetResponse())
-                    return true;
+                using var response = (HttpWebResponse)request.GetResponse();
+                return true;
             }
             catch
             {
@@ -97,13 +97,13 @@ namespace AutopilotQuick
 
         public void Run(Object? o)
         {
-            var internet = CheckForInternetConnection(500) & CheckForHTTPSConnection(500);
+            var internet = CheckForInternetConnection(2000, "https://www.google.com");
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
                 _logger.LogInformation("I decree internet is available");
                 IsConnected = internet;
-                InternetBecameAvailable?.Invoke(this, new EventArgs());
+                InternetBecameAvailable?.Invoke(this, EventArgs.Empty);
             
             }
             else if(!internet && IsConnected)
