@@ -71,6 +71,7 @@ namespace AutopilotQuick
                     TaskManager.getInstance().RemoveOnly = true;
                 }
             }
+
             var mainWindow = new MainWindow();
             this.MainWindow = mainWindow;
             mainWindow.Closed += (sender, args2) =>
@@ -86,6 +87,11 @@ namespace AutopilotQuick
             };
             App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.Show();
+        }
+
+        public static FileVersionInfo GetVersion()
+        {
+            return FileVersionInfo.GetVersionInfo(GetExecutablePath());
         }
 
         
