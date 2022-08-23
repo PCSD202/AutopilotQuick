@@ -9,10 +9,7 @@
         xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters"
                  mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"
-        ShowCloseButton="False"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        WindowState="Maximized"
         dialogs:DialogParticipation.Register="{Binding}"
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
@@ -103,11 +100,13 @@
                 <RowDefinition Height="2*"></RowDefinition>
                 <RowDefinition Height="auto"></RowDefinition>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" FontSize="48" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                <TextBlock.Inlines>
-                    <Run Text="{Binding CurrentStepName}"/>
-                </TextBlock.Inlines>
-            </TextBlock>
+            <Viewbox Grid.Row="0" Stretch="Uniform">
+                <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                    <TextBlock.Inlines>
+                        <Run Text="{Binding CurrentStepName}"/>
+                    </TextBlock.Inlines>
+                </TextBlock>
+            </Viewbox>
             <TextBlock Grid.Row="1" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Top">
                 <TextBlock.Inlines>
                     <Run Text="{Binding CurrentStepMessage}"/>
