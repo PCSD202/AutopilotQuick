@@ -11,8 +11,10 @@ using System.Windows;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using DiskQueue;
+using LazyCache;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -31,20 +33,30 @@ namespace AutopilotQuick.LogMan
         public ShareClient Share;
         public Cacher AzureLogSettingsCache;
         
+        IAppCache cache = new CachingService();
+        
         
         private void OnInternetBecameAvailable(object? sender, EventArgs e)
         {
             Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
+            Share.CreateIfNotExists();
         }
 
+        
         public string GetConnectionString()
         {
+            if (cache.TryGetValue("ConnectionString", out string ConnectionString))
+            {
+                return ConnectionString;
+            }
+            
             if (!(AzureLogSettingsCache.FileCached && AzureLogSettingsCache.IsUpToDate))
             {
                 AzureLogSettingsCache.DownloadUpdate();
             }
             var data = JsonConvert.DeserializeObject<LogSettings>(File.ReadAllText(AzureLogSettingsCache.FilePath));
-            return data?.ConnectionString ?? string.Empty;
+            cache.Add("ConnectionString", data?.ConnectionString ?? string.Empty);
+            return cache.Get<string>("ConnectionString");
         }
 
         public bool Stopped = false;
@@ -64,6 +76,19 @@ namespace AutopilotQuick.LogMan
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("LogUploadServiceStarted");
                 Logger.LogInformation("Log upload service started");
+                AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
+                    "AzureLogSettings.json", context);
+                
+                // Instantiate a ShareClient which will be used to create and manipulate the file share
+                if (InternetMan.getInstance().IsConnected)
+                {
+                    Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
+                    Share.CreateIfNotExists();
+                }
+                else
+                {
+                    InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
+                }
                 _timer = new Timer(Run, null, 0, 1000);
             }
             
@@ -73,20 +98,6 @@ namespace AutopilotQuick.LogMan
         {
             try
             {
-                AzureLogSettingsCache = new Cacher("http://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
-                    "AzureLogSettings.json", context);
-                
-                // Instantiate a ShareClient which will be used to create and manipulate the file share
-                if (InternetMan.getInstance().IsConnected)
-                {
-                    var ConnectionString = GetConnectionString();
-                    Share = new ShareClient(ConnectionString, "autopilot-quick-logs");
-                }
-                else
-                {
-                    InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
-                }
-
                 if (InternetMan.getInstance().IsConnected)
                 {
                     try
@@ -117,9 +128,6 @@ namespace AutopilotQuick.LogMan
         {
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var logFolder = $"{appFolder}/logs/";
-
-            Task task = Task.Run(async () => await CreateShareAsync("autopilot-quick-logs"));
-            task.Wait();
             var client = Share.GetDirectoryClient(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
             client.CreateIfNotExists();
             foreach (var update in ComputeFilesToUpload())

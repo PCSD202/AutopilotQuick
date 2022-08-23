@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,6 +23,7 @@ using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using NLog;
 using NLog.Config;
 using NLog.Extensions.Logging;
@@ -94,6 +96,28 @@ namespace AutopilotQuick
             return FileVersionInfo.GetVersionInfo(GetExecutablePath());
         }
 
+        public static DiskDrive GetBootDrive()
+        {
+            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            var drives = helper.Query<DiskDrive>();
+            if (EnvironmentDrive is not null)
+            {
+                var eDrivestr = ((string)EnvironmentDrive).TrimEnd('\\');
+                var bootDisk = helper.Query($"ASSOCIATORS OF {{Win32_LogicalDisk.DeviceID='{eDrivestr}'}} WHERE AssocClass=Win32_LogicalDiskToPartition").First();
+                if (bootDisk is not null)
+                {
+                    string pattern = @"^Disk #([0-9]+), Partition #[0-9]+";
+                    var diskName = (string)bootDisk.Name;
+                    var matches = Regex.Match(diskName, pattern);
+                    var diskFullName = @"\\.\PHYSICALDRIVE"+matches.Groups[1].Value;
+                    DiskDrive diskToSelect = drives.First(x => x.DeviceID == diskFullName);
+                    return diskToSelect;
+                }
+            }
+
+            return drives.First();
+        }
         
         public class MyTelemetryInitializer : ITelemetryInitializer
         {
@@ -101,6 +125,7 @@ namespace AutopilotQuick
             public string? model = null;
             public string? serviceTag = null;
             public string? version = null;
+            public DiskDrive? bootDrive = null;
             public void Initialize(ITelemetry telemetry)
             {
                 if (model is null)
@@ -120,11 +145,18 @@ namespace AutopilotQuick
                     FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
                     version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
                 }
+
+                if (bootDrive is null)
+                {
+                    bootDrive = GetBootDrive();
+                }
                 
                 telemetry.Context.User.Id = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
                 telemetry.Context.GlobalProperties["DeviceID"] = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
                 telemetry.Context.GlobalProperties["ServiceTag"] = serviceTag;
                 telemetry.Context.GlobalProperties["Model"] = model;
+                telemetry.Context.GlobalProperties["DriveModel"] = bootDrive.Model;
+                telemetry.Context.GlobalProperties["Drive"] = JsonConvert.SerializeObject(bootDrive);
                 telemetry.Context.Component.Version = version;
                 telemetry.Context.Session.Id = SessionID;
             }

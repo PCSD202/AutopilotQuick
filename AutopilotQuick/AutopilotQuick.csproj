@@ -37,6 +37,7 @@
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.11.0" />
     <PackageReference Include="DiskQueue" Version="1.6.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+    <PackageReference Include="LazyCache" Version="2.4.0" />
     <PackageReference Include="MahApps.Metro" Version="2.4.9" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="4.11.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.21.0" />
