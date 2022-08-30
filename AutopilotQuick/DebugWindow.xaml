@@ -12,5 +12,6 @@
         <mah:MetroHeader Header="DeviceID:"><TextBox IsReadOnly="True" Text="{Binding DeviceID}"/></mah:MetroHeader>
         <mah:MetroHeader Header="SessionID:"><TextBox IsReadOnly="True" Text="{Binding SessionID}"/></mah:MetroHeader>
         <mah:MetroHeader Header="Version:"><TextBox IsReadOnly="True" Text="{Binding Version}"/></mah:MetroHeader>
+        <mah:MetroHeader Header="Version:"><TextBox IsReadOnly="True" Text="{Binding ServiceTag}"/></mah:MetroHeader>
     </StackPanel>
 </mah:MetroWindow>
