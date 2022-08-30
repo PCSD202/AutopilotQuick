@@ -26,11 +26,14 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Media.Animation;
 using AutopilotQuick.LogMan;
+using AutopilotQuick.Steps;
+using AutopilotQuick.WMI;
 using ControlzEx.Theming;
 using MahApps.Metro.Controls;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Nito.AsyncEx;
+using ORMi;
 using Application = System.Windows.Application;
 
 namespace AutopilotQuick
@@ -530,9 +533,15 @@ namespace AutopilotQuick
 
         private async void F7KeyPressed_OnExecuted(object? sender, object e)
         {
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            string serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
             Dispatcher.BeginInvoke(async () =>
             {
-                var debugWindow = new DebugWindow(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(), App.SessionID, $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}");
+                var debugWindow = new DebugWindow(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+                    App.SessionID,
+                    $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}",
+                    serviceTag
+                    );
                 debugWindow.Show();
             });
 

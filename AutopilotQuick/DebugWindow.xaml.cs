@@ -10,6 +10,7 @@ public partial class DebugWindow : INotifyPropertyChanged
     private string _deviceId;
     private string _sessionId;
     private string _version;
+    private string _serviceTag;
 
     public string DeviceID
     {
@@ -44,13 +45,25 @@ public partial class DebugWindow : INotifyPropertyChanged
         }
     }
 
-    public DebugWindow(string DeviceID, string SessionID, string Version)
+    public string ServiceTag
+    {
+        get => _serviceTag;
+        set
+        {
+            if (value == _serviceTag) return;
+            _serviceTag = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public DebugWindow(string DeviceID, string SessionID, string Version, string ServiceTag)
     {
         InitializeComponent();
         DataContext = this;
         this.DeviceID = DeviceID;
         this.SessionID = SessionID;
         this.Version = Version;
+        this.ServiceTag = ServiceTag;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

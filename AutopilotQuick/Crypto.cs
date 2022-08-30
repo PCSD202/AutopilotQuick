@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Documents;
 
 namespace AutopilotQuick;
 
@@ -95,7 +96,7 @@ public static class AESThenHMAC
         byte[] nonSecretPayload = null)
     {
         if (string.IsNullOrEmpty(secretMessage))
-            throw new ArgumentException("Secret Message Required!", "secretMessage");
+            throw new ArgumentException("Secret Message Required!", nameof(secretMessage));
 
         var plainText = Encoding.UTF8.GetBytes(secretMessage);
         var cipherText = SimpleEncryptWithPassword(plainText, password, nonSecretPayload);
@@ -120,7 +121,7 @@ public static class AESThenHMAC
         int nonSecretPayloadLength = 0)
     {
         if (string.IsNullOrWhiteSpace(encryptedMessage))
-            throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
+            throw new ArgumentException("Encrypted Message Required!", nameof(encryptedMessage));
 
         var cipherText = Convert.FromBase64String(encryptedMessage);
         var plainText = SimpleDecryptWithPassword(cipherText, password, nonSecretPayloadLength);
@@ -145,13 +146,13 @@ public static class AESThenHMAC
     {
         //User Error Checks
         if (cryptKey == null || cryptKey.Length != KeyBitSize / 8)
-            throw new ArgumentException(String.Format("Key needs to be {0} bit!", KeyBitSize), "cryptKey");
+            throw new ArgumentException(String.Format("Key needs to be {0} bit!", KeyBitSize), nameof(cryptKey));
 
         if (authKey == null || authKey.Length != KeyBitSize / 8)
-            throw new ArgumentException(String.Format("Key needs to be {0} bit!", KeyBitSize), "authKey");
+            throw new ArgumentException(String.Format("Key needs to be {0} bit!", KeyBitSize), nameof(authKey));
 
         if (secretMessage == null || secretMessage.Length < 1)
-            throw new ArgumentException("Secret Message Required!", "secretMessage");
+            throw new ArgumentException("Secret Message Required!", nameof(secretMessage));
 
         //non-secret payload optional
         nonSecretPayload = nonSecretPayload ?? new byte[] { };
@@ -222,13 +223,13 @@ public static class AESThenHMAC
     {
         //Basic Usage Error Checks
         if (cryptKey == null || cryptKey.Length != KeyBitSize / 8)
-            throw new ArgumentException(String.Format("CryptKey needs to be {0} bit!", KeyBitSize), "cryptKey");
+            throw new ArgumentException(String.Format("CryptKey needs to be {0} bit!", KeyBitSize), nameof(cryptKey));
 
         if (authKey == null || authKey.Length != KeyBitSize / 8)
-            throw new ArgumentException(String.Format("AuthKey needs to be {0} bit!", KeyBitSize), "authKey");
+            throw new ArgumentException(String.Format("AuthKey needs to be {0} bit!", KeyBitSize), nameof(authKey));
 
         if (encryptedMessage == null || encryptedMessage.Length == 0)
-            throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
+            throw new ArgumentException("Encrypted Message Required!", nameof(encryptedMessage));
 
         using (var hmac = new HMACSHA256(authKey))
         {
@@ -252,7 +253,7 @@ public static class AESThenHMAC
             //if message doesn't authenticate return null
             if (compare != 0)
                 return null;
-
+            
             using (var aes = new AesManaged
                    {
                        KeySize = KeyBitSize,
