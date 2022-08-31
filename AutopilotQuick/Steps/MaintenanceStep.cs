@@ -14,6 +14,21 @@ public class MaintenanceStep : StepBaseEx
     public new bool Critical = false;
 
     public readonly ILogger Logger = App.GetLogger<MaintenanceStep>();
+
+    private bool IsScript(string filename)
+    {
+        if (filename.StartsWith("script-") && filename.EndsWith(".ps1"))
+        {
+            return true;
+        }
+
+        if (filename.StartsWith("diskpart-") && filename.EndsWith(".txt"))
+        {
+            return true;
+        }
+
+        return false;
+    }
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
     {
         Title = "AQ Maintenance";
@@ -21,7 +36,7 @@ public class MaintenanceStep : StepBaseEx
         IsIndeterminate = true;
         var scriptFilesPath = Path.GetDirectoryName(App.GetExecutablePath());
         var AllFiles = Directory.GetFiles(scriptFilesPath);
-        var scriptFiles = AllFiles.Where(x => x.ToLower().StartsWith("script-") && (x.ToLower().EndsWith(".ps1") || x.ToLower().EndsWith(".txt"))).ToList();
+        var scriptFiles = AllFiles.Where(x => IsScript(Path.GetFileName(x))).ToList();
         var deletedCount = 0;
         foreach (var scriptFile in scriptFiles)
         {
