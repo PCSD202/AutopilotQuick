@@ -54,8 +54,6 @@ namespace AutopilotQuick.Steps
             return serviceTag;
         }
 
-        
-        
         public async Task CountDown(PauseToken pauseToken, double ms)
         {
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Countdown"))
@@ -76,7 +74,7 @@ namespace AutopilotQuick.Steps
                     }
 
                     //Thread.Sleep((int)Math.Round(ms/200,0));
-                    await Task.Delay((int)Math.Round(ms/200,0));
+                    await Task.Delay((int)Math.Round(ms/200,0)).ConfigureAwait(false);
                 }
 
                 Status = oldStatus with { Progress = 100 };
