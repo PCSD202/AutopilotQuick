@@ -149,6 +149,9 @@ public class Cacher
         }
     }
 
+    ///<summary>
+    ///Deletes the data associated with the cached file
+    ///</summary>
     public void Delete()
     {
         if (File.Exists(FilePath))
