@@ -22,7 +22,7 @@ namespace AutopilotQuick.Steps
                 if (!IsEnabled || context.DeveloperModeEnabled)
                 {
                     Title = "Imaging complete - Rebooting - DISABLED";
-                    await Task.Run(() => CountDown(pauseToken, 5000));
+                    await CountDown(pauseToken, 5000);
                     return new StepResult(true, "Imaging complete - Rebooting machine");
                 }
 
@@ -38,7 +38,7 @@ namespace AutopilotQuick.Steps
                 App.GetTelemetryClient().TrackEvent("Image successful");
                 TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
-                await Task.Run(() => CountDown(pauseToken, 5000));
+                await CountDown(pauseToken, 5000);
                 formatProcess.Start();
                 await formatProcess.WaitForExitAsync();
                 Environment.Exit(0);
@@ -51,7 +51,7 @@ namespace AutopilotQuick.Steps
                 TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
                 TaskManager.getInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
-                await Task.Run(() => CountDown(pauseToken, 5000));
+                await Task.Run(async () => await CountDown(pauseToken, 5000));
             }
 
         }
