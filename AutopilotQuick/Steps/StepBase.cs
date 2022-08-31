@@ -24,8 +24,11 @@ namespace AutopilotQuick.Steps
             get => _status;
             set
             {
-                _status = value;
-                StepUpdated?.Invoke(this, _status);
+                if (_status != value)
+                {
+                    _status = value;
+                    StepUpdated?.Invoke(this, _status);
+                }
             }
         }
 

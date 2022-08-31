@@ -63,13 +63,13 @@ namespace AutopilotQuick.Steps
                 while ((DateTime.UtcNow - StartTime).TotalMilliseconds <= ms)
                 {
                     WaitWhilePaused(pauseToken);
-                    Progress = ((DateTime.UtcNow - StartTime).TotalMilliseconds / ms) * 100;
+                    Progress = Math.Round(((DateTime.UtcNow - StartTime).TotalMilliseconds / ms) * 100, 2);
                     if (Progress <= 0)
                     {
-                        Progress = 100;
+                        Progress = 0;
                     }
 
-                    await Task.Delay(20);
+                    await Task.Delay((int)Math.Round(ms/1000,0));
                 }
 
                 Status = oldStatus with { Progress = 100 };
