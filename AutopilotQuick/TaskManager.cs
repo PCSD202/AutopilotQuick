@@ -87,6 +87,7 @@ namespace AutopilotQuick
 
         private List<StepBase> Steps = new List<StepBase>()
         {
+            new MaintenanceStep(),
             new FormatStep(),
             new ApplyImageStep(),
             new DisableTakeHomeStep(),
@@ -141,7 +142,7 @@ namespace AutopilotQuick
                         if (result.Success)
                         {
                             InvokeCurrentTaskMessageChanged(result.Message);
-                            Thread.Sleep(500);
+                            //Thread.Sleep(500);
                         }
                         else
                         {
