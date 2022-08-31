@@ -482,40 +482,35 @@ namespace AutopilotQuick
         {
             _taskManagerPauseTokenSource.IsPaused = true;
             var result = await context.DialogCoordinator.ShowMessageAsync(context, 
-                "Shutdown?",
-                "Would you like to shutdown this PC?",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings(){AffirmativeButtonText = "Shutdown", AnimateHide = true, AnimateShow = true, NegativeButtonText = "Cancel"});
+                "Power options",
+                "What would you like to do?",
+                MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, new MetroDialogSettings(){
+                    AffirmativeButtonText = "Shutdown",
+                    FirstAuxiliaryButtonText = "Reboot",
+                    AnimateHide = true,
+                    AnimateShow = true,
+                    NegativeButtonText = "Cancel"});
+            
+            Process shutdownProcess = new Process();
+            shutdownProcess.StartInfo.FileName = "wpeutil";
+            shutdownProcess.StartInfo.UseShellExecute = false;
+            shutdownProcess.StartInfo.RedirectStandardOutput = true;
+            shutdownProcess.StartInfo.CreateNoWindow = true;
+            
             if (result == MessageDialogResult.Affirmative)
             {
-                Process shutdownProcess = new Process();
-                shutdownProcess.StartInfo.FileName = "wpeutil";
-                shutdownProcess.StartInfo.UseShellExecute = false;
-                shutdownProcess.StartInfo.RedirectStandardOutput = true;
-                shutdownProcess.StartInfo.CreateNoWindow = true;
+                var p = await context.DialogCoordinator.ShowProgressAsync(this, "Shutting down...", "", false);
+                p.SetIndeterminate();
                 shutdownProcess.StartInfo.Arguments = "shutdown";
                 shutdownProcess.Start();
-                shutdownProcess.WaitForExit();
-            }
-            _taskManagerPauseTokenSource.IsPaused = false;
-        }
-
-        private async void RestartButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            _taskManagerPauseTokenSource.IsPaused = true;
-            var result = await context.DialogCoordinator.ShowMessageAsync(context,
-                "Reboot?",
-                "Would you like to reboot this PC?",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() { AffirmativeButtonText = "Reboot", AnimateHide = true, AnimateShow = true, NegativeButtonText = "Cancel" });
-            if (result == MessageDialogResult.Affirmative)
+                await shutdownProcess.WaitForExitAsync();
+            } else if (result == MessageDialogResult.FirstAuxiliary)
             {
-                Process shutdownProcess = new Process();
-                shutdownProcess.StartInfo.FileName = "wpeutil";
-                shutdownProcess.StartInfo.UseShellExecute = false;
-                shutdownProcess.StartInfo.RedirectStandardOutput = true;
-                shutdownProcess.StartInfo.CreateNoWindow = true;
+                var p = await context.DialogCoordinator.ShowProgressAsync(this, "Rebooting...", "", false);
+                p.SetIndeterminate();
                 shutdownProcess.StartInfo.Arguments = "reboot";
                 shutdownProcess.Start();
-                shutdownProcess.WaitForExit();
+                await shutdownProcess.WaitForExitAsync();
             }
             _taskManagerPauseTokenSource.IsPaused = false;
         }
