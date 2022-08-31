@@ -221,10 +221,11 @@ namespace AutopilotQuick
             var telemetryClient = GetTelemetryClient();
             return telemetryClient.FlushAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
-        public static Task<bool> FlushTelemetryAsync(CancellationToken ct)
+        public static Task<bool> FlushTelemetryAsync(CancellationToken? ct = null)
         {
+            ct ??= CancellationToken.None;
             var telemetryClient = GetTelemetryClient();
-            return telemetryClient.FlushAsync(CancellationToken.None);
+            return telemetryClient.FlushAsync(ct.Value);
         }
 
         public void SetupLoggingConfig()
