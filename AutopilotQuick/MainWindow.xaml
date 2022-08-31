@@ -70,13 +70,10 @@
                 </StackPanel>
             </Viewbox>
 
-            <Button x:Name="ShutdownButton"  ToolTip="Shutdown" Click="ShutdownButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
+            <Button x:Name="ShutdownButton"  ToolTip="Power options" Click="ShutdownButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
                 <iconPacks:PackIconMaterial Width="22"
                                           Height="22"
                                           Kind="Power" />
-            </Button>
-            <Button x:Name="RestartButton" ToolTip="Restart" Click="RestartButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
-                <iconPacks:PackIconCodicons Width="22" Height="22" Kind="DebugRestart" />
             </Button>
 
         </mah:WindowCommands>
