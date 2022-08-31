@@ -36,6 +36,12 @@ public class Cacher
 
     static readonly HttpClient client = new HttpClient();
 
+    /// <summary>
+    /// Automatically caches files from a WebServer using the Last-Modified header
+    /// </summary>
+    /// <param name="FileURL">The URL of the file you wish to download</param>
+    /// <param name="FileName">The filename that you would like to download the file to</param>
+    /// <param name="context">The context of the mainwindow, this is for progress reports.</param>
     public Cacher(string FileURL, string FileName, UserDataContext context)
     {
         this.FileURL = FileURL;
@@ -63,6 +69,9 @@ public class Cacher
         }
     }
 
+    /// <summary>
+    /// Downloads the latest file with progress reports
+    /// </summary>
     public async Task DownloadUpdateAsync()
     {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Downloading update"))
@@ -95,6 +104,10 @@ public class Cacher
         }
     }
 
+    /// <summary>
+    /// Gets the Last-Modified header from the internet
+    /// </summary>
+    /// <returns>The DateTime from the Last-Modified Header. If not found returns <see cref="DateTime.MaxValue"/></returns>
     public DateTime GetLastModifiedFromWeb()
     {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Requesting last modified"))
@@ -128,6 +141,10 @@ public class Cacher
         }
     }
 
+    /// <summary>
+    /// Gets the last modified information from the cache from disk
+    /// </summary>
+    /// <returns>The last-modified information from disk, if not found returns <see cref="DateTime.MinValue"/></returns>
     public DateTime GetCachedFileLastModified()
     {
         if (!File.Exists(FileCacheDataPath))
@@ -165,6 +182,10 @@ public class Cacher
         }
     }
 
+    ///<summary>
+    ///Sets the last modified information for the cache
+    ///</summary>
+    ///<param name="LastModified">The time that you would like to be set in the cache on disk</param>
     public void SetCachedFileLastModified(DateTime LastModified)
     {
         CacherData data = new CacherData()
