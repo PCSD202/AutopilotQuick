@@ -149,6 +149,19 @@ public class Cacher
         }
     }
 
+    public void Delete()
+    {
+        if (File.Exists(FilePath))
+        {
+            File.Delete(FilePath);
+        }
+
+        if (File.Exists(FileCacheDataPath))
+        {
+            File.Delete(FileCacheDataPath);
+        }
+    }
+
     public void SetCachedFileLastModified(DateTime LastModified)
     {
         CacherData data = new CacherData()
