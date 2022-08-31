@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
+using Humanizer;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -53,23 +54,29 @@ namespace AutopilotQuick.Steps
             return serviceTag;
         }
 
+        
+        
         public async Task CountDown(PauseToken pauseToken, double ms)
         {
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Countdown"))
             {
                 var oldStatus = Status;
                 IsIndeterminate = false;
-                DateTime StartTime = DateTime.UtcNow;
-                while ((DateTime.UtcNow - StartTime).TotalMilliseconds <= ms)
+                var sw = Stopwatch.StartNew();
+                while (sw.ElapsedMilliseconds <= ms)
                 {
+                    sw.Stop();
                     WaitWhilePaused(pauseToken);
-                    Progress = Math.Round(((DateTime.UtcNow - StartTime).TotalMilliseconds / ms) * 100, 2);
+                    sw.Start();
+                    
+                    Progress = Math.Round((sw.ElapsedMilliseconds / ms) * 100, 2);
                     if (Progress <= 0)
                     {
                         Progress = 0;
                     }
 
-                    await Task.Delay((int)Math.Round(ms/1000,0));
+                    //Thread.Sleep((int)Math.Round(ms/200,0));
+                    await Task.Delay((int)Math.Round(ms/200,0));
                 }
 
                 Status = oldStatus with { Progress = 100 };
