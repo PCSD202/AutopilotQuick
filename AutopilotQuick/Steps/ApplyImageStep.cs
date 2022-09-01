@@ -19,6 +19,29 @@ namespace AutopilotQuick.Steps
         public readonly ILogger Logger = App.GetLogger<ApplyImageStep>();
         public override string Name() => "Apply image step";
 
+        private double? CalculatedWeight;
+
+        public override double ProgressWeight()
+        {
+            if (CalculatedWeight.HasValue) return CalculatedWeight.Value;
+            
+            var stepList = TaskManager.getInstance().Steps;
+            var indexOfMe = stepList.FindIndex(x => x.Name() == Name());
+            var stepListWithoutMe = new List<StepBase>(stepList);
+            stepListWithoutMe.RemoveAt(indexOfMe);
+            var stepListBeforeMe = stepList.GetRange(0, indexOfMe);
+            double endProgress = 85; //When I am at 100% progress, I want the total progress to be 85
+            // We need to find out what weight I need to be at
+            var weightedProgressWithoutMe = stepListBeforeMe.Sum(x => 100 * x.ProgressWeight()); //Calculate it like the steps before me are at 100%
+            var weightsNotIncludingMine = stepListWithoutMe.Sum(x => x.ProgressWeight());
+
+            var myWeightNeedsToBe = 1d / 15d * (endProgress * weightsNotIncludingMine - weightedProgressWithoutMe);
+            
+            //The idea is that (100*x+weightedProgressWithoutMe) / (x+weightsNotIncludingMine) = endProgress
+            CalculatedWeight = myWeightNeedsToBe;
+            return myWeightNeedsToBe;
+        }
+
         private WimMessageResult ImageCallback(WimMessageType messageType, object message, object userData)
         {
             // This method is called for every single action during the process being executed.

@@ -15,6 +15,9 @@ namespace AutopilotQuick.Steps
         public event EventHandler<StepStatus> StepUpdated;
 
         public abstract string Name();
+
+        public abstract double ProgressWeight();
+
         public bool IsEnabled => TaskManager.getInstance().Enabled;
 
         private StepStatus _status { get; set; } = new StepStatus(0, true, "Please wait...", "");
