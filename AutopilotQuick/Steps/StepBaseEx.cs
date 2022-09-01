@@ -22,6 +22,8 @@ namespace AutopilotQuick.Steps
 {
     public abstract class StepBaseEx : StepBase
     {
+        public override double ProgressWeight() => 1;
+
         public void WaitWhilePaused(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
             using (App.telemetryClient.StartOperation<RequestTelemetry>("Paused"))
@@ -68,9 +70,9 @@ namespace AutopilotQuick.Steps
                     sw.Start();
                     
                     Progress = Math.Round((sw.ElapsedMilliseconds / ms) * 100, 2);
-                    if (Progress <= 0)
+                    if (Progress < 0)
                     {
-                        Progress = 0;
+                        Progress = 100;
                     }
 
                     //Thread.Sleep((int)Math.Round(ms/200,0));

@@ -45,6 +45,8 @@ namespace AutopilotQuick.LogMan
         
         public string GetConnectionString()
         {
+            return
+                "DefaultEndpointsProtocol=https;AccountName=autopilotquicklogstorage;AccountKey=RAXJoRnSo5b+fz4FX1EbRpRIcBEXgQIjy7gEQFzgrlm2qAVnl6YuZO15kyINmEirdTZ3rzRdJsMd+AStDb1MJw==;EndpointSuffix=core.windows.net";
             if (cache.TryGetValue("ConnectionString", out string ConnectionString))
             {
                 return ConnectionString;

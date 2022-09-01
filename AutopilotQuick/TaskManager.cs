@@ -9,6 +9,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 
 namespace AutopilotQuick
@@ -85,7 +86,7 @@ namespace AutopilotQuick
         }
         private UserDataContext _context;
 
-        private List<StepBase> Steps = new List<StepBase>()
+        public List<StepBase> Steps = new List<StepBase>()
         {
             new MaintenanceStep(),
             new FormatStep(),
@@ -142,7 +143,7 @@ namespace AutopilotQuick
                         if (result.Success)
                         {
                             InvokeCurrentTaskMessageChanged(result.Message);
-                            //Thread.Sleep(500);
+                            Thread.Sleep(500);
                         }
                         else
                         {
@@ -199,9 +200,18 @@ namespace AutopilotQuick
             
         }
 
+        private double CalculateWeightedTotalProgress(List<StepBase> stepsToCalculateOn)
+        {
+            var weightedProgress = stepsToCalculateOn.Sum(x => x.Progress * x.ProgressWeight());
+            var weightTotal = stepsToCalculateOn.Sum(x => x.ProgressWeight());
+            return weightedProgress / weightTotal;
+        }
+
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
         {
-            double totalProgress = Steps.Average(x => x.Progress);
+            //double totalProgress = Steps.Average(x => x.Progress);
+            double totalProgress = CalculateWeightedTotalProgress(Steps);
+            
             InvokeTotalTaskProgressChanged(totalProgress);
             InvokeCurrentTaskMessageChanged(e.Message);
             InvokeCurrentTaskNameChanged(e.Title);
