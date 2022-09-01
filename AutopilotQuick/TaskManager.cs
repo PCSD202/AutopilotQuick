@@ -118,6 +118,7 @@ namespace AutopilotQuick
             
             var telemetryClient = App.GetTelemetryClient();
             TaskManOp = telemetryClient.StartOperation<RequestTelemetry>("Image");
+            TaskManOp.Telemetry.Success = false;
             try
             {
                 foreach (var step in Steps)
