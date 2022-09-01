@@ -49,6 +49,12 @@ public class HttpClientDownloadWithProgress : IDisposable
         var buffer = new byte[bufferSize];
         var isMoreToRead = true;
         var shouldStop = false;
+        double? progressPercentage = null;
+        if (totalDownloadSize.HasValue)
+        {
+            progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
+        }
+        
         Application.Current.Invoke(() =>
         {
             Application.Current.Exit += (sender, args) =>
@@ -73,6 +79,18 @@ public class HttpClientDownloadWithProgress : IDisposable
             totalBytesRead += bytesRead;
             readCount += 1;
 
+            if (totalDownloadSize.HasValue)
+            {
+                if (progressPercentage.HasValue)
+                {
+                    if (Math.Abs(progressPercentage.Value - Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2)) > 0.1)
+                    {
+                        progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
+                        TriggerProgressChanged(totalDownloadSize, totalBytesRead);
+                    };
+                }
+                
+            }
             if (readCount % 100 == 0)
                 TriggerProgressChanged(totalDownloadSize, totalBytesRead);
         }
