@@ -35,7 +35,7 @@ namespace AutopilotQuick
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("InternetManServiceServiceStarted");
                 _logger.LogInformation("Internet man service started");
-                _timer = new Timer(Run, null, 1.Seconds(), 5.Seconds());
+                _timer = new Timer(Run, null, 5.Seconds(), 5.Seconds()); //Give some time for the app to startup before we start checking for internet
             }
             
         }
@@ -46,19 +46,20 @@ namespace AutopilotQuick
         }
         public static async Task WaitForInternetAsync(UserDataContext context)
         {
-            
-            var connectedToInternet = CheckForInternetConnection();
-            if (!connectedToInternet)
+            using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Waiting for internet"))
             {
-                var progressController = await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...", "Connecting to the internet");
-                progressController.SetIndeterminate();
-                while (!connectedToInternet)
+                if (!InternetMan.getInstance().IsConnected)
                 {
-                    connectedToInternet = CheckForInternetConnection();
+                    var progressController =
+                        await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...",
+                            "Connecting to the internet");
+                    progressController.SetIndeterminate();
+                    var tcs = new TaskCompletionSource();
+                    InternetMan.getInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
+                    await tcs.Task;
+                    await progressController.CloseAsync();
                 }
-                await progressController.CloseAsync();
             }
-            
         }
         
         public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")
@@ -68,24 +69,6 @@ namespace AutopilotQuick
                 var request = (HttpWebRequest)WebRequest.Create(url);
                 request.KeepAlive = false;
                 request.Timeout = timeoutMs;
-                using var response = (HttpWebResponse)request.GetResponse();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        
-        public static bool CheckForHTTPSConnection(int timeoutMs = 10000, string url = "https://nettools.psd202.org/AutoPilotFast/InternetTest.txt")
-        {
-            try
-            {
-                
-                var request = (HttpWebRequest)WebRequest.Create(url);
-                request.KeepAlive = false;
-                request.Timeout = timeoutMs;
-
                 using var response = (HttpWebResponse)request.GetResponse();
                 return true;
             }

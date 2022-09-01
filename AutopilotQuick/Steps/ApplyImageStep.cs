@@ -123,7 +123,7 @@ namespace AutopilotQuick.Steps
                     {
                         InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                         _updatedImageAvailable = false;
-                        wimCache.DownloadUpdate();
+                        await wimCache.DownloadUpdateAsync();
                         InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                     }
 
@@ -170,6 +170,9 @@ namespace AutopilotQuick.Steps
                 catch (Exception e)
                 {
                     Logger.LogError(e, "Caught error while applying windows");
+                    await InternetMan.WaitForInternetAsync(context);
+                    wimCache.Delete(); //Delete and redownload it because we had an issue with it
+                    return await Run(context, pauseToken, StepOperation);
                 }
 
                 if (wimCache.FileCached && !_updatedImageAvailable)
@@ -177,7 +180,7 @@ namespace AutopilotQuick.Steps
 
                 InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 _updatedImageAvailable = false;
-                wimCache.DownloadUpdate();
+                await wimCache.DownloadUpdateAsync();
                 InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                 return await Run(context, pauseToken, StepOperation);
             }
@@ -185,6 +188,14 @@ namespace AutopilotQuick.Steps
             {
                 Title = "Apply image - DISABLED";
                 Message = "Will continue after 5 seconds";
+                if (!wimCache.FileCached || !wimCache.IsUpToDate)
+                {
+                    InternetMan.getInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
+                    _updatedImageAvailable = false;
+                    await wimCache.DownloadUpdateAsync();
+                    InternetMan.getInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+                }
+                
                 await Task.Run(() => CountDown(pauseToken, 5000));
             }
 

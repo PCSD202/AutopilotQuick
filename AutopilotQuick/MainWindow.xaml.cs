@@ -122,39 +122,7 @@ namespace AutopilotQuick
                 }
             }
         }
-
-        public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")
-        {
-            try
-            {
-                var request = (HttpWebRequest)WebRequest.Create(url);
-                request.KeepAlive = false;
-                request.Timeout = timeoutMs;
-                using (var response = (HttpWebResponse)request.GetResponse())
-                    return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public async void WaitForInternet()
-        {
-            
-            var connectedToInternet = CheckForInternetConnection();
-            if (!connectedToInternet)
-            {
-                var progressController = await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...", "Connecting to the internet");
-                progressController.SetIndeterminate();
-                while (!connectedToInternet)
-                {
-                    connectedToInternet = CheckForInternetConnection();
-                }
-                await progressController.CloseAsync();
-            }
-            
-        }
+        
 
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -177,9 +145,9 @@ namespace AutopilotQuick
             
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            DurableAzureBackgroundTask.getInstance().StartTimer(context);
-            BatteryMan.getInstance().StartTimer();
-            InternetMan.getInstance().StartTimer();
+            await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
+            await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
+            await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
             var TaskManagerTask = Task.Run(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), cancellationToken);
 
         }
@@ -309,7 +277,7 @@ namespace AutopilotQuick
             var latestVersion = new Version();
             try
             {
-                WaitForInternet();
+                await InternetMan.WaitForInternetAsync(context);
                 context.RefreshLatestVersion();
                 version = new Version(context.Version);
                 latestVersion = new Version(context.LatestVersion);

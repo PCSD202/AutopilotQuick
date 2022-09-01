@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using NLog;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
+using Humanizer.Localisation;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Newtonsoft.Json;
@@ -88,15 +93,19 @@ public class Cacher
             SetCachedFileLastModified(DateTime
                 .MinValue); //Set it to the lowest value so if we were to crash, it will re-download
             using var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath);
+
+            var sw = Stopwatch.StartNew();
             DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
             {
                 if (!progressPercentage.HasValue) return;
+
+                var bytesPerSecond = totalBytesDownloaded.Bytes().Per(sw.Elapsed);
                 updateWindow.SetProgress(progressPercentage.Value);
-                updateWindow.SetMessage($"Downloading updated file\n" +
-                                        $"Progress: {(progressPercentage.Value / 100):P} " +
-                                        $"({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
+                updateWindow.SetMessage($"Downloading updated file {(progressPercentage.Value / 100):P}\n" +
+                                        $"{totalBytesDownloaded.Bytes().Humanize("#.00")} of {totalFileSize.Value.Bytes().Humanize("#.00")}".PadRight(27)+ $"({bytesPerSecond.Humanize("#", TimeUnit.Second)})");
             };
             await DownloadClient.StartDownload();
+            sw.Stop();
             SetCachedFileLastModified(GetLastModifiedFromWeb());
             await updateWindow.CloseAsync();
             _logger.Info($"Download complete for {FileURL}");
