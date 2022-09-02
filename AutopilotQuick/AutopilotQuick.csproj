@@ -66,6 +66,26 @@
   <ItemGroup>
     <None Remove="Resources\Egg\PerfectCookie.bmp" />
     <Resource Include="Resources\Egg\PerfectCookie.bmp" />
+    <None Remove="Resources\Egg\Apple.bmp" />
+    <Resource Include="Resources\Egg\Apple.bmp" />
+    <None Remove="Resources\Egg\Blue_Swirl.bmp" />
+    <Resource Include="Resources\Egg\Blue_Swirl.bmp" />
+    <None Remove="Resources\Egg\Cherry_Jam.bmp" />
+    <Resource Include="Resources\Egg\Cherry_Jam.bmp" />
+    <None Remove="Resources\Egg\Chocolate_Chip.bmp" />
+    <Resource Include="Resources\Egg\Chocolate_Chip.bmp" />
+    <None Remove="Resources\Egg\Chocolate_Chip_Bite.bmp" />
+    <Resource Include="Resources\Egg\Chocolate_Chip_Bite.bmp" />
+    <None Remove="Resources\Egg\Ghost.bmp" />
+    <Resource Include="Resources\Egg\Ghost.bmp" />
+    <None Remove="Resources\Egg\Golden.bmp" />
+    <Resource Include="Resources\Egg\Golden.bmp" />
+    <None Remove="Resources\Egg\M_and_M.bmp" />
+    <Resource Include="Resources\Egg\M_and_M.bmp" />
+    <None Remove="Resources\Egg\Pink_Swirl.bmp" />
+    <Resource Include="Resources\Egg\Pink_Swirl.bmp" />
+    <None Remove="Resources\Egg\Sugar_Cookie.bmp" />
+    <Resource Include="Resources\Egg\Sugar_Cookie.bmp" />
   </ItemGroup>
 
 </Project>

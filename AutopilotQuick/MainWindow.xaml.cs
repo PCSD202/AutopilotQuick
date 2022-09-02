@@ -153,15 +153,16 @@ namespace AutopilotQuick
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
-            var TaskManagerTask = Task.Run(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), cancellationToken);
+            var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
 
         }
 
         private CookieWindow? _cookieWindow = null;
         private DateTime LastCookieTime = DateTime.MinValue;
+        private int msHeldCookieDelay = 100;
         private void WinOnKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.C && ((e.IsRepeat && (DateTime.UtcNow - LastCookieTime).TotalMilliseconds >= 250) || !e.IsRepeat))
+            if (e.Key == Key.C && ((e.IsRepeat && (DateTime.UtcNow - LastCookieTime).TotalMilliseconds >= msHeldCookieDelay) || !e.IsRepeat))
             {
                 if (_cookieWindow is null)
                 {

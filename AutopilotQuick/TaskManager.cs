@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using AutopilotQuick.Steps;
 using Humanizer;
 using Microsoft.ApplicationInsights;
@@ -108,7 +109,7 @@ namespace AutopilotQuick
         private int CurrentStep = 1;
         public IOperationHolder<RequestTelemetry> TaskManOp;
 
-        public void Run(UserDataContext context, PauseToken pauseToken)
+        public async Task Run(UserDataContext context, PauseToken pauseToken)
         {
             _context = context;
             if (!Enabled)
@@ -133,8 +134,7 @@ namespace AutopilotQuick
                     ImageOp.Telemetry.Success = false;
                     try
                     {
-                        var result = step.Run(context, pauseToken, ImageOp).ConfigureAwait(true).GetAwaiter()
-                            .GetResult();
+                        var result = await step.Run(context, pauseToken, ImageOp);
                         ImageOp.Telemetry.Success = result.Success;
                         telemetryClient.TrackEvent(step.Name() + " completed",
                             new Dictionary<string, string>() { { "Output", result.Message } });
