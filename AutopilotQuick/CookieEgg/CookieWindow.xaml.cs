@@ -16,6 +16,12 @@ namespace AutopilotQuick.CookieEgg;
 
 public partial class CookieWindow : INotifyPropertyChanged
 {
+    
+    private int minSize = 64;
+    private int maxSize = 175;
+    private int minSpeed = 2; //Speed that the smallest ones will go
+    private int maxSpeed = 4; //Speed that the biggest ones will go
+    
     public double ScreenWidth
     {
         get => _screenWidth;
@@ -41,10 +47,12 @@ public partial class CookieWindow : INotifyPropertyChanged
     private double _screenWidth;
     private double _screenHeight;
 
+
+
     public CookieWindow()
     {
         DataContext = this;
-        ScreenHeight = System.Windows.SystemParameters.PrimaryScreenHeight;
+        ScreenHeight = SystemParameters.PrimaryScreenHeight;
         ScreenWidth = SystemParameters.PrimaryScreenWidth;
         InitializeComponent();
     }
@@ -55,6 +63,16 @@ public partial class CookieWindow : INotifyPropertyChanged
         var angle = rnd.Next(0, 361);
         RotateTransform rotateTransform = new RotateTransform(angle);
         cookie.LayoutTransform = rotateTransform;
+
+        if (rnd.Next(0, 100) < 50) //50% chance of flip
+        {
+            cookie.RenderTransformOrigin = new Point(0.5, 0.5);
+            ScaleTransform flipTrans = new ScaleTransform
+            {
+                ScaleX = -1
+            };
+            cookie.RenderTransform = flipTrans;
+        }
     }
 
     private void RandomizeHorizontalPosition(Image cookie)
@@ -66,16 +84,22 @@ public partial class CookieWindow : INotifyPropertyChanged
     
     private void RandomizeCookieSize(Image cookie)
     {
-        cookie.Width = rnd.Next(64,256);
+        cookie.Width = rnd.Next(minSize,maxSize);
         cookie.Height = cookie.Width;
+    }
+
+    private static double Map (double value, double fromSource, double toSource, double fromTarget, double toTarget)
+    {
+        return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
     }
     
     private void ApplyAnimation(Image cookie)
     {
         var currentTop = Canvas.GetTop(cookie);
+        var easeExp = Map(cookie.Height, minSize, maxSize, minSpeed, maxSpeed);
         var animation = new DoubleAnimation(currentTop, ScreenHeight+(cookie.Height*3), new Duration(1.Seconds()))
         {
-            EasingFunction =new ExponentialEase(){EasingMode = EasingMode.EaseIn}
+            EasingFunction =new ExponentialEase(){EasingMode = EasingMode.EaseIn, Exponent = easeExp}
             
         };
         animation.Completed += (sender, args) =>
@@ -87,23 +111,21 @@ public partial class CookieWindow : INotifyPropertyChanged
 
     private void Cookie_OnLoaded(object sender, RoutedEventArgs e)
     {
-        //await Task.Delay(1000);
-        //this.Dispatcher.Invoke(this.Close);
         Width = ScreenWidth;
         Height = ScreenHeight;
         Top = 0;
         Left = 0;
     }
 
-    private BitmapImage? _cookieBitmap; 
+    private static Uri GetRandomCookieFromBaker() => new Uri($"pack://application:,,,/Resources/Egg/{Baker.SurpriseMe().FileName}.bmp");
+
     public void AddCookie()
     {
         Dispatcher.BeginInvoke(() =>
         {
-            _cookieBitmap ??= this.FindResource("PerfectCookie") as BitmapImage;
             var newCookie = new Image
             {
-                Source = _cookieBitmap
+                Source = new CachedBitmap(new BitmapImage(GetRandomCookieFromBaker()), BitmapCreateOptions.None, BitmapCacheOption.Default)
             };
             RandomizeCookieSize(newCookie);
             RandomizeCookieOrientation(newCookie);
