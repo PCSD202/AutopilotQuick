@@ -48,7 +48,12 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
                 <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <mah:ToggleSwitch VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" OffContent="No" OnContent="Yes" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+                <mah:ToggleSwitch  VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
+                <mah:MetroHeader Header="Shared PC:" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
+                <CheckBox IsThreeState="True" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck"/>
             </StackPanel>
 
             <Viewbox Width="22" Height="22" UseLayoutRounding="True">
