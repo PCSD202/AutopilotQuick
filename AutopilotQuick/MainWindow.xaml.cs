@@ -531,5 +531,37 @@ namespace AutopilotQuick
             });
 
         }
+
+        private async void SharedPCSwitch_OnCheckedOrUncheck(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _taskManagerPauseTokenSource.IsPaused = true;
+                var result = await context.DialogCoordinator.ShowMessageAsync(context, "SharedPC change?",
+                    "Would you like to add this device to the sharedPC group, or remove it, or do nothing?", MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, new MetroDialogSettings()
+                    {
+                        AffirmativeButtonText = "Add",
+                        NegativeButtonText = "Remove",
+                        FirstAuxiliaryButtonText = "Do nothing",
+                        DefaultButtonFocus = MessageDialogResult.FirstAuxiliary
+                    });
+                if (result is MessageDialogResult.Affirmative or MessageDialogResult.Negative)
+                {
+                    context.SharedPCChecked = result is MessageDialogResult.Affirmative;
+                    context.UserRequestedChangeSharedPC = true;
+                }
+                else
+                {
+                    context.SharedPCChecked = null;
+                    context.UserRequestedChangeSharedPC = false;
+                }
+            }
+            finally
+            {
+                _taskManagerPauseTokenSource.IsPaused = false;
+            }
+            
+            
+        }
     }
 }

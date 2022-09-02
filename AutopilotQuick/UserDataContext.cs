@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using AutopilotQuick.Annotations;
 using ControlzEx.Theming;
 using Humanizer;
 using MahApps.Metro.Controls;
@@ -28,6 +29,8 @@ namespace AutopilotQuick
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         public IDialogCoordinator DialogCoordinator { get; set; }
+
+        public bool UserRequestedChangeSharedPC { get; set; } = false;
 
         public string Title { get; set; } = "Autopilot Quick";
         public string Version { get; set; }
@@ -117,6 +120,8 @@ namespace AutopilotQuick
         }
 
         private bool _developerModeEnabled = false;
+        private bool? _sharedPcChecked;
+
 
         public bool DeveloperModeEnabled
         {
@@ -135,7 +140,18 @@ namespace AutopilotQuick
             }
         };
 
-        
+
+        public bool? SharedPCChecked
+        {
+            get => _sharedPcChecked;
+            set
+            {
+                if (value == _sharedPcChecked) return;
+                _sharedPcChecked = value;
+                OnPropertyChanged();
+            }
+        }
+
         public UserDataContext(IDialogCoordinator dialogCoordinator, MetroWindow window)
         {
             DialogCoordinator = dialogCoordinator;
@@ -193,6 +209,8 @@ namespace AutopilotQuick
 
 
         public event PropertyChangedEventHandler? PropertyChanged;
+        
+        [NotifyPropertyChangedInvocator]
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
