@@ -25,6 +25,8 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using AutopilotQuick.CookieEgg;
 using AutopilotQuick.LogMan;
 using AutopilotQuick.Steps;
 using AutopilotQuick.WMI;
@@ -35,6 +37,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Nito.AsyncEx;
 using ORMi;
 using Application = System.Windows.Application;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace AutopilotQuick
 {
@@ -134,6 +137,8 @@ namespace AutopilotQuick
                 Close();
             };
 
+            var win = Window.GetWindow(this);
+            win.KeyDown += WinOnKeyDown;
 
             BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
 
@@ -150,6 +155,22 @@ namespace AutopilotQuick
             await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
             var TaskManagerTask = Task.Run(() => TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), cancellationToken);
 
+        }
+
+        private CookieWindow? _cookieWindow = null;
+        private DateTime LastCookieTime = DateTime.MinValue;
+        private void WinOnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.C && ((e.IsRepeat && (DateTime.UtcNow - LastCookieTime).TotalMilliseconds >= 250) || !e.IsRepeat))
+            {
+                if (_cookieWindow is null)
+                {
+                    _cookieWindow = new CookieWindow();
+                    _cookieWindow.Show();
+                }
+                _cookieWindow.AddCookie();
+                LastCookieTime = DateTime.UtcNow;
+            }
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)

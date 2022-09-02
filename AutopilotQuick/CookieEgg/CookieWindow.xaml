@@ -1,0 +1,20 @@
+﻿<Window x:Class="AutopilotQuick.CookieEgg.CookieWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:AutopilotQuick.CookieEgg"
+        mc:Ignorable="d"
+        Title="Cookie" x:Name="cookieWindow" WindowStyle="None" AllowsTransparency="True" Loaded="Cookie_OnLoaded" Focusable="False" ShowActivated="False" Topmost="True"> 
+    <Window.Background>
+        <SolidColorBrush Opacity="0" Color="White"/>
+    </Window.Background>
+    <Window.Resources>
+        <BitmapImage x:Key="PerfectCookie" UriSource="pack://application:,,,/Resources/Egg/PerfectCookie.bmp"></BitmapImage>
+    </Window.Resources>
+    <Grid>
+        <Canvas x:Name="CookieCanvas" Width="{Binding ScreenWidth}" Height="{Binding ScreenHeight}" Background="Transparent">
+            
+        </Canvas>
+    </Grid>
+</Window>
