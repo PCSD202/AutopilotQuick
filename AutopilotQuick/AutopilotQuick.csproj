@@ -62,5 +62,10 @@
     <None Remove="Resources\sharedpc.json" />
     <EmbeddedResource Include="Resources\sharedpc.json" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <None Remove="Resources\Egg\PerfectCookie.bmp" />
+    <Resource Include="Resources\Egg\PerfectCookie.bmp" />
+  </ItemGroup>
 
 </Project>

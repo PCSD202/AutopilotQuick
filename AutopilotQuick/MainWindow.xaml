@@ -22,6 +22,7 @@
     </mah:MetroWindow.Resources>
     <Window.InputBindings>
         <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}"/>
+        
         <KeyBinding Key="F10">
             <KeyBinding.Command>
                 <local:SimpleMainWindowCommand Executed="F10KeyPressed_OnExecuted"/>
