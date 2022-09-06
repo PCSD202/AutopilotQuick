@@ -5,6 +5,10 @@ VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutopilotQuick", "AutopilotQuick\AutopilotQuick.csproj", "{028EBCD1-5843-401B-977C-9AA6655E7078}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.DeviceIdentifier", "AQ.DeviceIdentifier\AQ.DeviceIdentifier.csproj", "{9A846DAD-58FE-4669-A569-5D163F938004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutopilotQuick.Tests", "AutopilotQuick.Tests\AutopilotQuick.Tests.csproj", "{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{028EBCD1-5843-401B-977C-9AA6655E7078}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{028EBCD1-5843-401B-977C-9AA6655E7078}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{028EBCD1-5843-401B-977C-9AA6655E7078}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A846DAD-58FE-4669-A569-5D163F938004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A846DAD-58FE-4669-A569-5D163F938004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A846DAD-58FE-4669-A569-5D163F938004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A846DAD-58FE-4669-A569-5D163F938004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -87,5 +87,9 @@
     <None Remove="Resources\Egg\Sugar_Cookie.bmp" />
     <Resource Include="Resources\Egg\Sugar_Cookie.bmp" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <ProjectReference Include="..\AQ.DeviceIdentifier\AQ.DeviceIdentifier.csproj" />
+  </ItemGroup>
 
 </Project>

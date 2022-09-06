@@ -55,7 +55,7 @@ public class LogTakeHomeStep : StepBaseEx
         Progress = 50;
         var thingToSend = new TakeHomeLaptopRequest()
         {
-            DeviceID = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+            DeviceID = App.GetDeviceIDService().Get(),
             ServiceTag = GetServiceTag(pauseToken)
         };
         Message = "Sending message";
