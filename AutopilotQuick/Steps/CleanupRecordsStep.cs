@@ -108,7 +108,7 @@ public class CleanupRecordsStep : StepBaseEx
         {
             DeleteAutopilot = context.TakeHomeToggleOn,
             DeleteIntune = true,
-            DeviceID = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+            DeviceID = App.GetDeviceIDService().Get(),
             Dry = false,
             ServiceTagToAudit = serviceTag
         };

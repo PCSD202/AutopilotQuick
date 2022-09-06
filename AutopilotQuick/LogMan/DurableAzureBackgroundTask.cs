@@ -130,7 +130,7 @@ namespace AutopilotQuick.LogMan
         {
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var logFolder = $"{appFolder}/logs/";
-            var client = Share.GetDirectoryClient(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
+            var client = Share.GetDirectoryClient(App.GetDeviceIDService().Get());
             client.CreateIfNotExists();
             foreach (var update in ComputeFilesToUpload())
             {

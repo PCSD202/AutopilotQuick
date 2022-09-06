@@ -522,7 +522,7 @@ namespace AutopilotQuick
             string serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
             Dispatcher.BeginInvoke(async () =>
             {
-                var debugWindow = new DebugWindow(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+                var debugWindow = new DebugWindow(App.GetDeviceIDService().Get(),
                     App.SessionID,
                     $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}",
                     serviceTag
