@@ -37,7 +37,6 @@ namespace AutopilotQuick
                 _logger.LogInformation("Internet man service started");
                 _timer = new Timer(Run, null, 5.Seconds(), 5.Seconds()); //Give some time for the app to startup before we start checking for internet
             }
-            
         }
         
         public static void WaitForInternet(UserDataContext context) {

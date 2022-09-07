@@ -13,7 +13,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using AQ.Connectivity;
 using AQ.DeviceIdentifier;
+using AQ.WebFileCacher;
 using AutopilotQuick.WMI;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
@@ -54,6 +56,13 @@ namespace AutopilotQuick
             ServiceCollection services = new ServiceCollection();
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();
+            WebFileCacherConfig.Configure(x =>
+            {
+                x.BaseDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache");
+                x.TelemetryClient = ServiceProvider.GetRequiredService<TelemetryClient>();
+                x.WebFileLogger = ServiceProvider.GetRequiredService<ILogger<WebFileCacher>>();
+                x.ConnectivityService = ServiceProvider.GetRequiredService<ConnectivityService>();
+            });
             
             // Obtain TelemetryClient instance from DI, for additional manual tracking or to flush.
             App.telemetryClient = ServiceProvider.GetRequiredService<TelemetryClient>();
@@ -133,16 +142,12 @@ namespace AutopilotQuick
                 loggingBuilder.AddNLog();
             });
             services.AddSingleton<MainWindow>();
-
-            services.AddOptions<DeviceIdentifierServiceOptions>().Configure(x =>
+            
+            services.AddDeviceIdentifier(x =>
             {
                 x.StoragePath = Path.Join(Path.GetDirectoryName(GetExecutablePath()), "DeviceIdentifier.json");
             });
-            
-            services.AddSingleton<IFileSystem, FileSystem>();
-            //Register the DeviceIdentifierService
-            services.AddSingleton<IDeviceIdentifierService, DeviceIdentifierService>();
-
+            services.AddConnectivityService(x => { });
         }
         
 
