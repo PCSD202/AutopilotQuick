@@ -90,7 +90,6 @@
 	
   <ItemGroup>
     <ProjectReference Include="..\AQ.DeviceIdentifier\AQ.DeviceIdentifier.csproj" />
-    <ProjectReference Include="..\AQ.WebFileCacher\AQ.WebFileCacher.csproj" />
   </ItemGroup>
 
 </Project>

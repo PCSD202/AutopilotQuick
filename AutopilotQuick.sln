@@ -9,10 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.DeviceIdentifier", "AQ.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutopilotQuick.Tests", "AutopilotQuick.Tests\AutopilotQuick.Tests.csproj", "{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.WebFileCacher", "AQ.WebFileCacher\AQ.WebFileCacher.csproj", "{42C29CEA-1513-4E1C-8DA1-0927B1C7F115}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.Connectivity", "AQ.Connectivity\AQ.Connectivity.csproj", "{5AE2DFA2-0A40-41ED-AC3D-8F28B54AC851}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,14 +27,6 @@ Global
 		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7E7413B-240F-4FEE-8BF9-64FF202B3CBC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42C29CEA-1513-4E1C-8DA1-0927B1C7F115}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42C29CEA-1513-4E1C-8DA1-0927B1C7F115}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42C29CEA-1513-4E1C-8DA1-0927B1C7F115}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42C29CEA-1513-4E1C-8DA1-0927B1C7F115}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5AE2DFA2-0A40-41ED-AC3D-8F28B54AC851}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5AE2DFA2-0A40-41ED-AC3D-8F28B54AC851}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5AE2DFA2-0A40-41ED-AC3D-8F28B54AC851}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5AE2DFA2-0A40-41ED-AC3D-8F28B54AC851}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
