@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace AutopilotQuick.CookieEgg;
 
@@ -22,13 +23,10 @@ public static class Baker
         new("Sugar_Cookie", 100)
     };
 
-    private static Random _rnd = new Random();
-    
-    
     public static WeightedCookie SurpriseMe()
     {
         var totalWeight = Cookies.Sum(x => x.Weight);
-        var randomNumber = _rnd.Next(0, totalWeight);
+        var randomNumber = RandomNumberGenerator.GetInt32(0, totalWeight);
         
         foreach (var cookie in Cookies)
         {
@@ -37,7 +35,7 @@ public static class Baker
                 return cookie;
             }
 
-            randomNumber = randomNumber - cookie.Weight;
+            randomNumber -= cookie.Weight;
         }
 
         return Cookies.First();
