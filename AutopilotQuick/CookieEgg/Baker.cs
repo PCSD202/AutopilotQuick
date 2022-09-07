@@ -14,7 +14,6 @@ public static class Baker
         new("Blue_Swirl", 100),
         new("Cherry_Jam", 100),
         new("chocolate_chip", 150),
-        new("chocolate_chip_bite", 10),
         new("Ghost", 50),
         new("Golden", 10),
         new("M_and_M", 100),
