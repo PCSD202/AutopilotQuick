@@ -25,7 +25,8 @@ namespace AutopilotQuick
         }
         public bool IsConnected { get; private set; } = false;
         public event EventHandler InternetBecameAvailable;
-
+        public event EventHandler InternetBecameUnavailable;
+        
         private Timer _timer = null;
         
         public void StartTimer()
@@ -93,6 +94,7 @@ namespace AutopilotQuick
             {
                 _logger.LogInformation("Where did the internet go? Nobody knows.");
                 App.GetTelemetryClient().TrackEvent("InternetLost");
+                InternetBecameUnavailable?.Invoke(this, EventArgs.Empty);
             }
             IsConnected = internet;
         }

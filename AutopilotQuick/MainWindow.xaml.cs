@@ -26,6 +26,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using AQ.GroupManagementLibrary;
 using AutopilotQuick.CookieEgg;
 using AutopilotQuick.LogMan;
 using AutopilotQuick.Steps;
@@ -34,6 +35,8 @@ using ControlzEx.Theming;
 using MahApps.Metro.Controls;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 using ORMi;
 using Application = System.Windows.Application;
@@ -46,7 +49,7 @@ namespace AutopilotQuick
     /// </summary>
     public partial class MainWindow
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger<MainWindow> Logger = App.GetLogger<MainWindow>();
         public UserDataContext context;
         private readonly bool Updated;
         private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
@@ -150,6 +153,7 @@ namespace AutopilotQuick
             
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
+            InternetMan.getInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
@@ -206,6 +210,7 @@ namespace AutopilotQuick
         private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
         {
             context.ConnectedToInternet = true;
+            Task.Factory.StartNew(UpdateSharedPCBoxWhenInternet, TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
         }
 
@@ -214,17 +219,17 @@ namespace AutopilotQuick
             if (Updating) return;
             using var t = App.telemetryClient.StartOperation<RequestTelemetry>("Checking for updates");
             Updating = true;
-            Logger.Info("Pausing for update checking&applying");
+            Logger.LogInformation("Pausing for update checking&applying");
             _taskManagerPauseTokenSource.IsPaused = true;
             try
             {
-                Logger.Info("Updating");
+                Logger.LogInformation("Updating");
                 await Update();
-                Logger.Info("Done updating");
+                Logger.LogInformation("Done updating");
             }
             finally
             {
-                Logger.Info("unpausing done with update checking&applying");
+                Logger.LogInformation("unpausing done with update checking&applying");
                 _taskManagerPauseTokenSource.IsPaused = false;
             }
         }
@@ -306,7 +311,7 @@ namespace AutopilotQuick
             }
             catch (Exception e)
             {
-                Logger.Error(e);
+                Logger.LogError(e, "Got error {e}", e);
             }
 #if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
@@ -489,14 +494,14 @@ namespace AutopilotQuick
             
             if (result == MessageDialogResult.Affirmative)
             {
-                var p = await context.DialogCoordinator.ShowProgressAsync(this, "Shutting down...", "", false);
+                var p = await context.DialogCoordinator.ShowProgressAsync(context, "Shutting down...", "", false);
                 p.SetIndeterminate();
                 shutdownProcess.StartInfo.Arguments = "shutdown";
                 shutdownProcess.Start();
                 await shutdownProcess.WaitForExitAsync();
             } else if (result == MessageDialogResult.FirstAuxiliary)
             {
-                var p = await context.DialogCoordinator.ShowProgressAsync(this, "Rebooting...", "", false);
+                var p = await context.DialogCoordinator.ShowProgressAsync(context, "Rebooting...", "", false);
                 p.SetIndeterminate();
                 shutdownProcess.StartInfo.Arguments = "reboot";
                 shutdownProcess.Start();
@@ -532,36 +537,57 @@ namespace AutopilotQuick
 
         }
 
+        public record struct GroupManConfig(string APIKEY, string URL);
+        public async void UpdateSharedPCBoxWhenInternet()
+        {
+            var groupManConfigCache = new Cacher("https://nettools.psd202.org/AutoPilotFast/GroupMan.json", "GroupMan.json", context);
+            if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
+            {
+                await Task.Run(async ()=>await groupManConfigCache.DownloadUpdateAsync());
+            }
+
+            GroupManConfig config = JsonConvert.DeserializeObject<GroupManConfig>(await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+            var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
+            
+            WMIHelper helper = new WMIHelper("root\\CimV2");
+            string serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+
+            var ismemeber = await client.IsSharedPCMember(serviceTag);
+            if (!ismemeber.HasValue) //Got error, which means we should probably turn off the checkbox
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    context.SharedPCCheckboxEnabled = false;
+                });
+                return;
+            }
+
+            if (!context.UserRequestedChangeSharedPC)
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    context.SharedPCChecked = ismemeber.Value.TransitiveMemberInGroup;
+                    if (ismemeber.Value.TransitiveMemberInGroup && !ismemeber.Value.DirectMemberInGroup)
+                    {
+                        context.SharedPCCheckboxEnabled = false; //Disable check box because we are not direct members, only transitive
+                    }
+                });
+                return;
+            } else if (context.UserRequestedChangeSharedPC &&
+                       context.SharedPCChecked == ismemeber.Value.TransitiveMemberInGroup)
+            {
+                context.UserRequestedChangeSharedPC = false;
+            }
+        }
+        private int count = 0;
         private async void SharedPCSwitch_OnCheckedOrUncheck(object sender, RoutedEventArgs e)
         {
-            try
+            if (context.SharedPCChecked is null)
             {
-                _taskManagerPauseTokenSource.IsPaused = true;
-                var result = await context.DialogCoordinator.ShowMessageAsync(context, "SharedPC change?",
-                    "Would you like to add this device to the sharedPC group, or remove it, or do nothing?", MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, new MetroDialogSettings()
-                    {
-                        AffirmativeButtonText = "Add",
-                        NegativeButtonText = "Remove",
-                        FirstAuxiliaryButtonText = "Do nothing",
-                        DefaultButtonFocus = MessageDialogResult.FirstAuxiliary
-                    });
-                if (result is MessageDialogResult.Affirmative or MessageDialogResult.Negative)
-                {
-                    context.SharedPCChecked = result is MessageDialogResult.Affirmative;
-                    context.UserRequestedChangeSharedPC = true;
-                }
-                else
-                {
-                    context.SharedPCChecked = null;
-                    context.UserRequestedChangeSharedPC = false;
-                }
+                context.SharedPCChecked = false;
             }
-            finally
-            {
-                _taskManagerPauseTokenSource.IsPaused = false;
-            }
-            
-            
+            context.UserRequestedChangeSharedPC = true; //User pressed the button so we need to flip this,
+            count++;
         }
     }
 }
