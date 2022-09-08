@@ -558,6 +558,8 @@ namespace AutopilotQuick
                 this.Dispatcher.Invoke(() =>
                 {
                     context.SharedPCCheckboxEnabled = false;
+                    context.UserRequestedChangeSharedPC = false;
+                    context.SharedPCChecked = null;
                 });
                 return;
             }

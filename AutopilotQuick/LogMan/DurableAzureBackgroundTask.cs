@@ -108,14 +108,14 @@ namespace AutopilotQuick.LogMan
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Got exception while trying to sync logs");
+                        Logger.LogError(ex, "Got exception {ex} while trying to sync logs", ex);
                     }
 
                 }
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Got exception while trying to sync logs");
+                Logger.LogError(e, "Got exception {e} while trying to sync logs", e);
             }
             finally
             {
