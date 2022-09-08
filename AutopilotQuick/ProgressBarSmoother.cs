@@ -6,8 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 using MahApps.Metro.Controls;
+using Microsoft.Xaml.Behaviors;
 
 namespace AutopilotQuick
 {
@@ -28,8 +30,48 @@ namespace AutopilotQuick
 
         private static void changing(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var anim = new DoubleAnimation((double)e.OldValue, (double)e.NewValue, new TimeSpan(0, 0, 0, 0, 500));
-            (d as ProgressBar).BeginAnimation(ProgressBar.ValueProperty, anim, HandoffBehavior.Compose);
+            var anim = new DoubleAnimation((double)e.OldValue, (double)e.NewValue, new TimeSpan(0, 0, 0, 0, 250));
+            (d as ProgressBar).BeginAnimation(RangeBase.ValueProperty, anim);
+        }
+    }
+    
+    class ProgresBarAnimateBehavior : Behavior<ProgressBar>
+    {
+        bool _IsAnimating = false;
+
+        protected override void OnAttached()
+        {
+            base.OnAttached();
+            ProgressBar progressBar = this.AssociatedObject;
+            progressBar.ValueChanged += ProgressBar_ValueChanged;
+        }
+
+        private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_IsAnimating)
+                return;
+
+            _IsAnimating = true;
+
+            DoubleAnimation doubleAnimation = new DoubleAnimation
+                (e.OldValue, e.NewValue, new Duration(TimeSpan.FromSeconds(0.3)), FillBehavior.Stop);
+            doubleAnimation.Completed += Db_Completed;
+
+            ((ProgressBar)sender).BeginAnimation(ProgressBar.ValueProperty, doubleAnimation);
+
+            e.Handled = true;
+        }
+
+        private void Db_Completed(object sender, EventArgs e)
+        {
+            _IsAnimating = false;
+        }
+
+        protected override void OnDetaching()
+        {
+            base.OnDetaching();
+            ProgressBar progressBar = this.AssociatedObject;
+            progressBar.ValueChanged -= ProgressBar_ValueChanged;
         }
     }
 }
