@@ -89,7 +89,7 @@ Write-Host $ISO;
         {
             Title = "Updating environment - DISABLED";
             Message = "Will continue after 5 seconds";
-            await Task.Run(() => CountDown(pauseToken, 5000));
+            await Task.Run(async () => await CountDown(pauseToken, 5000));
             return new StepResult(true, "Skipped updating environment because no internet or not enabled");
         }
 

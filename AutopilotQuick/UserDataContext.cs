@@ -121,6 +121,7 @@ namespace AutopilotQuick
 
         private bool _developerModeEnabled = false;
         private bool? _sharedPcChecked;
+        private bool _sharedPcCheckboxEnabled = true;
 
 
         public bool DeveloperModeEnabled
@@ -140,6 +141,16 @@ namespace AutopilotQuick
             }
         };
 
+        public bool SharedPCCheckboxEnabled
+        {
+            get => _sharedPcCheckboxEnabled;
+            set
+            {
+                if (value == _sharedPcCheckboxEnabled) return;
+                _sharedPcCheckboxEnabled = value;
+                OnPropertyChanged();
+            }
+        }
 
         public bool? SharedPCChecked
         {

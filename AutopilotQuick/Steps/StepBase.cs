@@ -43,8 +43,13 @@ namespace AutopilotQuick.Steps
         public double Progress
         {
             get => Status.Progress;
-            set => Status = Status with { Progress = value };
+            set
+            {
+                if(Math.Abs(value - Progress) < 0.1) return;
+                Status = Status with { Progress = value };
+            }
         }
+
         public string Message
         {
             get => Status.Message;
