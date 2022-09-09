@@ -163,21 +163,19 @@ namespace AutopilotQuick
                     });
                     HotkeyManager.Current.AddOrReplace("ToggleSharedPC", Key.S, ModifierKeys.Control, true, (o, args) =>
                     {
-                        if (context.SharedPCCheckboxEnabled)
-                        {
-                            context.SharedPCChecked = context.SharedPCChecked is not (null or true);
+                        if (!context.SharedPCCheckboxEnabled) return;
+                        
+                        context.SharedPCChecked = context.SharedPCChecked is not (null or true);
                             
-                            SharedPCSwitch_OnCheckedOrUncheck(this, new RoutedEventArgs());
-                        }
+                        SharedPCSwitch_OnCheckedOrUncheck(this, new RoutedEventArgs());
                     });
                     HotkeyManager.Current.AddOrReplace("OpenPowerMenu", Key.P, ModifierKeys.Control,
-                        true, async (o, args) => { ShutdownButton_OnClick(this, new RoutedEventArgs()); });
+                        true, (o, args) => { ShutdownButton_OnClick(this, new RoutedEventArgs()); });
                 }, DispatcherPriority.Normal
             );
-                
             
-            var win = Window.GetWindow(this);
-            win.KeyDown += WinOnKeyDown;
+            KeyDown += WinOnKeyDown;
+            
 
             BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
 
@@ -193,7 +191,7 @@ namespace AutopilotQuick
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
-            var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token), TaskCreationOptions.LongRunning);
+            var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         }
 
@@ -300,6 +298,7 @@ namespace AutopilotQuick
                 });
             if (errorBox == MessageDialogResult.Affirmative) await Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
         }
+        
 
         public bool VerifySignature(string pathToSig)
         {

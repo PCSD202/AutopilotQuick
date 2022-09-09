@@ -76,7 +76,7 @@ namespace AutopilotQuick.Steps
                     }
 
                     //Thread.Sleep((int)Math.Round(ms/200,0));
-                    await Task.Delay(250).ConfigureAwait(false);
+                    await Task.Delay(249).ConfigureAwait(false);
                 }
 
                 Status = oldStatus with { Progress = 100 };

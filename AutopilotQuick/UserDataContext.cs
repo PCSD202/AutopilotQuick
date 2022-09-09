@@ -193,8 +193,9 @@ namespace AutopilotQuick
             }
         }
 
-        public UserDataContext(IDialogCoordinator dialogCoordinator, MetroWindow window)
+        public UserDataContext(IDialogCoordinator dialogCoordinator, MainWindow window)
         {
+            MainWindow = window;
             DialogCoordinator = dialogCoordinator;
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
@@ -203,6 +204,7 @@ namespace AutopilotQuick
             OnPropertyChanged(nameof(Title));
         }
 
+        public MainWindow MainWindow { get; }
         public void RefreshLatestVersion()
         {
             while (!InternetMan.getInstance().IsConnected)

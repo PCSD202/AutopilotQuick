@@ -35,7 +35,7 @@
 
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
-            <mah:MetroHeader  Header="Internet" HorizontalAlignment="Right" Grid.Column="1" VerticalAlignment="Center" Margin="0 0 5 0" mah:ControlsHelper.ContentCharacterCasing="Normal">
+            <mah:MetroHeader Style="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" Header="Internet" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0 0 5 0" mah:ControlsHelper.ContentCharacterCasing="Normal">
                 <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
             </mah:MetroHeader>
 
