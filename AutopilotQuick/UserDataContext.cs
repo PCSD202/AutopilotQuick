@@ -22,6 +22,7 @@ using MahApps.Metro.Controls;
 using Polly;
 using Polly.Retry;
 using Application = System.Windows.Application;
+using System.Windows.Data;
 
 namespace AutopilotQuick
 {
@@ -162,6 +163,35 @@ namespace AutopilotQuick
                 OnPropertyChanged();
             }
         }
+        public record struct HotkeyListItem(string Name, HotKey HotKey, HotkeyType HotkeyType);
+
+
+        private List<HotkeyListItem> _hotkeyList = new List<HotkeyListItem>()
+        {
+            new HotkeyListItem("Enable Developer mode", new HotKey(Key.F1), HotkeyType.Normal),
+            new HotkeyListItem("Open debug menu", new HotKey(Key.F7), HotkeyType.Normal),
+            new HotkeyListItem("Toggle hotkey menu", new HotKey(Key.H), HotkeyType.Normal),
+            new HotkeyListItem("Enable takehome", new HotKey(Key.T, ModifierKeys.Control), HotkeyType.Normal),
+            new HotkeyListItem("Open power menu", new HotKey(Key.P, ModifierKeys.Control), HotkeyType.Normal),
+            new HotkeyListItem("Toggle SharedPC", new HotKey(Key.S, ModifierKeys.Control), HotkeyType.Normal),
+            new HotkeyListItem("Enable Rainbow mode", new HotKey(Key.F10), HotkeyType.EasterEgg),
+            new HotkeyListItem("Make cookies rain down", new HotKey(Key.C), HotkeyType.EasterEgg),
+        };
+
+        public IEnumerable<HotkeyListItem> NormalHotkeyList
+        {
+            get
+            {
+                return _hotkeyList.Where(x => x.HotkeyType == HotkeyType.Normal);
+            }
+        }
+
+        public IEnumerable<HotkeyListItem> EggHotkeyList
+        {
+            get {
+                return _hotkeyList.Where(x=>x.HotkeyType == HotkeyType.EasterEgg);
+            }
+        }
 
         public UserDataContext(IDialogCoordinator dialogCoordinator, MetroWindow window)
         {
@@ -226,5 +256,12 @@ namespace AutopilotQuick
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public enum HotkeyType
+        {
+            Normal,
+            EasterEgg
+        }
     }
+
 }

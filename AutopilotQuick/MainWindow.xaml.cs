@@ -41,6 +41,8 @@ using Nito.AsyncEx;
 using ORMi;
 using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using NHotkey.Wpf;
+using NHotkey;
 
 namespace AutopilotQuick
 {
@@ -139,7 +141,41 @@ namespace AutopilotQuick
                 _cancelTokenSource.Cancel();
                 Close();
             };
-
+            Dispatcher.BeginInvoke(() =>
+                {
+                    HotkeyManager.Current.AddOrReplace("RainbowMode", Key.F10, ModifierKeys.None, true,
+                        F10KeyPressed_OnExecuted);
+                    HotkeyManager.Current.AddOrReplace("DebugMenu", Key.F7, ModifierKeys.None, true,
+                        F7KeyPressed_OnExecuted);
+                    HotkeyManager.Current.AddOrReplace("HotkeyMenu", Key.H, ModifierKeys.None, true, (o, args) =>
+                    {
+                        this.Dispatcher.Invoke(() =>
+                        {
+                            this.ToggleFlyout(0);
+                        });
+                    });
+                    HotkeyManager.Current.AddOrReplace("ToggleTakeHome", Key.T, ModifierKeys.Control, true, (o, args) =>
+                    {
+                        if (TakeHomeToggle.IsEnabled)
+                        {
+                            context.TakeHomeToggleOn = true;
+                        }
+                    });
+                    HotkeyManager.Current.AddOrReplace("ToggleSharedPC", Key.S, ModifierKeys.Control, true, (o, args) =>
+                    {
+                        if (context.SharedPCCheckboxEnabled)
+                        {
+                            context.SharedPCChecked = context.SharedPCChecked is not (null or true);
+                            
+                            SharedPCSwitch_OnCheckedOrUncheck(this, new RoutedEventArgs());
+                        }
+                    });
+                    HotkeyManager.Current.AddOrReplace("OpenPowerMenu", Key.P, ModifierKeys.Control,
+                        true, async (o, args) => { ShutdownButton_OnClick(this, new RoutedEventArgs()); });
+                }, DispatcherPriority.Normal
+            );
+                
+            
             var win = Window.GetWindow(this);
             win.KeyDown += WinOnKeyDown;
 
@@ -581,6 +617,24 @@ namespace AutopilotQuick
                 context.UserRequestedChangeSharedPC = false;
             }
         }
+        
+
+        private void ToggleFlyout(int index)
+        {
+            var flyout = this.Flyouts?.Items[index] as Flyout;
+            if (flyout == null)
+            {
+                return;
+            }
+
+            flyout.IsOpen = !flyout.IsOpen;
+        }
+
+        private void HotKeyFlyoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.ToggleFlyout(0);
+        }
+
         private int count = 0;
         private async void SharedPCSwitch_OnCheckedOrUncheck(object sender, RoutedEventArgs e)
         {

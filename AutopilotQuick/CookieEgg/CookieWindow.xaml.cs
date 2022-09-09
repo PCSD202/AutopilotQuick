@@ -100,12 +100,14 @@ public partial class CookieWindow : INotifyPropertyChanged
         var animation = new DoubleAnimation(currentTop, ScreenHeight+(cookie.Height*3), new Duration(1.Seconds()))
         {
             EasingFunction =new ExponentialEase(){EasingMode = EasingMode.EaseIn, Exponent = easeExp}
-            
         };
+        
         animation.Completed += (sender, args) =>
         {
             CookieCanvas.Children.Remove(cookie);
         };
+
+        Timeline.SetDesiredFrameRate(animation, 30);
         cookie.BeginAnimation(Canvas.TopProperty, animation);
     }
 
