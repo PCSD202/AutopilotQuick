@@ -44,6 +44,7 @@
     <PackageReference Include="Microsoft.Graph" Version="4.36.0" />
     <PackageReference Include="Microsoft.Wim" Version="1.2.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="NHotkey.Wpf" Version="2.1.0" />
     <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageReference Include="NLog" Version="5.0.2" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.0.2" />

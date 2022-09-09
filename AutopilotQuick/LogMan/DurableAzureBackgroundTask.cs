@@ -100,7 +100,7 @@ namespace AutopilotQuick.LogMan
         {
             try
             {
-                if (InternetMan.getInstance().IsConnected)
+                if (InternetMan.getInstance().IsConnected && Share is not null)
                 {
                     try
                     {

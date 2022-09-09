@@ -19,44 +19,37 @@
         <converters:BoolToColorConverter x:Key="StatusConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <SolidColorBrush x:Key="ProgressBrush" x:Name="ColorBrush" Color="{DynamicResource MahApps.Colors.Accent}"/>
+        <Style BasedOn="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" TargetType="mah:MetroHeader" />
+       <Style x:Key="tooltipThing" BasedOn="{StaticResource MahApps.Styles.CheckBox}" TargetType="CheckBox">
+           <Setter Property="ToolTip" Value="SharedPC"/>
+           <Style.Triggers>
+               <Trigger Property="IsEnabled" Value="False">
+                   <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot, or azureAD record, or because we already applied the settings"></Setter>
+               </Trigger>
+           </Style.Triggers>
+       </Style>
     </mah:MetroWindow.Resources>
     <Window.InputBindings>
-        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}"/>
-        
-        <KeyBinding Key="F10">
-            <KeyBinding.Command>
-                <local:SimpleMainWindowCommand Executed="F10KeyPressed_OnExecuted"/>
-            </KeyBinding.Command>
-        </KeyBinding>
-        <KeyBinding Key="F7">
-            <KeyBinding.Command>
-                <local:SimpleMainWindowCommand Executed="F7KeyPressed_OnExecuted"/>
-            </KeyBinding.Command>
-        </KeyBinding>
+        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" HotkeyManager.RegisterGlobalHotkey="True"/>
     </Window.InputBindings>
 
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
-
-            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" Margin="0 0 5 0">
+            <mah:MetroHeader  Header="Internet" HorizontalAlignment="Right" Grid.Column="1" VerticalAlignment="Center" Margin="0 0 5 0" mah:ControlsHelper.ContentCharacterCasing="Normal">
                 <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
-                <Label VerticalAlignment="Center" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">
-                    <Label.Content>
-                        Internet
-                    </Label.Content>
-                </Label>
-            </StackPanel>
+            </mah:MetroHeader>
+
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
                 <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <mah:ToggleSwitch  VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+                <mah:ToggleSwitch x:Name="TakeHomeToggle" OnContent="" OffContent="" VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
                 <mah:MetroHeader Header="Shared PC:" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <CheckBox x:Name="SharedPCCheckbox" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck"/>
+                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}"/>
             </StackPanel>
 
-            <Viewbox Width="22" Height="22" UseLayoutRounding="True">
+            <Viewbox Width="22" Height="22" UseLayoutRounding="False">
                 <StackPanel Orientation="Vertical">
                     <Border Background="{StaticResource ProgressBrush}" CornerRadius="2,2,0,0" Padding="2" Width="20" Height="7" Margin="0,-2,0,-2" HorizontalAlignment="Center"/>
                     <Border BorderBrush="{StaticResource ProgressBrush}" BorderThickness="2" CornerRadius="5" Padding="2" Width="50" Height="100">
@@ -75,6 +68,10 @@
                     </Border>
                 </StackPanel>
             </Viewbox>
+            
+            <Button VerticalAlignment="Center" ToolTip="Hotkeys" VerticalContentAlignment="Center" Click="HotKeyFlyoutButton_Click">
+                <iconPacks:PackIconForkAwesome Kind="KeyboardOutline" Width="22" Height="22"/>
+            </Button>
 
             <Button x:Name="ShutdownButton"  ToolTip="Power options" Click="ShutdownButton_OnClick" VerticalAlignment="Center" VerticalContentAlignment="Center">
                 <iconPacks:PackIconMaterial Width="22"
@@ -84,8 +81,39 @@
 
         </mah:WindowCommands>
     </mah:MetroWindow.RightWindowCommands>
+    
+    <mah:MetroWindow.Flyouts>
+        <mah:FlyoutsControl x:Name="flyoutsControl">
+            <mah:Flyout x:Name="HotKeyFlyout" Header="Hotkeys" Position="Right" Width="300">
+                <TabControl Margin="10">
+                    <TabItem Header="Normal">
+                        <ListBox ItemsSource="{Binding NormalHotkeyList}" BorderBrush="Transparent" HorizontalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <mah:MetroHeader Header="{Binding Name}" VerticalAlignment="Center" mah:HeaderedControlHelper.HeaderVerticalContentAlignment="Center">
+                                        <mah:HotKeyBox HorizontalContentAlignment="Center" Margin="0 0 5 0" MinWidth="50" HorizontalAlignment="Right" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="10 0 10 0" HotKey="{Binding HotKey}" Focusable="False"/>
+                                    </mah:MetroHeader>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </TabItem>
+                    <TabItem Header="Fun">
+                        <ListBox ItemsSource="{Binding EggHotkeyList}" Grid.IsSharedSizeScope="True" BorderBrush="Transparent" HorizontalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <mah:MetroHeader Header="{Binding Name}" VerticalAlignment="Center" mah:HeaderedControlHelper.HeaderVerticalContentAlignment="Center">
+                                        <mah:HotKeyBox HorizontalContentAlignment="Center" MinWidth="50" Margin="0 0 5 0" HorizontalAlignment="Right" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="10 0 10 0" HotKey="{Binding HotKey}" Focusable="False"/>
+                                    </mah:MetroHeader>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </TabItem>
+                </TabControl>
+            </mah:Flyout>
+        </mah:FlyoutsControl>
+    </mah:MetroWindow.Flyouts>
+    
     <Grid>
-        
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition Width="3*"></ColumnDefinition>
