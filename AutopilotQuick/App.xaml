@@ -32,7 +32,7 @@
                                                           HorizontalAlignment="{TemplateBinding mah:HeaderedControlHelper.HeaderHorizontalContentAlignment}"
                                                           VerticalAlignment="{TemplateBinding mah:HeaderedControlHelper.HeaderVerticalContentAlignment}"
                                                           Content="{TemplateBinding Header}"
-                                                          ContentCharacterCasing="{TemplateBinding mah:ControlsHelper.ContentCharacterCasing}"
+                                                          ContentCharacterCasing="Normal"
                                                           ContentStringFormat="{TemplateBinding HeaderStringFormat}"
                                                           ContentTemplate="{TemplateBinding HeaderTemplate}"
                                                           ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
