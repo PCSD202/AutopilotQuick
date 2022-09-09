@@ -110,7 +110,7 @@
                     </TextBlock.Inlines>
                 </TextBlock>
             </Viewbox>
-            <TextBlock Grid.Row="1" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+            <TextBlock Grid.Row="1" FontSize="20" HorizontalAlignment="Stretch" VerticalAlignment="Top" TextWrapping="Wrap">
                 <TextBlock.Inlines>
                     <Run Text="{Binding CurrentStepMessage}"/>
                 </TextBlock.Inlines>
