@@ -44,7 +44,9 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
 
 
         var progressWindow =
-            await context.DialogCoordinator.ShowProgressAsync(context, "Autopilot sync", "Waiting for autopilot sync",
+            await context.DialogCoordinator.ShowProgressAsync(context, "Waiting for autopilot sync", 
+                "This is to make sure that when the computer is first turned on, the right Autopilot profile is applied. This usually takes only a few minutes but can take up to 30 minutes." +
+                "If you do not want to wait for this, you can cancel with the button below. If the wrong autopilot profile is applied, you need to re-image the computer.",
                 true);
         progressWindow.SetIndeterminate();
 
