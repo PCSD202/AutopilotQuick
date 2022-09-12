@@ -53,7 +53,7 @@ public class GroupManagementClient : IDisposable
     
     public async Task<CheckAutopilotProfileSyncStatusOutput?> CheckAutopilotProfileSyncStatus(string ServiceTag)
     {
-        var request = new RestRequest("CheckAutopilotProfileSyncStatusOutput", Method.Delete);
+        var request = new RestRequest("CheckAutopilotProfileSyncStatus", Method.Get);
         request.AddJsonBody(new NormalRequestBody(ServiceTag));
         var result = await _client.ExecuteAsync<CheckAutopilotProfileSyncStatusOutput>(request);
         if (result.IsSuccessful) return result.Data;
