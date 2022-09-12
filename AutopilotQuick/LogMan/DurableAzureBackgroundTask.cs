@@ -30,7 +30,7 @@ namespace AutopilotQuick.LogMan
 
         private static readonly ILogger Logger = App.GetLogger<DurableAzureBackgroundTask>();
         
-        public ShareClient Share;
+        public ShareClient? Share;
         public Cacher AzureLogSettingsCache;
         
         IAppCache cache = new CachingService();
@@ -38,8 +38,16 @@ namespace AutopilotQuick.LogMan
         
         private void OnInternetBecameAvailable(object? sender, EventArgs e)
         {
-            Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
-            Share.CreateIfNotExists();
+            try
+            {
+                Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
+                Share.CreateIfNotExists();
+            }
+            catch (Exception err)
+            {
+                Logger.LogError(err, "Got exception {e} while connecting to logs", err);
+            }
+            
         }
 
         
