@@ -33,7 +33,7 @@ public class FinalizeSyncingLogsStep : StepBaseEx
         while (((DateTime.UtcNow - startTime).TotalSeconds <= 5) && !DurableAzureBackgroundTask.getInstance().Stopped)
         {
             DurableAzureBackgroundTask.getInstance().Stop();
-            Thread.Sleep(250);
+            await Task.Delay(250);
         }
 
         Progress = 75;
