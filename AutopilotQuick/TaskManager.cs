@@ -103,7 +103,7 @@ namespace AutopilotQuick
             new SharedPCGroupStep(),
             new ApplyAutopilotConfigurationStep(),
             new UpdateWinPEStep(),
-            new FinalizeSyncingLogsStep(),
+            //new FinalizeSyncingLogsStep(),
             new RebootStep(),
         };
         
