@@ -69,7 +69,7 @@ namespace AutopilotQuick.LogMan
             return cache.Get<string>("ConnectionString");
         }
 
-        public bool Stopped = false;
+        public bool Stopped = true;
         public void Stop()
         {
             _timer.Dispose();
@@ -81,6 +81,7 @@ namespace AutopilotQuick.LogMan
         
         public void StartTimer(UserDataContext context)
         {
+            Stopped = false;
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting legacy log upload service"))
             {
                 this.context = context;
