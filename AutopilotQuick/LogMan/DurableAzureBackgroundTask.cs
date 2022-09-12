@@ -109,6 +109,9 @@ namespace AutopilotQuick.LogMan
                     catch (Exception ex)
                     {
                         Logger.LogError(ex, "Got exception {ex} while trying to sync logs", ex);
+                        Logger.LogInformation("Recreating Share-Client");
+                        Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
+                        Share.CreateIfNotExists();
                     }
 
                 }
