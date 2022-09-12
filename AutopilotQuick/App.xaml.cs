@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Threading;
 using AutopilotQuick.WMI;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
@@ -81,8 +82,14 @@ namespace AutopilotQuick
                 FlushTelemetry();
                 MainWindow.Close();
             };
+            App.Current.DispatcherUnhandledException += CurrentOnDispatcherUnhandledException;
             App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.Show();
+        }
+
+        private void CurrentOnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            App.GetLogger<App>().LogError(e.Exception, "Unhandled exception: {e}", e.Exception);
         }
 
         public static FileVersionInfo GetVersion()
