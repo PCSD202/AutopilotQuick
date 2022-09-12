@@ -1,0 +1,86 @@
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using AQ.GroupManagementLibrary;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Nito.AsyncEx;
+
+namespace AutopilotQuick.Steps;
+
+public class MakeSureAutopilotSyncedStep : StepBaseEx
+{
+    public override string Name()
+    {
+        return "Autopilot Sync step";
+    }
+
+    public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
+        IOperationHolder<RequestTelemetry> StepOperation)
+    {
+        Title = "Autopilot sync step";
+        Message = "Making sure autopilot is synced";
+        IsIndeterminate = true;
+        if (!IsEnabled || !InternetMan.getInstance().IsConnected)
+        {
+            await CountDown(pauseToken, 5000);
+            return new StepResult(true, "Autopilot sync step disabled");
+        }
+
+        var groupManConfigCache = new Cacher("https://nettools.psd202.org/AutoPilotFast/GroupMan.json", "GroupMan.json",
+            context);
+        if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
+        {
+            await Task.Run(async () => await groupManConfigCache.DownloadUpdateAsync());
+        }
+
+        MainWindow.GroupManConfig config =
+            JsonConvert.DeserializeObject<MainWindow.GroupManConfig>(
+                await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+        var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
+
+
+        var progressWindow =
+            await context.DialogCoordinator.ShowProgressAsync(context, "Autopilot sync", "Waiting for autopilot sync",
+                true);
+        progressWindow.SetIndeterminate();
+
+        var errorCount = 0;
+        var synced = false;
+        var cts = new CancellationTokenSource();
+        progressWindow.Canceled += (sender, args) => cts.Cancel();
+        while (!progressWindow.IsCanceled && !synced && errorCount < 5)
+        {
+            try
+            {
+                var status = await client.CheckAutopilotProfileSyncStatus(GetServiceTag(pauseToken));
+                if (status.HasValue)
+                {
+                    synced = status.Value.synced;
+                }
+
+                if (!synced)
+                {
+                    await Task.Delay(5000, cts.Token);
+                }
+            } catch (Exception e) {
+                App.GetLogger<MakeSureAutopilotSyncedStep>().LogError(e, "Got error while checking if autopilot profile synced {e}", e);
+                errorCount++;
+            }
+        }
+        await progressWindow.CloseAsync();
+
+        if (progressWindow.IsCanceled)
+        {
+            return new StepResult(true, "Autopilot sync canceled");
+        }
+
+        
+
+        return new StepResult(true, "Autopilot profile synced");
+
+    }
+}

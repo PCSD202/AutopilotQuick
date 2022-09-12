@@ -101,6 +101,7 @@ namespace AutopilotQuick
             new MakeDiskBootableStep(),
             new RemoveUnattendXMLStep(),
             new SharedPCGroupStep(),
+            new MakeSureAutopilotSyncedStep(),
             new ApplyAutopilotConfigurationStep(),
             new UpdateWinPEStep(),
             //new FinalizeSyncingLogsStep(),
