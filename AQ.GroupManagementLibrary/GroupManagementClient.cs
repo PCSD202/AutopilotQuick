@@ -51,6 +51,16 @@ public class GroupManagementClient : IDisposable
         return null;
     }
     
+    public async Task<CheckAutopilotProfileSyncStatusOutput?> CheckAutopilotProfileSyncStatus(string ServiceTag)
+    {
+        var request = new RestRequest("CheckAutopilotProfileSyncStatusOutput", Method.Delete);
+        request.AddJsonBody(new NormalRequestBody(ServiceTag));
+        var result = await _client.ExecuteAsync<CheckAutopilotProfileSyncStatusOutput>(request);
+        if (result.IsSuccessful) return result.Data;
+        _logger.LogError("Got status code: {statuscode} when calling CheckAutopilotProfileSyncStatus. Content: {content}", result.StatusCode, result.Content);
+        return null;
+    }
+    
     public void Dispose()
     {
         _client?.Dispose();
@@ -64,6 +74,8 @@ public record struct IsSharedPCMemberResult(bool TransitiveMemberInGroup, bool D
 public record struct AddToGroupOutput(bool AlreadyInGroup, bool Success);
 
 public record struct RemoveFromGroupOutput(bool AlreadyRemoved, bool Success);
+
+public record struct CheckAutopilotProfileSyncStatusOutput(bool synced);
 
 
 internal class GroupManagementAuthenticator : AuthenticatorBase {
