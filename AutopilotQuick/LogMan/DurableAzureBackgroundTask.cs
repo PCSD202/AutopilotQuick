@@ -88,8 +88,7 @@ namespace AutopilotQuick.LogMan
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("LogUploadServiceStarted");
                 Logger.LogInformation("Log upload service started");
-                AzureLogSettingsCache = new Cacher("https://nettools.psd202.org/AutoPilotFast/AzureLogSettings.json",
-                    "AzureLogSettings.json", context);
+                AzureLogSettingsCache = new Cacher(CachedResourceUris.AzureLogSettings, context);
                 
                 // Instantiate a ShareClient which will be used to create and manipulate the file share
                 if (InternetMan.getInstance().IsConnected)

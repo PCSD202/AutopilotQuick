@@ -575,7 +575,7 @@ namespace AutopilotQuick
         public record struct GroupManConfig(string APIKEY, string URL);
         public async void UpdateSharedPCBoxWhenInternet()
         {
-            var groupManConfigCache = new Cacher("https://nettools.psd202.org/AutoPilotFast/GroupMan.json", "GroupMan.json", context);
+            var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
             if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
             {
                 await Task.Run(async ()=>await groupManConfigCache.DownloadUpdateAsync());

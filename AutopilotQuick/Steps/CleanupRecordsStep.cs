@@ -45,9 +45,7 @@ public class CleanupRecordsStep : StepBaseEx
     
     public async Task<TakeHomeInfo> GetAPIInfo(UserDataContext context)
     {
-        var takehomeCredsCacher = new Cacher(
-            "https://nettools.psd202.org/AutoPilotFast/Takehome.json",
-            "TakeHome.json", context);
+        var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeCredConfig, context);
         if (!takehomeCredsCacher.FileCached || !takehomeCredsCacher.IsUpToDate)
         {
             await takehomeCredsCacher.DownloadUpdateAsync();

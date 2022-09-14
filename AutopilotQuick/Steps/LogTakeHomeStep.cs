@@ -43,7 +43,7 @@ public class LogTakeHomeStep : StepBaseEx
         Message = "Loading credentials";
         IsIndeterminate = false;
         Progress = 0;
-        var takehomeCredsCacher = new Cacher("https://nettools.psd202.org/AutoPilotFast/TakehomeLoggerInfo.json", "TakeHomeLoggerInfo.json", context);
+        var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeLoggerConfig, context);
         if (!takehomeCredsCacher.FileCached || !takehomeCredsCacher.IsUpToDate)
         {
             await takehomeCredsCacher.DownloadUpdateAsync();

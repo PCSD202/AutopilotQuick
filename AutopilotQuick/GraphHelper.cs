@@ -116,8 +116,7 @@ public static class GraphHelper
     {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Getting Graph Creds"))
         {
-            var takehomeCredsCacher = new Cacher("http://nettools.psd202.org/AutoPilotFast/TakehomeCreds.json",
-                "TakeHomeCreds.json", context);
+            var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeConfig, context);
 
             if (!(takehomeCredsCacher.FileCached && takehomeCredsCacher.IsUpToDate))
             {

@@ -73,6 +73,35 @@ public class Cacher
             Directory.CreateDirectory(BaseDir);
         }
     }
+    
+    /// <summary>
+    /// Automatically caches files from a WebServer using the Last-Modified header
+    /// </summary>
+    /// <param name="FileURI">The URI of the file you wish to download</param>
+    /// <param name="FileName">The filename that you would like to download the file to</param>
+    /// <param name="context">The context of the mainwindow, this is for progress reports.</param>
+    public Cacher(Uri FileURI, string FileName, UserDataContext context)
+    {
+        FileURL = FileURI.AbsoluteUri;
+        this.FileName = FileName;
+        _context = context;
+        if (!Directory.Exists(BaseDir))
+        {
+            Directory.CreateDirectory(BaseDir);
+        }
+    }
+    
+    
+    /// <summary>
+    /// Automatically caches files from a WebServer using the Last-Modified header
+    /// </summary>
+    /// <param name="FileURI">The URI of the file you wish to download</param>
+    /// <param name="FileName">The filename that you would like to download the file to</param>
+    /// <param name="context">The context of the mainwindow, this is for progress reports.</param>
+    public Cacher(CachedResourceData cachedResourceData, UserDataContext context) : this(cachedResourceData.Uri, cachedResourceData.FileName, context)
+    {
+        
+    }
 
     private Task? DownloadUpdateTask = null;
 
