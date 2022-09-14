@@ -53,8 +53,6 @@ namespace AutopilotQuick.LogMan
         
         public string GetConnectionString()
         {
-            return
-                "REMOVED_SECRET";
             if (cache.TryGetValue("ConnectionString", out string ConnectionString))
             {
                 return ConnectionString;

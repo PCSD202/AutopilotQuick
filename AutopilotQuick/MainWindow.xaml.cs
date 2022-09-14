@@ -188,7 +188,7 @@ namespace AutopilotQuick
             
             InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
             InternetMan.getInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
-            //await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
+            await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
             var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -276,7 +276,6 @@ namespace AutopilotQuick
                 if (result == MessageDialogResult.Affirmative)
                 {
                     context.TakeHomeToggleEnabled = false;
-                    TaskManager.getInstance().ApplyTakeHome(toggleSwitch.IsOn);
                 }
                 else
                 {
