@@ -20,22 +20,38 @@ public class Cacher
 {
     private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-    //The name of the file once downloaded. Needs to be unique or files will overwrite.
+    /// <summary>
+    /// The name of the file once downloaded, needs to be unique or the files will overwrite
+    /// </summary>
     public readonly string FileName;
 
-    //The URL of where to get the file from
+    /// <summary>
+    /// The URL of where to get the file from
+    /// </summary>
     public readonly string FileURL;
 
-    //The downloaded path of the file
+    /// <summary>
+    /// The downloaded path of the file
+    /// </summary>
     public string FilePath => Path.Combine(BaseDir, FileName);
 
-    //Whether or not we have the file downloaded
+    /// <summary>
+    /// Whether or not we have the file downloaded
+    /// </summary>
+    /// <remarks>Does not use internet, or check that the file is up to date, for that use <see cref="IsUpToDate"/></remarks>
     public bool FileCached => File.Exists(FilePath);
 
+    /// <summary>
+    /// The cache directory
+    /// </summary>
     public static string BaseDir => Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache");
 
     private UserDataContext _context;
 
+    /// <summary>
+    /// Is your cached file up to date? Checks the last modified header from the webserver, and the last modified of the downloaded file
+    /// </summary>
+    /// <remarks>Requires internet and will wait for it, if you do not want that use <see cref="FileCached"/></remarks>
     public bool IsUpToDate => GetCachedFileLastModified() >= GetLastModifiedFromWeb();
     private string FileCacheDataPath => Path.Combine(BaseDir, FileName + "-CacheData.json");
 
@@ -173,6 +189,20 @@ public class Cacher
             File.Delete(FileCacheDataPath);
             return DateTime.MinValue;
         }
+    }
+
+    /// <summary>
+    /// Reads the cached file as a text file
+    /// </summary>
+    /// <returns>The file's text</returns>
+    public string ReadAllText()
+    {
+        return File.ReadAllText(FilePath);
+    }
+    
+    public Task<string> ReadAllTextAsync()
+    {
+        return File.ReadAllTextAsync(FilePath);
     }
 
     ///<summary>
