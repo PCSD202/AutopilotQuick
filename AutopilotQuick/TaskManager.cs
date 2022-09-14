@@ -58,23 +58,8 @@ namespace AutopilotQuick
                 Progress = newProgressPercent
             });
         }
-        public static Cacher wimCache;
-        public bool UpdatedImageAvailable = false;
-       
-
         public bool Enabled = false;
-        public bool DriveRemoved = false;
-        public bool RemoveOnly = false;
         
-        private bool TakeHome = false;
-        public void ApplyTakeHome(bool Enabled)
-        {
-            if (Enabled)
-            {
-                TakeHome = true;
-            }
-        }
-
         private void WaitForPause(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
             using (App.telemetryClient.StartOperation<RequestTelemetry>("Paused"))
@@ -85,7 +70,6 @@ namespace AutopilotQuick
                 pauseToken.WaitWhilePaused();
             }
         }
-        private UserDataContext _context;
 
         public List<StepBase> Steps = new List<StepBase>()
         {
@@ -108,15 +92,13 @@ namespace AutopilotQuick
             new RebootStep(),
         };
         
-        private int CurrentStep = 1;
         public IOperationHolder<RequestTelemetry> TaskManOp;
 
         public async Task Run(UserDataContext context, PauseToken pauseToken)
         {
-            _context = context;
             if (!Enabled)
             {
-                //WimMan.getInstance().Preload();
+                
             }
             
             var telemetryClient = App.GetTelemetryClient();
