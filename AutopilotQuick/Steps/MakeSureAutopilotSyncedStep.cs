@@ -39,19 +39,33 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
 
         MainWindow.GroupManConfig config =
             JsonConvert.DeserializeObject<MainWindow.GroupManConfig>(
-                await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+                await groupManConfigCache.ReadAllTextAsync());
         var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
 
 
+        var synced = false;
+        try
+        {
+            var status = await client.CheckAutopilotProfileSyncStatus(GetServiceTag(pauseToken));
+            if (status != null) synced = status.Value.synced;
+        }
+        catch (Exception e)
+        {
+            App.GetLogger<MakeSureAutopilotSyncedStep>()
+                .LogError(e, "Got error while checking if autopilot profile synced {e}", e);
+        }
+
+        if (synced) return new StepResult(true, "Autopilot profile synced");
+        
         var progressWindow =
             await context.DialogCoordinator.ShowProgressAsync(context, "Waiting for autopilot sync", 
-                "This is to make sure that when the computer is first turned on, the right Autopilot profile is applied. This usually takes only a few minutes but can take up to 30 minutes." +
-                "If you do not want to wait for this, you can cancel with the button below. If the wrong autopilot profile is applied, you need to re-image the computer.",
+                "This is to make sure that when the computer is first turned on, the right Autopilot profile is applied. This usually takes only a few minutes but can take upwards of 30." +
+                " If you do not want to wait for this, you can cancel with the button below. If the wrong autopilot profile is applied, you need to re-image the computer.",
                 true);
         progressWindow.SetIndeterminate();
 
+
         var errorCount = 0;
-        var synced = false;
         var cts = new CancellationTokenSource();
         progressWindow.Canceled += (sender, args) => cts.Cancel();
         while (!progressWindow.IsCanceled && !synced && errorCount < 5)
@@ -75,14 +89,6 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
         }
         await progressWindow.CloseAsync();
 
-        if (progressWindow.IsCanceled)
-        {
-            return new StepResult(true, "Autopilot sync canceled");
-        }
-
-        
-
-        return new StepResult(true, "Autopilot profile synced");
-
+        return progressWindow.IsCanceled ? new StepResult(true, "Autopilot sync canceled") : new StepResult(true, "Autopilot profile synced");
     }
 }
