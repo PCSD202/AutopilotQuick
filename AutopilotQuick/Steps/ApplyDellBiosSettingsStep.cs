@@ -45,9 +45,7 @@ namespace AutopilotQuick.Steps
             Progress = 0;
             IsIndeterminate = true;
 
-            Cacher DellBiosSettingsCacher =
-                new Cacher("https://nettools.psd202.org/AutoPilotFast/DellBiosSettings.zip", "DellBiosSettings.zip",
-                    context);
+            Cacher DellBiosSettingsCacher = new Cacher(CachedResourceUris.DellBiosSettingsZip, context);
             using (var UpdateAndExtract = App.telemetryClient.StartOperation<RequestTelemetry>("Updating/Extracting dell bios"))
             {
                 UpdateAndExtract.Telemetry.Properties["Downloaded"] = "false";

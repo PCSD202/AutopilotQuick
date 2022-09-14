@@ -80,11 +80,7 @@ Write-Host $ISO;
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
         IOperationHolder<RequestTelemetry> StepOperation)
     {
-        WinPEISOCache = new Cacher(
-            "http://nettools.psd202.org/AutoPilotFast/OSDCloud_NoPrompt.iso", 
-            "OSDImage.iso", context);
-        
-        
+        WinPEISOCache = new Cacher(CachedResourceUris.OsdImage, context);
         if (!IsEnabled || (!InternetMan.getInstance().IsConnected && !InternetMan.CheckForInternetConnection()))
         {
             Title = "Updating environment - DISABLED";
