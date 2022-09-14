@@ -73,8 +73,7 @@ namespace AutopilotQuick.LogMan
             _timer.Dispose();
             Stopped = true;
         }
-
-        private UserDataContext context = null;
+        
         private Timer _timer = null;
         
         public void StartTimer(UserDataContext context)
@@ -82,7 +81,6 @@ namespace AutopilotQuick.LogMan
             Stopped = false;
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting legacy log upload service"))
             {
-                this.context = context;
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("LogUploadServiceStarted");
                 Logger.LogInformation("Log upload service started");
