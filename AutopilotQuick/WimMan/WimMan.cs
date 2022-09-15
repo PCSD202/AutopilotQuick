@@ -30,7 +30,7 @@ namespace AutopilotQuick
         {
             _context = context;
             _configCacher = new Cacher(CachedResourceUris.WimManConfig, _context);
-            InternetMan.getInstance().InternetBecameAvailable += WimMan_InternetBecameAvailable;
+            InternetMan.GetInstance().InternetBecameAvailable += WimMan_InternetBecameAvailable;
         }
 
         private void WimMan_InternetBecameAvailable(object? sender, EventArgs e)
@@ -47,7 +47,7 @@ namespace AutopilotQuick
             {
                 _configCacher.DownloadUpdate();
             }
-            return JsonConvert.DeserializeObject<WimManDatabase>(File.ReadAllText(_configCacher.FilePath));
+            return JsonConvert.DeserializeObject<WimManDatabase>(_configCacher.ReadAllText());
         }
 
         public void Preload() {

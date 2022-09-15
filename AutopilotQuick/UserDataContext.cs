@@ -207,7 +207,7 @@ namespace AutopilotQuick
         public MainWindow MainWindow { get; }
         public void RefreshLatestVersion()
         {
-            while (!InternetMan.getInstance().IsConnected)
+            while (!InternetMan.GetInstance().IsConnected)
             {
                 Thread.Sleep(200);
             }

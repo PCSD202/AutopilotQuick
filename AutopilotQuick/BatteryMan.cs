@@ -16,13 +16,13 @@ namespace AutopilotQuick
     internal class BatteryMan
     {
 
-        private static readonly BatteryMan instance = new();
-        public event EventHandler<BatteryUpdatedEventData> BatteryUpdated;
+        private static readonly BatteryMan Instance = new();
+        public event EventHandler<BatteryUpdatedEventData>? BatteryUpdated;
 
         private static readonly ILogger Logger = App.GetLogger<BatteryMan>();
-        public static BatteryMan getInstance()
+        public static BatteryMan GetInstance()
         {
-            return instance;
+            return Instance;
         }
         private BatteryUpdatedEventData _status { get; set; } = new BatteryUpdatedEventData(0, false);
 

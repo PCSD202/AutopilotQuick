@@ -24,7 +24,7 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
         Title = "Autopilot sync step";
         Message = "Making sure autopilot is synced";
         IsIndeterminate = true;
-        if (!IsEnabled || !InternetMan.getInstance().IsConnected || context.TakeHomeToggleOn)
+        if (!IsEnabled || !InternetMan.GetInstance().IsConnected || context.TakeHomeToggleOn)
         {
             await CountDown(pauseToken, 5000);
             return new StepResult(true, "Autopilot sync step disabled");

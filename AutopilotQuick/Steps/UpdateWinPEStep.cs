@@ -81,7 +81,7 @@ Write-Host $ISO;
         IOperationHolder<RequestTelemetry> StepOperation)
     {
         WinPEISOCache = new Cacher(CachedResourceUris.OsdImage, context);
-        if (!IsEnabled || (!InternetMan.getInstance().IsConnected && !InternetMan.CheckForInternetConnection()))
+        if (!IsEnabled || (!InternetMan.GetInstance().IsConnected && !InternetMan.CheckForInternetConnection()))
         {
             Title = "Updating environment - DISABLED";
             Message = "Will continue after 5 seconds";

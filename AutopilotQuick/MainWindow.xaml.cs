@@ -23,13 +23,10 @@ using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
 using System.Threading;
-using System.Windows.Forms;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
 using AutopilotQuick.CookieEgg;
 using AutopilotQuick.LogMan;
-using AutopilotQuick.Steps;
 using AutopilotQuick.WMI;
 using ControlzEx.Theming;
 using MahApps.Metro.Controls;
@@ -56,44 +53,18 @@ namespace AutopilotQuick
         private readonly bool Updated;
         private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
         private readonly CancellationTokenSource _cancelTokenSource = new();
-        private List<Task> _backgroundTasks = new List<Task>();
         private bool Updating = false;
         
         public MainWindow()
         {
+            this.Dispatcher.UnhandledException += (sender, args) => App.GetLogger<App>().LogError(args.Exception, "Unhandled exception: {e}", args.Exception);
             InitializeComponent();
             context = new UserDataContext(DialogCoordinator.Instance, this);
             DataContext = context;
             WimMan.getInstance().SetContext(context);
             context.PropertyChanged += ContextOnPropertyChanged;
-            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
-            var appName = Path.GetFileNameWithoutExtension(Environment.ProcessPath);
-            var appExtension = Path.GetExtension(Environment.ProcessPath);
-            var archivePath = Path.Combine(appFolder, appName + "_Old" + appExtension);
-            if (File.Exists(archivePath))
-            {
-                Updated = true;
-                try
-                {
-                    //Will wait for the other program to exit.
-                    var me = Process.GetCurrentProcess();
-                    var aProcs = Process.GetProcessesByName(me.ProcessName);
-                    aProcs = aProcs.Where(x => x.Id != me.Id).ToArray();
-                    if (aProcs != null && aProcs.Length > 0) aProcs[0].WaitForExit(1000);
-
-                    File.Delete(archivePath);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Could not delete old file.");
-                }
-            }
-            else
-            {
-                Updated = false;
-            }
-
-            if (!TaskManager.getInstance().Enabled)
+            
+            if (!TaskManager.GetInstance().Enabled)
             {
                 ResizeMode = ResizeMode.CanResize;
                 WindowState = WindowState.Normal;
@@ -177,21 +148,21 @@ namespace AutopilotQuick
             KeyDown += WinOnKeyDown;
             
 
-            BatteryMan.getInstance().BatteryUpdated += MainWindow_BatteryUpdated;
+            BatteryMan.GetInstance().BatteryUpdated += MainWindow_BatteryUpdated;
 
             
-            TaskManager.getInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
-            TaskManager.getInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
-            TaskManager.getInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
-            TaskManager.getInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
+            TaskManager.GetInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
+            TaskManager.GetInstance().CurrentTaskProgressChanged += MainWindow_CurrentTaskProgressChanged;
+            TaskManager.GetInstance().CurrentTaskMessageChanged += MainWindow_CurrentTaskMessageChanged;
+            TaskManager.GetInstance().CurrentTaskNameChanged += MainWindow_CurrentTaskNameChanged;
             
             
-            InternetMan.getInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            InternetMan.getInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
+            InternetMan.GetInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
+            InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
-            await Task.Run(() =>BatteryMan.getInstance().StartTimer(), cancellationToken);
-            await Task.Run(() =>InternetMan.getInstance().StartTimer(), cancellationToken);
-            var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.getInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            await Task.Run(() =>BatteryMan.GetInstance().StartTimer(), cancellationToken);
+            await Task.Run(() =>InternetMan.GetInstance().StartTimer(), cancellationToken);
+            var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.GetInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         }
 

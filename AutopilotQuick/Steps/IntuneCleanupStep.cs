@@ -42,7 +42,7 @@ public class IntuneCleanupStep : StepBaseEx
             return new StepResult(true, "Cleaning up autopilot records - DISABLED");
         }
 
-        if (!InternetMan.getInstance().IsConnected)
+        if (!InternetMan.GetInstance().IsConnected)
         {
             Title = "Cleaning up intune records - NO INTERNET";
             Progress = 100;

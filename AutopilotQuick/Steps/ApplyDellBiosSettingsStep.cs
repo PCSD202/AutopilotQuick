@@ -51,7 +51,7 @@ namespace AutopilotQuick.Steps
                 UpdateAndExtract.Telemetry.Properties["Downloaded"] = "false";
                 //If the file is not cached, or if we have internet and the file is not up to date, or if the directory does not exist
                 if (!DellBiosSettingsCacher.FileCached ||
-                    (InternetMan.getInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate) ||
+                    (InternetMan.GetInstance().IsConnected && !DellBiosSettingsCacher.IsUpToDate) ||
                     !Directory.Exists(dellBiosSettingsDir))
                 {
                     UpdateAndExtract.Telemetry.Properties["Downloaded"] = "true";
