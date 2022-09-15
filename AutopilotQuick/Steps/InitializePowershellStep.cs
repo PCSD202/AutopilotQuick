@@ -13,7 +13,7 @@ public class InitializePowershellStep : StepBaseEx
 {
     public override string Name() => "Initialize powershell step";
     public readonly ILogger Logger = App.GetLogger<FormatStep>();
-    public bool IsCritical()
+    public override bool IsCritical()
     {
         return false;
     }

@@ -126,10 +126,15 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
         Title = "Autopilot sync step";
         Message = "Making sure autopilot is synced";
         IsIndeterminate = true;
-        if (!IsEnabled || !InternetMan.GetInstance().IsConnected || context.TakeHomeToggleOn)
+        if (!IsEnabled)
         {
             await CountDown(pauseToken, 5000);
             return new StepResult(true, "Autopilot sync step disabled");
+        }
+
+        if (!InternetMan.GetInstance().IsConnected)
+        {
+            await InternetMan.WaitForInternetAsync(context);
         }
 
         var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);

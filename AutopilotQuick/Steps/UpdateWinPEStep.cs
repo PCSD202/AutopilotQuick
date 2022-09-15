@@ -18,7 +18,7 @@ public class UpdateWinPEStep : StepBaseEx
     public readonly ILogger Logger = App.GetLogger<UpdateWinPEStep>();
     private Cacher WinPEISOCache;
 
-    public bool IsCritical()
+    public override bool IsCritical()
     {
         return false;
     }
@@ -136,7 +136,7 @@ Write-Host $ISO;
         Logger.LogInformation("Starting to robocopy");
 
         Title = "Updating Flash Drive OS";
-        
+        IsIndeterminate = false;
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Robocopying OS to disk"))
         {
             
