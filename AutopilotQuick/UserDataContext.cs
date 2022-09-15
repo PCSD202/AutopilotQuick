@@ -33,7 +33,7 @@ namespace AutopilotQuick
 
         public bool UserRequestedChangeSharedPC { get; set; } = false;
 
-        public string Title { get; set; } = "Autopilot Quick";
+        public string Title { get; set; } = "";
         public string Version { get; set; }
         public string LatestVersion { get; set; }
         public string LatestReleaseAssetURL { get; set; }
@@ -170,13 +170,15 @@ namespace AutopilotQuick
         {
             new HotkeyListItem("Enable Developer mode", new HotKey(Key.F1), HotkeyType.Normal),
             new HotkeyListItem("Open debug menu", new HotKey(Key.F7), HotkeyType.Normal),
-            new HotkeyListItem("Toggle hotkey menu", new HotKey(Key.H), HotkeyType.Normal),
+            new HotkeyListItem("Toggle hotkey menu", new HotKey(Key.H, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Enable takehome", new HotKey(Key.T, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Open power menu", new HotKey(Key.P, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Toggle SharedPC", new HotKey(Key.S, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Enable Rainbow mode", new HotKey(Key.F10), HotkeyType.EasterEgg),
             new HotkeyListItem("Make cookies rain down", new HotKey(Key.C), HotkeyType.EasterEgg),
         };
+
+        private string _currentTime;
 
         public IEnumerable<HotkeyListItem> NormalHotkeyList
         {
@@ -193,6 +195,22 @@ namespace AutopilotQuick
             }
         }
 
+        public string CurrentTime
+        {
+            get => _currentTime;
+            set
+            {
+                if (value.Equals(_currentTime)) return;
+                _currentTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public void SetCurrentTime(DateTime currentTime)
+        {
+            CurrentTime = currentTime.ToString("MM/dd/yyyy hh:mm:ss tt");
+        }
+
         public UserDataContext(IDialogCoordinator dialogCoordinator, MainWindow window)
         {
             MainWindow = window;
@@ -200,8 +218,11 @@ namespace AutopilotQuick
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
             OnPropertyChanged(nameof(Version));
-            Title = $"Autopilot Quick - {Version} | ID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}";
+            Title = $" - {Version} | ID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}";
             OnPropertyChanged(nameof(Title));
+            
+            SetCurrentTime(DateTime.Now);
+            
         }
 
         public MainWindow MainWindow { get; }

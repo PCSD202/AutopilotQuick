@@ -23,6 +23,7 @@
 	  <EmbeddedResource Include="Resources\AutopilotConfigurationFile.json" />
 	  <EmbeddedResource Include="Resources\AutopilotQuick_PubKey.asc" />
 	  <EmbeddedResource Include="Resources\Wifi.ppkg" />
+	  <None Remove="Resources\Fonts\Lucida Sans Italic.ttf" />
 	  <None Remove="Resources\TakeHome\AutopilotCleanup.ps1" />
 	  <EmbeddedResource Include="Resources\TakeHome\AutopilotCleanup.ps1" />
 	  <None Remove="Resources\TakeHome\TakeHomeCreds.xml" />
@@ -88,6 +89,7 @@
     <Resource Include="Resources\Egg\Pink_Swirl.bmp" />
     <None Remove="Resources\Egg\Sugar_Cookie.bmp" />
     <Resource Include="Resources\Egg\Sugar_Cookie.bmp" />
+    <Resource Include="Resources\Fonts\Lucida Sans Italic.ttf" />
   </ItemGroup>
 	
   <ItemGroup>

@@ -76,7 +76,17 @@ namespace AutopilotQuick
                 WindowState = WindowState.Maximized;
                 ShowCloseButton = false;
             }
-
+            var timer = new DispatcherTimer
+            {
+                Interval = 1.Seconds()
+            };
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+        
+        private void Timer_Tick(object? sender, EventArgs e)
+        {
+            context.SetCurrentTime(DateTime.Now);
         }
 
         private void ContextOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -112,13 +122,13 @@ namespace AutopilotQuick
                 _cancelTokenSource.Cancel();
                 Close();
             };
-            Dispatcher.BeginInvoke(() =>
+            _ = Dispatcher.BeginInvoke(() =>
                 {
                     HotkeyManager.Current.AddOrReplace("RainbowMode", Key.F10, ModifierKeys.None, true,
                         F10KeyPressed_OnExecuted);
                     HotkeyManager.Current.AddOrReplace("DebugMenu", Key.F7, ModifierKeys.None, true,
                         F7KeyPressed_OnExecuted);
-                    HotkeyManager.Current.AddOrReplace("HotkeyMenu", Key.H, ModifierKeys.None, true, (o, args) =>
+                    HotkeyManager.Current.AddOrReplace("HotkeyMenu", Key.H, ModifierKeys.Control, true, (o, args) =>
                     {
                         this.Dispatcher.Invoke(() =>
                         {
@@ -135,9 +145,9 @@ namespace AutopilotQuick
                     HotkeyManager.Current.AddOrReplace("ToggleSharedPC", Key.S, ModifierKeys.Control, true, (o, args) =>
                     {
                         if (!context.SharedPCCheckboxEnabled) return;
-                        
+
                         context.SharedPCChecked = context.SharedPCChecked is not (null or true);
-                            
+
                         SharedPCSwitch_OnCheckedOrUncheck(this, new RoutedEventArgs());
                     });
                     HotkeyManager.Current.AddOrReplace("OpenPowerMenu", Key.P, ModifierKeys.Control,
