@@ -76,12 +76,12 @@ public class CleanupRecordsStep : StepBaseEx
         }
         
         //if Take home enabled, wait for internet. If take home not enabled then we will not wait
-        if (context.TakeHomeToggleOn & !InternetMan.getInstance().IsConnected)
+        if (context.TakeHomeToggleOn & !InternetMan.GetInstance().IsConnected)
         {
             await InternetMan.WaitForInternetAsync(context);
         }
 
-        if (!InternetMan.getInstance().IsConnected && !context.TakeHomeToggleOn)
+        if (!InternetMan.GetInstance().IsConnected && !context.TakeHomeToggleOn)
         {
             Title = "Cleaning up intune records - NO INTERNET";
             Progress = 100;

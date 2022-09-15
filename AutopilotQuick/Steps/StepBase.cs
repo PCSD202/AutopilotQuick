@@ -18,7 +18,7 @@ namespace AutopilotQuick.Steps
 
         public abstract double ProgressWeight();
 
-        public bool IsEnabled => TaskManager.getInstance().Enabled;
+        public bool IsEnabled => TaskManager.GetInstance().Enabled;
 
         private StepStatus _status { get; set; } = new StepStatus(0, true, "Please wait...", "");
 

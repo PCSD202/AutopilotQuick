@@ -34,9 +34,9 @@ namespace AutopilotQuick.Steps
                 formatProcess.StartInfo.Arguments = "reboot";
                 StepOperation.Telemetry.Success = true;
                 StepOperation.Dispose();
-                TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
+                TaskManager.GetInstance().TaskManOp.Telemetry.Success = true;
                 App.GetTelemetryClient().TrackEvent("Image successful");
-                TaskManager.getInstance().TaskManOp.Dispose();
+                TaskManager.GetInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
                 await CountDown(pauseToken, 5000);
                 formatProcess.Start();
@@ -48,8 +48,8 @@ namespace AutopilotQuick.Steps
             finally
             {
                 StepOperation.Dispose();
-                TaskManager.getInstance().TaskManOp.Telemetry.Success = true;
-                TaskManager.getInstance().TaskManOp.Dispose();
+                TaskManager.GetInstance().TaskManOp.Telemetry.Success = true;
+                TaskManager.GetInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
                 await Task.Run(async () => await CountDown(pauseToken, 5000));
             }

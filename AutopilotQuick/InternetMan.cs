@@ -16,16 +16,16 @@ namespace AutopilotQuick
 {
     public class InternetMan
     {
-        private static readonly InternetMan instance = new();
+        private static readonly InternetMan Instance = new();
 
-        private static readonly ILogger _logger = App.GetLogger<InternetMan>();
-        public static InternetMan getInstance()
+        private static readonly ILogger Logger = App.GetLogger<InternetMan>();
+        public static InternetMan GetInstance()
         {
-            return instance;
+            return Instance;
         }
         public bool IsConnected { get; private set; } = false;
-        public event EventHandler InternetBecameAvailable;
-        public event EventHandler InternetBecameUnavailable;
+        public event EventHandler? InternetBecameAvailable;
+        public event EventHandler? InternetBecameUnavailable;
         
         private Timer _timer = null;
         
@@ -35,7 +35,7 @@ namespace AutopilotQuick
             {
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("InternetManServiceServiceStarted");
-                _logger.LogInformation("Internet man service started");
+                Logger.LogInformation("Internet man service started");
                 _timer = new Timer(Run, null, 5.Seconds(), 5.Seconds()); //Give some time for the app to startup before we start checking for internet
             }
             
@@ -49,14 +49,14 @@ namespace AutopilotQuick
         {
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Waiting for internet"))
             {
-                if (!InternetMan.getInstance().IsConnected)
+                if (!InternetMan.GetInstance().IsConnected)
                 {
                     var progressController =
                         await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...",
                             "Connecting to the internet");
                     progressController.SetIndeterminate();
                     var tcs = new TaskCompletionSource();
-                    InternetMan.getInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
+                    InternetMan.GetInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
                     await tcs.Task;
                     await progressController.CloseAsync();
                 }
@@ -85,14 +85,14 @@ namespace AutopilotQuick
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
-                _logger.LogInformation("I decree internet is available");
+                Logger.LogInformation("I decree internet is available");
                 IsConnected = internet;
                 InternetBecameAvailable?.Invoke(this, EventArgs.Empty);
             
             }
             else if(!internet && IsConnected)
             {
-                _logger.LogInformation("Where did the internet go? Nobody knows.");
+                Logger.LogInformation("Where did the internet go? Nobody knows.");
                 App.GetTelemetryClient().TrackEvent("InternetLost");
                 InternetBecameUnavailable?.Invoke(this, EventArgs.Empty);
             }

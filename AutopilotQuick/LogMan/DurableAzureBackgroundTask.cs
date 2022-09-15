@@ -87,14 +87,14 @@ namespace AutopilotQuick.LogMan
                 AzureLogSettingsCache = new Cacher(CachedResourceUris.AzureLogSettings, context);
                 
                 // Instantiate a ShareClient which will be used to create and manipulate the file share
-                if (InternetMan.getInstance().IsConnected)
+                if (InternetMan.GetInstance().IsConnected)
                 {
                     Share = new ShareClient(GetConnectionString(), "autopilot-quick-logs");
                     Share.CreateIfNotExists();
                 }
                 else
                 {
-                    InternetMan.getInstance().InternetBecameAvailable += OnInternetBecameAvailable;
+                    InternetMan.GetInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
                 _timer = new Timer(Run, null, 0, 1000);
             }
@@ -105,7 +105,7 @@ namespace AutopilotQuick.LogMan
         {
             try
             {
-                if (InternetMan.getInstance().IsConnected && Share is not null)
+                if (InternetMan.GetInstance().IsConnected && Share is not null)
                 {
                     try
                     {

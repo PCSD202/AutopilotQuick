@@ -10,21 +10,20 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Nito.AsyncEx;
 
 namespace AutopilotQuick
 {
     class TaskManager {
-        private static readonly TaskManager instance = new();
-        public static TaskManager getInstance()
+        private static readonly TaskManager Instance = new();
+        public static TaskManager GetInstance()
         {
-            return instance;
+            return Instance;
         }
-        public event EventHandler<CurrentTaskNameChangedEventArgs> CurrentTaskNameChanged;
-        public event EventHandler<CurrentTaskMessageChangedEventArgs> CurrentTaskMessageChanged;
-        public event EventHandler<CurrentTaskProgressChangedEventArgs> CurrentTaskProgressChanged;
-        public event EventHandler<TotalTaskProgressChangedEventArgs> TotalTaskProgressChanged;
+        public event EventHandler<CurrentTaskNameChangedEventArgs>? CurrentTaskNameChanged;
+        public event EventHandler<CurrentTaskMessageChangedEventArgs>? CurrentTaskMessageChanged;
+        public event EventHandler<CurrentTaskProgressChangedEventArgs>? CurrentTaskProgressChanged;
+        public event EventHandler<TotalTaskProgressChangedEventArgs>? TotalTaskProgressChanged;
         private static readonly ILogger Logger = App.GetLogger<TaskManager>();
 
         private void InvokeTotalTaskProgressChanged(double progress, bool isIndeterminate = false)

@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using AutopilotQuick.WMI;
+using Humanizer;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using Microsoft.ApplicationInsights;
@@ -51,17 +52,23 @@ namespace AutopilotQuick
         {
             base.OnStartup(e);
             AllocConsole();
-            Console.WriteLine("Starting up");
-            ServiceProvider = SetupAzureAppInsights();
+            var s = Stopwatch.StartNew();
+            Console.WriteLine("Starting up...");
             SetupLoggingConfig();
+            ServiceProvider = SetupAzureAppInsights();
+            Console.WriteLine($"Startup took {s.Elapsed.Humanize()}.");
+            s.Restart();
             var _logger = GetLogger<App>();
+            _logger.LogInformation($"Started logging service in {s.Elapsed.Humanize()}");
             var telemetryClient = GetTelemetryClient();
+            
+            LogManager.AutoShutdown = true;
 
             for (int i = 0; i != e.Args.Length; ++i)
             {
                 if (e.Args[i] == "/run")
                 {
-                    TaskManager.getInstance().Enabled = true;
+                    TaskManager.GetInstance().Enabled = true;
                 }
             }
 
@@ -77,6 +84,7 @@ namespace AutopilotQuick
             {
                 FlushTelemetry();
                 MainWindow.Close();
+                NLog.LogManager.Shutdown();
             };
             App.Current.DispatcherUnhandledException += CurrentOnDispatcherUnhandledException;
             App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
