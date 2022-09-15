@@ -12,7 +12,7 @@ public class MaintenanceStep : StepBaseEx
 {
     public override string Name() => "Maintenance Step";
     
-    public bool IsCritical()
+    public override bool IsCritical()
     {
         return false;
     }
