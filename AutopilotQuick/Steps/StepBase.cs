@@ -20,11 +20,6 @@ namespace AutopilotQuick.Steps
 
         public bool IsEnabled => TaskManager.GetInstance().Enabled;
 
-        public virtual List<CachedResourceData> RequiredFiles()
-        {
-            return new List<CachedResourceData>();
-        }
-
         private StepStatus _status { get; set; } = new StepStatus(0, true, "Please wait...", "");
 
         public StepStatus Status
