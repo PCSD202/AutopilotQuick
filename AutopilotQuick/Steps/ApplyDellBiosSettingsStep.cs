@@ -27,8 +27,7 @@ namespace AutopilotQuick.Steps
         public override string Name() => "Apply dell bios settings step";
         public readonly ILogger Logger = App.GetLogger<ApplyDellBiosSettingsStep>();
 
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
-            IOperationHolder<RequestTelemetry> StepOperation)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
         {
             Title = "Applying dell bios settings";
             if (!IsEnabled)

@@ -20,8 +20,7 @@ namespace AutopilotQuick.Steps
     {
         public override string Name() => "Apply autopilot configuration step";
         public readonly ILogger Logger = App.GetLogger<ApplyAutopilotConfigurationStep>();
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
-            IOperationHolder<RequestTelemetry> StepOperation)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
         {
             Title = "Applying Autopilot configuration";
             Message = "";

@@ -131,7 +131,7 @@ namespace AutopilotQuick
                         }
                         else
                         {
-                            if (!step.Critical)
+                            if (!step.IsCritical())
                             {
                                 InvokeCurrentTaskNameChanged("Failed");
                                 InvokeCurrentTaskMessageChanged(result.Message);
@@ -148,7 +148,7 @@ namespace AutopilotQuick
                     catch (Exception b)
                     {
                         telemetryClient.TrackException(b);
-                        if (!step.Critical)
+                        if (!step.IsCritical())
                         {
                             Logger.LogInformation("Continuing to next step because step was not critical");
                             continue;
