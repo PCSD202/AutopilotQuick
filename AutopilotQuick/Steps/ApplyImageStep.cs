@@ -105,7 +105,7 @@ namespace AutopilotQuick.Steps
 
         private ScratchDir MakeScratchDir()
         {
-            var scratchDir = Path.Join("W:\"", "Scratch");
+            var scratchDir = Path.Join("W:\\", "Scratch");
             if (!Directory.Exists("W:\\"))
             {
                 Logger.LogError("W:\\ Drive does not exist, format must have failed");
