@@ -13,7 +13,10 @@ public class InitializePowershellStep : StepBaseEx
 {
     public override string Name() => "Initialize powershell step";
     public readonly ILogger Logger = App.GetLogger<FormatStep>();
-    public new bool Critical = false;
+    public bool IsCritical()
+    {
+        return false;
+    }
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
         IOperationHolder<RequestTelemetry> StepOperation)
     {

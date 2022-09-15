@@ -18,7 +18,10 @@ public class UpdateWinPEStep : StepBaseEx
     public readonly ILogger Logger = App.GetLogger<UpdateWinPEStep>();
     private Cacher WinPEISOCache;
 
-    public new bool Critical = false;
+    public bool IsCritical()
+    {
+        return false;
+    }
 
     public override string Name() => "Update WinPE step";
 

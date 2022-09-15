@@ -20,6 +20,11 @@ namespace AutopilotQuick.Steps
 
         public bool IsEnabled => TaskManager.GetInstance().Enabled;
 
+        public virtual List<CachedResourceData> RequiredFiles()
+        {
+            return new List<CachedResourceData>();
+        }
+
         private StepStatus _status { get; set; } = new StepStatus(0, true, "Please wait...", "");
 
         public StepStatus Status
@@ -61,7 +66,10 @@ namespace AutopilotQuick.Steps
             set => Status = Status with { Title = value };
         }
 
-        public bool Critical = true; //This defines if task manager should continue or not if this task fails. 
+        public virtual bool IsCritical() //This defines if task manager should continue or not if this task fails. 
+        {
+            return true; 
+        } 
 
         public readonly record struct StepStatus(double Progress, bool IsIndeterminate, string Message, string Title);
 

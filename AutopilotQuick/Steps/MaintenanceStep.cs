@@ -11,7 +11,11 @@ namespace AutopilotQuick.Steps;
 public class MaintenanceStep : StepBaseEx
 {
     public override string Name() => "Maintenance Step";
-    public new bool Critical = false;
+    
+    public bool IsCritical()
+    {
+        return false;
+    }
 
     public readonly ILogger Logger = App.GetLogger<MaintenanceStep>();
 
