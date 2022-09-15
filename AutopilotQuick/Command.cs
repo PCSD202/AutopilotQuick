@@ -33,16 +33,19 @@ class SimpleMainWindowCommand : ICommand
 {
     public event EventHandler<object> Executed;
 
+#pragma warning disable CS8767
     public bool CanExecute(object parameter)
+#pragma warning restore CS8767
     {
         return true;
     }
 
+#pragma warning disable CS8767
     public void Execute(object parameter)
+#pragma warning restore CS8767
     {
-        if (Executed != null)
-            Executed(this, parameter);
+        Executed?.Invoke(this, parameter);
     }
 
-    public event EventHandler CanExecuteChanged;
+    public event EventHandler? CanExecuteChanged;
 }
