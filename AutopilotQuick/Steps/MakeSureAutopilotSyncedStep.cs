@@ -25,6 +25,7 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
         {
             var status = await client.CheckAutopilotProfileSyncStatus(GetServiceTag(pauseToken));
             if (status != null) synced = status.Value.synced;
+            if (status == null) synced = true; //We synced because we could not find the profile
         }
         catch (Exception e)
         {
@@ -53,6 +54,10 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
                 if (status.HasValue)
                 {
                     synced = status.Value.synced;
+                }
+                else
+                {
+                    errorCount++;
                 }
 
                 if (!synced)
@@ -126,6 +131,7 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
         Title = "Autopilot sync step";
         Message = "Making sure autopilot is synced";
         IsIndeterminate = true;
+        // If takehome is off, and UserRequestChangeSharedPC is off, and we don't have internet
         if (!IsEnabled)
         {
             await CountDown(pauseToken, 5000);
@@ -134,7 +140,14 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
 
         if (!InternetMan.GetInstance().IsConnected)
         {
-            await InternetMan.WaitForInternetAsync(context);
+            if (context.TakeHomeToggleOn || context.UserRequestedChangeSharedPC)
+            {
+                await InternetMan.WaitForInternetAsync(context);
+            }
+            else
+            {
+                return new StepResult(true, "Skipped step because no internet, and user didn't request change");
+            }
         }
 
         var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
@@ -145,6 +158,11 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
 
         var config = JsonConvert.DeserializeObject<MainWindow.GroupManConfig>(await groupManConfigCache.ReadAllTextAsync());
         var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
+        var exists = await client.CheckAutopilotProfileExists(GetServiceTag(pauseToken));
+        if (exists is not { Exists: true })
+        {
+            return new StepResult(true, "Sync finished because no profile found");
+        }
         if (!context.TakeHomeToggleOn)
         {
             return await RunSharedPCSync(client, context, pauseToken);

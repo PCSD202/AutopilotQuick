@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights;
+using Humanizer;
+using Humanizer.Localisation;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
@@ -130,6 +131,29 @@ namespace AutopilotQuick.Steps
             }
         }
 
+        /// <summary>
+        /// Copies the specified cached wim to the drive
+        /// </summary>
+        /// <param name="wimCache">Cached file to copy</param>
+        /// <returns>The path to the wim on the drive</returns>
+        public async Task<string> CopyWimToDrive(Cacher wimCache)
+        {
+            Title = "Copying WIM to drive";
+            var dest = Path.Join("W:\\", wimCache.FileName);
+            var source = wimCache.FilePath;
+            var copier = new CustomFileCopier(source, dest);
+            var sw = new Stopwatch();
+            copier.OnProgressChanged += (long size, long downloaded, double percentage, ref bool cancel) =>
+            {
+                var bytesPerSecond = downloaded.Bytes().Per(sw.Elapsed);
+                Progress = percentage/2;
+                Message = $"Copying {percentage / 100:P} {downloaded.Bytes().Humanize("#.00")} of {size.Bytes().Humanize("#.00")} ({bytesPerSecond.Humanize("#", TimeUnit.Second)})";
+            };
+            sw = Stopwatch.StartNew();
+            await copier.CopyAsync();
+            return dest;
+        }
+        
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
             IOperationHolder<RequestTelemetry> StepOperation)
         {
@@ -182,6 +206,8 @@ namespace AutopilotQuick.Steps
                         "Failed to create scratch directory. This could mean that the drive in the computer is faulty.");
                 }
 
+                //var copiedFilePath = await CopyWimToDrive(wimCache);
+                
                 using var wimHandle = WimgApi.CreateFile(wimCache.FilePath, WimFileAccess.Read,
                     WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None);
 
