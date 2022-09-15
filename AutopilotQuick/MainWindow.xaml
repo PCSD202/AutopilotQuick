@@ -13,6 +13,7 @@
         dialogs:DialogParticipation.Register="{Binding}"
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
+        TitleCharacterCasing="Normal"
         Title="{Binding Title}" Height="450" Width="800">
 
     <mah:MetroWindow.Resources>
@@ -20,19 +21,29 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <SolidColorBrush x:Key="ProgressBrush" x:Name="ColorBrush" Color="{DynamicResource MahApps.Colors.Accent}"/>
         <Style BasedOn="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" TargetType="mah:MetroHeader" />
-       <Style x:Key="tooltipThing" BasedOn="{StaticResource MahApps.Styles.CheckBox}" TargetType="CheckBox">
-           <Setter Property="ToolTip" Value="SharedPC"/>
-           <Style.Triggers>
-               <Trigger Property="IsEnabled" Value="False">
-                   <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot, or azureAD record, or because we already applied the settings"></Setter>
-               </Trigger>
-           </Style.Triggers>
-       </Style>
+        <Style x:Key="tooltipThing" BasedOn="{StaticResource MahApps.Styles.CheckBox}" TargetType="CheckBox">
+            <Setter Property="ToolTip" Value="SharedPC"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot, or azureAD record, or because we already applied the settings"></Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </mah:MetroWindow.Resources>
+    <mah:MetroWindow.TitleTemplate>
+        <DataTemplate>
+            <TextBlock Margin="8 -1 1 0" VerticalAlignment="Center" FontFamily="{DynamicResource MahApps.Fonts.Family.Window.Title}" FontSize="{DynamicResource MahApps.Font.Size.Window.Title}" TextTrimming="CharacterEllipsis">
+                <Run Text="AUTOPILOT" FontFamily="Lucida Sans Unicode, Verdana" FontWeight="Medium"/>
+                <Run Text="QUICK" FontFamily="Lucida Sans Unicode, Verdana" FontWeight="Medium" FontStyle="Italic"/>
+                <Run Text="{TemplateBinding Content}"/>
+            </TextBlock>
+        </DataTemplate>
+    </mah:MetroWindow.TitleTemplate>
+
     <Window.InputBindings>
         <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" HotkeyManager.RegisterGlobalHotkey="True"/>
     </Window.InputBindings>
-
+    
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
             <mah:MetroHeader Style="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" Header="Internet" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0 0 5 0" mah:ControlsHelper.ContentCharacterCasing="Normal">
@@ -81,7 +92,6 @@
 
         </mah:WindowCommands>
     </mah:MetroWindow.RightWindowCommands>
-    
     <mah:MetroWindow.Flyouts>
         <mah:FlyoutsControl x:Name="flyoutsControl">
             <mah:Flyout x:Name="HotKeyFlyout" Header="Hotkeys" Position="Right" Width="300">
@@ -169,7 +179,11 @@
                 <ColumnDefinition Width="8*"></ColumnDefinition>
                 <ColumnDefinition Width="auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <mah:MetroProgressBar Foreground="{StaticResource ProgressBrush}" VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"></mah:MetroProgressBar>
+
+            <StackPanel VerticalAlignment="Bottom">
+                <mah:MetroHeader Header="{Binding CurrentTime}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Opacity="0.5"/>
+                <mah:MetroProgressBar Foreground="{StaticResource ProgressBrush}" VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"/>
+            </StackPanel>
         </Grid>
 
 
