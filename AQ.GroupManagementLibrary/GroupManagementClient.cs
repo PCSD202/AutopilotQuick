@@ -61,6 +61,16 @@ public class GroupManagementClient : IDisposable
         return null;
     }
     
+    public async Task<AutopilotProfileExistsOutput?> CheckAutopilotProfileExists(string ServiceTag)
+    {
+        var request = new RestRequest("AutopilotProfileExists", Method.Get);
+        request.AddJsonBody(new NormalRequestBody(ServiceTag));
+        var result = await _client.ExecuteAsync<AutopilotProfileExistsOutput>(request);
+        if (result.IsSuccessful) return result.Data;
+        _logger.LogError("Got status code: {statuscode} when calling CheckAutopilotProfileExists. Content: {content}", result.StatusCode, result.Content);
+        return null;
+    }
+    
     public void Dispose()
     {
         _client?.Dispose();
@@ -76,6 +86,8 @@ public record struct AddToGroupOutput(bool AlreadyInGroup, bool Success);
 public record struct RemoveFromGroupOutput(bool AlreadyRemoved, bool Success);
 
 public record struct CheckAutopilotProfileSyncStatusOutput(bool synced);
+
+public record struct AutopilotProfileExistsOutput(bool Exists);
 
 
 internal class GroupManagementAuthenticator : AuthenticatorBase {

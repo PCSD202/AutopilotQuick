@@ -23,6 +23,22 @@ public class Tests
     }
     
     [Test]
+    public async Task AutopilotProfileExistsValid()
+    {
+        var result = await Client.CheckAutopilotProfileExists(STToTestWith);
+        Assert.That(result.HasValue);
+        Assert.That(result.Value.Exists, Is.True, $"Response should return with valid ST. Please make sure {STToTestWith} is valid.");
+    }
+    
+    [Test]
+    public async Task AutopilotProfileExistsInvalid()
+    {
+        var result = await Client.CheckAutopilotProfileExists("AAAAAAAAAAAAA");
+        Assert.That(result.HasValue);
+        Assert.That(result.Value.Exists, Is.False, $"Response should be false when invalid ST.");
+    }
+    
+    [Test]
     public async Task GetMemberOfGroupInvalidST()
     {
         var result = await Client.IsSharedPCMember("AAAAAAAAAAAAA");
