@@ -142,6 +142,10 @@ namespace AutopilotQuick
                             context.TakeHomeToggleOn = true;
                         }
                     });
+                    HotkeyManager.Current.AddOrReplace("OpenPowershell", Key.F10, ModifierKeys.Shift, true, (o, args) =>
+                    {
+                        LaunchPowershell();
+                    });
                     HotkeyManager.Current.AddOrReplace("ToggleSharedPC", Key.S, ModifierKeys.Control, true, (o, args) =>
                     {
                         if (!context.SharedPCCheckboxEnabled) return;
@@ -191,6 +195,15 @@ namespace AutopilotQuick
                 _cookieWindow.AddCookie();
                 LastCookieTime = DateTime.UtcNow;
             }
+        }
+
+        private static void LaunchPowershell()
+        {
+            var powerShellProcess = new Process();
+            powerShellProcess.StartInfo.FileName = "Powershell.exe";
+            powerShellProcess.StartInfo.UseShellExecute = true;
+            powerShellProcess.StartInfo.CreateNoWindow = false;
+            powerShellProcess.Start();
         }
 
         private void MainWindow_BatteryUpdated(object? sender, BatteryMan.BatteryUpdatedEventData e)
