@@ -33,6 +33,7 @@ using MahApps.Metro.Controls;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using ORMi;
@@ -115,6 +116,7 @@ namespace AutopilotQuick
 
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            
             var cancellationToken = _cancelTokenSource.Token;
             
             Application.Current.Exit += (o, args) =>

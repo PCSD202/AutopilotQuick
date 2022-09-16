@@ -12,13 +12,15 @@ using Humanizer;
 using Humanizer.Localisation;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Polly;
 
 namespace AutopilotQuick;
 
 public class Cacher
 {
-    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger<Cacher> _logger = App.GetLogger<Cacher>();
 
     /// <summary>
     /// The name of the file once downloaded, needs to be unique or the files will overwrite
@@ -128,32 +130,39 @@ public class Cacher
         {
             t.Telemetry.Url = new Uri(FileURL);
             await InternetMan.WaitForInternetAsync(_context); //We need internet connectivity
-            _logger.Info($"Started downloading update for {FileURL}");
+            _logger.LogInformation($"Started downloading update for {FileURL}");
 
-            var updateWindow = await _context.DialogCoordinator.ShowProgressAsync(_context,
-                $"Downloading updated {FileName}",
-                "Downloading updated file");
+            var updateWindow = await _context.DialogCoordinator.ShowProgressAsync(_context, $"Downloading updated {FileName}", "Downloading updated file");
             updateWindow.SetIndeterminate();
             updateWindow.Maximum = 100;
-            SetCachedFileLastModified(DateTime
-                .MinValue); //Set it to the lowest value so if we were to crash, it will re-download
-            using var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath);
-
-            var sw = Stopwatch.StartNew();
-            DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+            SetCachedFileLastModified(DateTime.MinValue); //Set it to the lowest value so if we were to crash, it will re-download
+            var rPolicy = Policy
+                .Handle<Exception>().RetryForeverAsync((outcome, retryNumber, context) =>
+                {
+                    _logger.LogError(outcome, "Downloader failed with error: {outcome}", outcome);
+                    updateWindow.SetMessage($"Download failed {retryNumber} times, retrying...");
+                });
+            
+            // ReSharper disable once AccessToDisposedClosure
+            var response = rPolicy.ExecuteAsync(async context =>
             {
-                if (!progressPercentage.HasValue) return;
+                var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath);
+                var sw = Stopwatch.StartNew();
+                DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                {
+                    if (!progressPercentage.HasValue) return;
 
-                var bytesPerSecond = totalBytesDownloaded.Bytes().Per(sw.Elapsed);
-                updateWindow.SetProgress(progressPercentage.Value);
-                updateWindow.SetMessage($"Downloading updated file {(progressPercentage.Value / 100):P}\n" +
-                                        $"{totalBytesDownloaded.Bytes().Humanize("#.00")} of {totalFileSize.Value.Bytes().Humanize("#.00")}".PadRight(27)+ $"({bytesPerSecond.Humanize("#", TimeUnit.Second)})");
-            };
-            await DownloadClient.StartDownload();
-            sw.Stop();
+                    var bytesPerSecond = totalBytesDownloaded.Bytes().Per(sw.Elapsed);
+                    updateWindow.SetProgress(progressPercentage.Value);
+                    updateWindow.SetMessage($"Downloading updated file {(progressPercentage.Value / 100):P}\n" +
+                                            $"{totalBytesDownloaded.Bytes().Humanize("#.00")} of {totalFileSize.Value.Bytes().Humanize("#.00")}".PadRight(27)+ $"({bytesPerSecond.Humanize("#", TimeUnit.Second)})");
+                };
+                await DownloadClient.StartDownload();
+            }, CancellationToken.None);
+            await response.WaitAsync(CancellationToken.None);
             SetCachedFileLastModified(GetLastModifiedFromWeb());
             await updateWindow.CloseAsync();
-            _logger.Info($"Download complete for {FileURL}");
+            _logger.LogInformation($"Download complete for {FileURL}");
             t.Telemetry.Success = true;
         }
     }
@@ -181,14 +190,14 @@ public class Cacher
                 else
                 {
                     t.Telemetry.Success = false;
-                    _logger.Error($"No Last-Modified header for {FileURL}");
+                    _logger.LogError($"No Last-Modified header for {FileURL}");
                     return DateTime.MaxValue;
                 }
             }
             catch (Exception e)
             {
                 t.Telemetry.Success = false;
-                _logger.Error($"Got error {e} while trying to get last modified from web for {FileURL}");
+                _logger.LogError($"Got error {e} while trying to get last modified from web for {FileURL}");
 
                 return DateTime.MaxValue;
             }
@@ -213,7 +222,7 @@ public class Cacher
         }
         catch (Exception e)
         {
-            _logger.Error(
+            _logger.LogError(
                 $"Got error {e.Message} while trying to deserialize {FileCacheDataPath}. Deleting json file.");
             File.Delete(FileCacheDataPath);
             return DateTime.MinValue;
