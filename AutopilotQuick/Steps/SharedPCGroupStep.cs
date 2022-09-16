@@ -15,6 +15,12 @@ public class SharedPCGroupStep : StepBaseEx
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
         IOperationHolder<RequestTelemetry> StepOperation)
     {
+        if (!IsEnabled)
+        {
+            Title = "SharedPC Step - Disabled";
+            await CountDown(pauseToken, 5000);
+            return new StepResult(true, "SharedPC Step - Disabled");
+        }
         if (!context.UserRequestedChangeSharedPC && context.SharedPCCheckboxEnabled)
         {
             Title = "Disabling SharedPC box";
