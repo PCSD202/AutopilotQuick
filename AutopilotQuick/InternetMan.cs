@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,14 +50,14 @@ namespace AutopilotQuick
         {
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Waiting for internet"))
             {
-                if (!InternetMan.GetInstance().IsConnected)
+                if (!InternetMan.GetInstance().IsConnected || !NetworkInterface.GetIsNetworkAvailable())
                 {
                     var progressController =
                         await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...",
                             "Connecting to the internet");
                     progressController.SetIndeterminate();
                     var tcs = new TaskCompletionSource();
-                    InternetMan.GetInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
+                    GetInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
                     await tcs.Task;
                     await progressController.CloseAsync();
                 }
@@ -67,7 +68,9 @@ namespace AutopilotQuick
         {
             try
             {
+#pragma warning disable SYSLIB0014
                 var request = (HttpWebRequest)WebRequest.Create(url);
+#pragma warning restore SYSLIB0014
                 request.KeepAlive = false;
                 request.Timeout = timeoutMs;
                 using var response = (HttpWebResponse)request.GetResponse();
@@ -81,7 +84,8 @@ namespace AutopilotQuick
 
         public void Run(Object? o)
         {
-            var internet = CheckForInternetConnection(2000, "https://www.google.com");
+            if(!NetworkInterface.GetIsNetworkAvailable()){ return; } //No network available so don't even try
+            var internet = CheckForInternetConnection(500, "https://www.google.com");
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");

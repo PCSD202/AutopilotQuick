@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Humanizer;
 using MahApps.Metro.Controls;
 
 namespace AutopilotQuick; 
@@ -27,8 +29,8 @@ public class HttpClientDownloadWithProgress : IDisposable
     public async Task StartDownload()
     {
         _httpClient = new HttpClient { Timeout = TimeSpan.FromDays(1) };
-        using (var response = await _httpClient.GetAsync(_downloadUrl, HttpCompletionOption.ResponseHeadersRead))
-            await DownloadFileFromHttpResponseMessage(response);
+        using var response = await _httpClient.GetAsync(_downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+        await DownloadFileFromHttpResponseMessage(response);
     }
 
     private async Task DownloadFileFromHttpResponseMessage(HttpResponseMessage response)
@@ -37,8 +39,8 @@ public class HttpClientDownloadWithProgress : IDisposable
 
         var totalBytes = response.Content.Headers.ContentLength;
 
-        using (var contentStream = await response.Content.ReadAsStreamAsync())
-            await ProcessContentStream(totalBytes, contentStream);
+        await using var contentStream = await response.Content.ReadAsStreamAsync();
+        await ProcessContentStream(totalBytes, contentStream);
     }
 
     private async Task ProcessContentStream(long? totalDownloadSize, Stream contentStream)
@@ -66,7 +68,9 @@ public class HttpClientDownloadWithProgress : IDisposable
         await using var fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
         do
         {
-            var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(10.Seconds());
+            var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
             if (bytesRead == 0)
             {
                 isMoreToRead = false;
