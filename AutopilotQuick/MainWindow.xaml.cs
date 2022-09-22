@@ -237,11 +237,18 @@ namespace AutopilotQuick
             context.TotalStepMessage = e.StepMessage;
         }
 
+        private bool AlreadyRanUpdater = false;
         private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
         {
+            
             context.ConnectedToInternet = true;
-            Task.Factory.StartNew(UpdateSharedPCBoxWhenInternet, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
+            if (!AlreadyRanUpdater)
+            {
+                AlreadyRanUpdater = true;
+                Task.Factory.StartNew(UpdateSharedPCBoxWhenInternet, TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
+            }
+            
         }
 
         private async void UpdateWithPause()
@@ -573,12 +580,15 @@ namespace AutopilotQuick
             var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
             if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
             {
-                await Task.Run(async ()=>await groupManConfigCache.DownloadUpdateAsync());
+                await Task.Run(async () => await groupManConfigCache.DownloadUpdateAsync());
             }
 
-            GroupManConfig config = JsonConvert.DeserializeObject<GroupManConfig>(await File.ReadAllTextAsync(groupManConfigCache.FilePath));
-            var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
-            
+            GroupManConfig config =
+                JsonConvert.DeserializeObject<GroupManConfig>(
+                    await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+            var client =
+                new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
+
             WMIHelper helper = new WMIHelper("root\\CimV2");
             string serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
 
@@ -601,12 +611,14 @@ namespace AutopilotQuick
                     context.SharedPCChecked = ismemeber.Value.TransitiveMemberInGroup;
                     if (ismemeber.Value.TransitiveMemberInGroup && !ismemeber.Value.DirectMemberInGroup)
                     {
-                        context.SharedPCCheckboxEnabled = false; //Disable check box because we are not direct members, only transitive
+                        context.SharedPCCheckboxEnabled =
+                            false; //Disable check box because we are not direct members, only transitive
                     }
                 });
                 return;
-            } else if (context.UserRequestedChangeSharedPC &&
-                       context.SharedPCChecked == ismemeber.Value.TransitiveMemberInGroup)
+            }
+            else if (context.UserRequestedChangeSharedPC &&
+                     context.SharedPCChecked == ismemeber.Value.TransitiveMemberInGroup)
             {
                 context.UserRequestedChangeSharedPC = false;
             }

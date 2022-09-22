@@ -11,6 +11,7 @@ using Humanizer;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
 using Octokit;
 
 namespace AutopilotQuick
@@ -26,6 +27,8 @@ namespace AutopilotQuick
         }
         public bool IsConnected { get; private set; } = false;
         public event EventHandler? InternetBecameAvailable;
+
+        private static AsyncManualResetEvent InternetAvailable = new AsyncManualResetEvent();
         public event EventHandler? InternetBecameUnavailable;
         
         private Timer _timer = null;
@@ -46,8 +49,10 @@ namespace AutopilotQuick
             Task task = Task.Run(async () => await InternetMan.WaitForInternetAsync(context));
             task.Wait();
         }
+        
         public static async Task WaitForInternetAsync(UserDataContext context)
         {
+            
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Waiting for internet"))
             {
                 if (!InternetMan.GetInstance().IsConnected || !NetworkInterface.GetIsNetworkAvailable())
@@ -56,13 +61,7 @@ namespace AutopilotQuick
                         await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...",
                             "Connecting to the internet");
                     progressController.SetIndeterminate();
-                    var tcs = new TaskCompletionSource();
-                    GetInstance().InternetBecameAvailable += (sender, args) =>
-                    {
-                        Logger.LogInformation("Internet available, setting the result of task");
-                        tcs.SetResult();
-                    };
-                    await tcs.Task;
+                    await InternetAvailable.WaitAsync();
                     await progressController.CloseAsync();
                 }
             }
@@ -95,13 +94,16 @@ namespace AutopilotQuick
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
                 Logger.LogInformation("I decree internet is available");
                 IsConnected = internet;
+                InternetAvailable.Set();
                 InternetBecameAvailable?.Invoke(this, EventArgs.Empty);
+                Logger.LogInformation("InternetAvailabe event finished firing");
             
             }
             else if(!internet && IsConnected)
             {
                 Logger.LogInformation("Where did the internet go? Nobody knows.");
                 App.GetTelemetryClient().TrackEvent("InternetLost");
+                InternetAvailable.Reset();
                 InternetBecameUnavailable?.Invoke(this, EventArgs.Empty);
             }
             IsConnected = internet;

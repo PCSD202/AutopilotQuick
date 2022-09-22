@@ -88,7 +88,20 @@ namespace AutopilotQuick
             };
             App.Current.DispatcherUnhandledException += CurrentOnDispatcherUnhandledException;
             App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             mainWindow.Show();
+        }
+
+        private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            App.GetLogger<App>().LogError((Exception?)e.ExceptionObject, "Unhandled exception: {e}", (Exception?)e.ExceptionObject);
+            if (e.IsTerminating)
+            {
+                App.GetLogger<App>().LogError("App terminating");
+                App.FlushTelemetry();
+                LogManager.Flush();
+                LogManager.Shutdown();
+            }
         }
 
         private void CurrentOnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
