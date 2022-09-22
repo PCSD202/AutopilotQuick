@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using AutopilotQuick.Annotations;
+using AutopilotQuick.WMI;
+using ORMi;
 
 namespace AutopilotQuick;
 
@@ -11,6 +13,7 @@ public partial class DebugWindow : INotifyPropertyChanged
     private string _sessionId;
     private string _version;
     private string _serviceTag;
+    private string _model;
 
     public string DeviceID
     {
@@ -56,6 +59,17 @@ public partial class DebugWindow : INotifyPropertyChanged
         }
     }
 
+    public string Model
+    {
+        get => _model;
+        set
+        {
+            if (value == _model) return;
+            _model = value;
+            OnPropertyChanged();
+        }
+    }
+
     public DebugWindow(string DeviceID, string SessionID, string Version, string ServiceTag)
     {
         InitializeComponent();
@@ -64,6 +78,7 @@ public partial class DebugWindow : INotifyPropertyChanged
         this.SessionID = SessionID;
         this.Version = Version;
         this.ServiceTag = ServiceTag;
+        this.Model = WimMan.getInstance().ModelName;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
