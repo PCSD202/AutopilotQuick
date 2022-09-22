@@ -8,8 +8,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Downloader;
 using Humanizer;
 using Humanizer.Localisation;
+using MahApps.Metro.Controls.Dialogs;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -121,6 +123,7 @@ public class Cacher
         }
     }
 
+    private ProgressDialogController? UpdateWindow = null;
     /// <summary>
     /// Downloads the latest file with progress reports
     /// </summary>
@@ -130,38 +133,65 @@ public class Cacher
         {
             t.Telemetry.Url = new Uri(FileURL);
             await InternetMan.WaitForInternetAsync(_context); //We need internet connectivity
-            _logger.LogInformation($"Started downloading update for {FileURL}");
 
-            var updateWindow = await _context.DialogCoordinator.ShowProgressAsync(_context, $"Downloading updated {FileName}", "Downloading updated file");
-            updateWindow.SetIndeterminate();
-            updateWindow.Maximum = 100;
-            SetCachedFileLastModified(DateTime.MinValue); //Set it to the lowest value so if we were to crash, it will re-download
-            var rPolicy = Policy
-                .Handle<Exception>().RetryForeverAsync((outcome, retryNumber, context) =>
-                {
-                    _logger.LogError(outcome, "Downloader failed with error: {outcome}", outcome);
-                    updateWindow.SetMessage($"Download failed {retryNumber} times, retrying...");
-                });
-            
-            // ReSharper disable once AccessToDisposedClosure
-            var response = rPolicy.ExecuteAsync(async context =>
+
+            var tempDir = Path.Join(Path.GetDirectoryName(Environment.ProcessPath), "Temp");
+            if (!Directory.Exists(tempDir))
             {
-                var DownloadClient = new HttpClientDownloadWithProgress(FileURL, FilePath);
-                var sw = Stopwatch.StartNew();
-                DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                Directory.CreateDirectory(tempDir);
+            }
+            var downloader = DownloadBuilder.New()
+                .WithUrl(FileURL)
+                .WithFileLocation(FilePath)
+                .WithConfiguration(new DownloadConfiguration()
                 {
-                    if (!progressPercentage.HasValue) return;
+                    CheckDiskSizeBeforeDownload = true,
+                    BufferBlockSize = 256 * 1024,
+                    OnTheFlyDownload = false,
+                    ChunkCount = 8,
+                    ParallelDownload = true,
+                    TempDirectory = tempDir
+                })
+                .Build();
+            
+            _logger.LogInformation($"Started downloading update for {FileURL}");
+            UpdateWindow = await _context.DialogCoordinator.ShowProgressAsync(_context, $"Downloading updated {FileName}", "Downloading updated file");
+            UpdateWindow.SetIndeterminate();
+            UpdateWindow.Maximum = 100;
+            SetCachedFileLastModified(DateTime.MinValue); //Set it to the lowest value so if we were to crash, it will re-download
+            
+            downloader.DownloadProgressChanged += (sender, args) =>
+            {
+                if (UpdateWindow is null) return;
+                string eta = "calculating...";
+                if (args.AverageBytesPerSecondSpeed > 0)
+                {
+                    eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) / args.AverageBytesPerSecondSpeed).Seconds().Humanize(minUnit: TimeUnit.Second);
+                }
+                
+                UpdateWindow.SetProgress(args.ProgressPercentage);
+                UpdateWindow.SetMessage($"Progress: {(args.ProgressPercentage/100):P0} ETA: {eta}\n" +
+                                        $"Downloaded: {args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}\n"+
+                                        $"Speed: {args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#", TimeUnit.Second)} Average: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#", TimeUnit.Second)}");
+            };
+            downloader.DownloadFileCompleted += async (sender, args) =>
+            {
+                if (args.Error is not null)
+                {
+                    _logger.LogError(args.Error, "Got error {e} while downloading update", args.Error);
+                }
+                if (UpdateWindow is null) return;
+                await UpdateWindow.CloseAsync();
+                UpdateWindow = null;
 
-                    var bytesPerSecond = totalBytesDownloaded.Bytes().Per(sw.Elapsed);
-                    updateWindow.SetProgress(progressPercentage.Value);
-                    updateWindow.SetMessage($"Downloading updated file {(progressPercentage.Value / 100):P}\n" +
-                                            $"{totalBytesDownloaded.Bytes().Humanize("#.00")} of {totalFileSize.Value.Bytes().Humanize("#.00")}".PadRight(27)+ $"({bytesPerSecond.Humanize("#", TimeUnit.Second)})");
-                };
-                await DownloadClient.StartDownload();
-            }, CancellationToken.None);
-            await response.WaitAsync(CancellationToken.None);
+            };
+
+            await downloader.StartAsync();
             SetCachedFileLastModified(GetLastModifiedFromWeb());
-            await updateWindow.CloseAsync();
+            if (UpdateWindow is not null)
+            {
+                await UpdateWindow.CloseAsync();
+            }
             _logger.LogInformation($"Download complete for {FileURL}");
             t.Telemetry.Success = true;
         }

@@ -23,6 +23,7 @@ using Polly;
 using Polly.Retry;
 using Application = System.Windows.Application;
 using System.Windows.Data;
+using Octokit.Internal;
 
 namespace AutopilotQuick
 {
