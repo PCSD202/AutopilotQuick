@@ -57,7 +57,11 @@ namespace AutopilotQuick
                             "Connecting to the internet");
                     progressController.SetIndeterminate();
                     var tcs = new TaskCompletionSource();
-                    GetInstance().InternetBecameAvailable += (sender, args) => tcs.SetResult();
+                    GetInstance().InternetBecameAvailable += (sender, args) =>
+                    {
+                        Logger.LogInformation("Internet available, setting the result of task");
+                        tcs.SetResult();
+                    };
                     await tcs.Task;
                     await progressController.CloseAsync();
                 }

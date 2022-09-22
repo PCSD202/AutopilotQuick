@@ -97,7 +97,7 @@ namespace AutopilotQuick
         {
             if (!Enabled)
             {
-                
+                await WimMan.getInstance().GetCacherForModel().DownloadUpdateAsync();
             }
             
             var telemetryClient = App.GetTelemetryClient();
