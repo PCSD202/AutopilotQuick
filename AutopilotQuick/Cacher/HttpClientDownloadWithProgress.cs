@@ -68,7 +68,7 @@ public class HttpClientDownloadWithProgress : IDisposable
         {
             var cts = new CancellationTokenSource();
             cts.CancelAfter(10.Seconds());
-            var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
+            var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cts.Token).ConfigureAwait(false);
             _bandwidth.CalculateSpeed(bytesRead);
             totalBytesRead += bytesRead;
             var a = new DownloadProgressChangedEventArgs("")
@@ -87,7 +87,7 @@ public class HttpClientDownloadWithProgress : IDisposable
                 continue;
             }
             
-            await fileStream.WriteAsync(buffer, 0, bytesRead);
+            await fileStream.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
             TriggerProgressChanged(a);
         }
         while (isMoreToRead && !shouldStop);
