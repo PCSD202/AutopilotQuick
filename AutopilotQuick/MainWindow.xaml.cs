@@ -575,7 +575,7 @@ namespace AutopilotQuick
                 updateProcess.StartInfo.RedirectStandardOutput = false;
                 updateProcess.StartInfo.CreateNoWindow = false;
                 updateProcess.StartInfo.Arguments = psscriptPath;
-                //updateProcess.Start();
+                updateProcess.Start();
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
