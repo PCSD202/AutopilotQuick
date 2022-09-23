@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Downloader;
@@ -132,7 +133,6 @@ public class Cacher
     /// </summary>
     public async Task DownloadUpdateAsync()
     {
-        
         using (await _mutex.LockAsync())
         {
             using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Downloading update"))
@@ -140,30 +140,31 @@ public class Cacher
                 t.Telemetry.Url = new Uri(FileURL);
                 await InternetMan.WaitForInternetAsync(_context); //We need internet connectivity
 
-                
+
                 var tempDir = Path.Join(Path.GetDirectoryName(Environment.ProcessPath), "Temp");
                 if (Directory.Exists("W:\\"))
                 {
                     tempDir = Path.Join("W:\\", "Temp");
                 }
+
                 if (!Directory.Exists(tempDir))
                 {
                     Directory.CreateDirectory(tempDir);
                 }
 
-                var downloader = DownloadBuilder.New()
-                    .WithUrl(FileURL)
-                    .WithFileLocation(FilePath)
-                    .WithConfiguration(new DownloadConfiguration()
-                    {
-                        MaximumBytesPerSecond = long.MaxValue,
-                        CheckDiskSizeBeforeDownload = true,
-                        BufferBlockSize = 256 * 1024,
-                        MaxTryAgainOnFailover = int.MaxValue,
-                        OnTheFlyDownload = false,
-                        TempDirectory = tempDir,
-                    })
-                    .Build();
+                //var downloader = DownloadBuilder.New()
+                //    .WithUrl(FileURL)
+                //    .WithFileLocation(FilePath)
+                //    .WithConfiguration(new DownloadConfiguration()
+                //    {
+                //        MaximumBytesPerSecond = long.MaxValue,
+                //        CheckDiskSizeBeforeDownload = true,
+                //        BufferBlockSize = 256 * 1024,
+                //        MaxTryAgainOnFailover = int.MaxValue,
+                //        OnTheFlyDownload = false,
+                //        TempDirectory = tempDir,
+                //    })
+                //    .Build();
                 
 
                 _logger.LogInformation($"Started downloading update for {FileURL}");
@@ -173,36 +174,76 @@ public class Cacher
                 updateWindow.Maximum = 100;
                 SetCachedFileLastModified(DateTime
                     .MinValue); //Set it to the lowest value so if we were to crash, it will re-download
-
-                DateTime LastUpdate = DateTime.MinValue;
-                downloader.DownloadProgressChanged += (sender, args) =>
-                {
-                    var now = DateTime.UtcNow;
-                    if ((now - LastUpdate).TotalMilliseconds >= 50)
+                var rPolicy = Policy
+                    .Handle<Exception>().RetryForeverAsync((outcome, retryNumber, context) =>
                     {
-                        LastUpdate = now;
-                        var eta = "calculating...";
-                        if (args.AverageBytesPerSecondSpeed > 0)
+                        _logger.LogError(outcome, "Downloader failed with error: {outcome}", outcome);
+                        updateWindow.SetMessage($"Download failed {retryNumber} times, retrying...");
+                    });
+                var response = rPolicy.ExecuteAsync(async context =>
+                {
+                    var downloader = new HttpClientDownloadWithProgress(FileURL, FilePath);
+                    DateTime LastUpdate = DateTime.MinValue;
+                    downloader.ProgressChanged += (sender, args) =>
+                    {
+                        var now = DateTime.UtcNow;
+                        if ((now - LastUpdate).TotalMilliseconds >= 50 &&
+                            !(Math.Abs(args.ProgressPercentage - 100d) < 0.1))
                         {
-                            eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) / args.AverageBytesPerSecondSpeed)
-                                .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2) + " left";
+                            LastUpdate = now;
+                            var eta = "calculating...";
+                            if (args.AverageBytesPerSecondSpeed > 0)
+                            {
+                                eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) /
+                                       args.AverageBytesPerSecondSpeed)
+                                    .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2);
+                            }
+
+                            const int space = 4;
+                            var info = new List<KeyValuePair<string, string>>()
+                            {
+                                new("Time left:", eta),
+                                new("Transferred:",
+                                    $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}"),
+                                new("Speed:",
+                                    $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                            };
+                            var longest = info.MaxBy(x => x.Key.Length).Key.Length;
+                            var maxLength = longest + space;
+                            var sb = new StringBuilder();
+                            foreach (var pair in info)
+                            {
+                                var newKey = pair.Key.PadRight(maxLength + 2);
+
+                                if (pair.Key.Length == longest)
+                                {
+                                    newKey = pair.Key.PadRight(maxLength);
+                                }
+
+                                sb.AppendLine($"{newKey} {pair.Value}");
+                            }
+
+                            updateWindow.SetProgress(args.ProgressPercentage);
+                            updateWindow.SetMessage(sb.ToString());
                         }
 
-                        updateWindow.SetProgress(args.ProgressPercentage);
-                        updateWindow.SetMessage($"{(args.ProgressPercentage / 100):P0}".PadRight(4)+$" - {eta}\n" +
-                                                $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}\n" +
-                                                $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})");
-                    }
-                };
-                downloader.DownloadFileCompleted += async (sender, args) =>
-                {
-                    if (args.Error is not null)
-                    {
-                        _logger.LogError(args.Error, "Got error {e} while downloading update", args.Error);
-                    }
-                };
+                        if (Math.Abs(args.ProgressPercentage - 100d) < 0.1)
+                        {
+                            updateWindow.SetMessage("Copying files to drive...");
+                            updateWindow.SetIndeterminate();
+                        }
+                    };
+                    await downloader.StartDownload();
+                }, CancellationToken.None);
+                //downloader.DownloadFileCompleted += async (sender, args) =>
+                // {
+                //     if (args.Error is not null)
+                //     {
+                //         _logger.LogError(args.Error, "Got error {e} while downloading update", args.Error);
+                //     }
+                // };
 
-                await downloader.StartAsync();
+                await response.WaitAsync(CancellationToken.None);
                 SetCachedFileLastModified(GetLastModifiedFromWeb());
                 await updateWindow.CloseAsync();
                 _logger.LogInformation($"Download complete for {FileURL}");
