@@ -29,6 +29,7 @@ using AutopilotQuick.CookieEgg;
 using AutopilotQuick.LogMan;
 using AutopilotQuick.WMI;
 using ControlzEx.Theming;
+using Humanizer.Localisation;
 using MahApps.Metro.Controls;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -365,12 +366,48 @@ namespace AutopilotQuick
             try
             {
                 using var DownloadClient = new HttpClientDownloadWithProgress(context.LatestReleaseAssetURL, downloadPath);
-                DownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                DateTime LastUpdate = DateTime.MinValue;
+                DownloadClient.ProgressChanged += (sender, args) =>
                 {
-                    if (!progressPercentage.HasValue) return;
-                    DownloadProgress.SetProgress(progressPercentage.Value);
-                    DownloadProgress.SetMessage(
-                        $"Percent: {progressPercentage}% ({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
+                    var now = DateTime.UtcNow;
+                    if ((now - LastUpdate).TotalMilliseconds >= 50)
+                    {
+                        LastUpdate = now;
+                        var eta = "calculating...";
+                        if (args.AverageBytesPerSecondSpeed > 0)
+                        {
+                            eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) /
+                                   args.AverageBytesPerSecondSpeed)
+                                .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2);
+                        }
+
+                        const int space = 4;
+                        var info = new List<KeyValuePair<string, string>>()
+                        {
+                            new("Time left:", eta),
+                            new("Transferred:",
+                                $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}"),
+                            new("Speed:",
+                                $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                        };
+                        var longest = info.MaxBy(x => x.Key.Length).Key.Length;
+                        var maxLength = longest + space;
+                        var sb = new StringBuilder();
+                        foreach (var pair in info)
+                        {
+                            var newKey = pair.Key.PadRight(maxLength + 2);
+
+                            if (pair.Key.Length == longest)
+                            {
+                                newKey = pair.Key.PadRight(maxLength);
+                            }
+
+                            sb.AppendLine($"{newKey} {pair.Value}");
+                        }
+
+                        DownloadProgress.SetProgress(args.ProgressPercentage);
+                        DownloadProgress.SetMessage(sb.ToString());
+                    }
                 };
                 await DownloadClient.StartDownload();
             }
@@ -386,12 +423,48 @@ namespace AutopilotQuick
                 DownloadProgress.SetTitle($"Step 2/{maxStep} - Downloading signature");
                 using var SignatureDownloadClient =
                     new HttpClientDownloadWithProgress(context.LatestReleaseAssetSignedHashURL, downloadPathSignedHash);
-                SignatureDownloadClient.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                DateTime LastUpdate = DateTime.MinValue;
+                SignatureDownloadClient.ProgressChanged += (sender,args) =>
                 {
-                    if (!progressPercentage.HasValue) return;
-                    DownloadProgress.SetProgress(progressPercentage.Value);
-                    DownloadProgress.SetMessage(
-                        $"Percent: {progressPercentage}% ({totalBytesDownloaded.Bytes().Humanize("#.##")}/{totalFileSize.Value.Bytes().Humanize("#.##")})");
+                    var now = DateTime.UtcNow;
+                    if ((now - LastUpdate).TotalMilliseconds >= 50)
+                    {
+                        LastUpdate = now;
+                        var eta = "calculating...";
+                        if (args.AverageBytesPerSecondSpeed > 0)
+                        {
+                            eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) /
+                                   args.AverageBytesPerSecondSpeed)
+                                .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2);
+                        }
+
+                        const int space = 4;
+                        var info = new List<KeyValuePair<string, string>>()
+                        {
+                            new("Time left:", eta),
+                            new("Transferred:",
+                                $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}"),
+                            new("Speed:",
+                                $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                        };
+                        var longest = info.MaxBy(x => x.Key.Length).Key.Length;
+                        var maxLength = longest + space;
+                        var sb = new StringBuilder();
+                        foreach (var pair in info)
+                        {
+                            var newKey = pair.Key.PadRight(maxLength + 2);
+
+                            if (pair.Key.Length == longest)
+                            {
+                                newKey = pair.Key.PadRight(maxLength);
+                            }
+
+                            sb.AppendLine($"{newKey} {pair.Value}");
+                        }
+
+                        DownloadProgress.SetProgress(args.ProgressPercentage);
+                        DownloadProgress.SetMessage(sb.ToString());
+                    }
                 };
                 await SignatureDownloadClient.StartDownload();
             }
@@ -502,7 +575,7 @@ namespace AutopilotQuick
                 updateProcess.StartInfo.RedirectStandardOutput = false;
                 updateProcess.StartInfo.CreateNoWindow = false;
                 updateProcess.StartInfo.Arguments = psscriptPath;
-                updateProcess.Start();
+                //updateProcess.Start();
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
