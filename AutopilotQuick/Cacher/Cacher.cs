@@ -175,10 +175,10 @@ public class Cacher
                 SetCachedFileLastModified(DateTime
                     .MinValue); //Set it to the lowest value so if we were to crash, it will re-download
                 var rPolicy = Policy
-                    .Handle<Exception>().RetryForeverAsync((outcome, retryNumber, context) =>
+                    .Handle<Exception>().WaitAndRetryForeverAsync(attempt=>5.Seconds(), onRetry: (exception, calculatedWaitDuration) => // Capture some info for logging!
                     {
-                        _logger.LogError(outcome, "Downloader failed with error: {outcome}", outcome);
-                        updateWindow.SetMessage($"Download failed {retryNumber} times, retrying...");
+                        _logger.LogError(exception, "Downloader failed with error: {outcome}", exception);
+                        updateWindow.SetMessage($"Download failed, retrying in 5 seconds...");
                     });
                 var response = rPolicy.ExecuteAsync(async context =>
                 {
@@ -187,8 +187,7 @@ public class Cacher
                     downloader.ProgressChanged += (sender, args) =>
                     {
                         var now = DateTime.UtcNow;
-                        if ((now - LastUpdate).TotalMilliseconds >= 50 &&
-                            !(Math.Abs(args.ProgressPercentage - 100d) < 0.1))
+                        if ((now - LastUpdate).TotalMilliseconds >= 50)
                         {
                             LastUpdate = now;
                             var eta = "calculating...";
@@ -225,12 +224,6 @@ public class Cacher
 
                             updateWindow.SetProgress(args.ProgressPercentage);
                             updateWindow.SetMessage(sb.ToString());
-                        }
-
-                        if (Math.Abs(args.ProgressPercentage - 100d) < 0.1)
-                        {
-                            updateWindow.SetMessage("Copying files to drive...");
-                            updateWindow.SetIndeterminate();
                         }
                     };
                     await downloader.StartDownload();
