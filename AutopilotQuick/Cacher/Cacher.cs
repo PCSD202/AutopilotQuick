@@ -185,13 +185,13 @@ public class Cacher
                         if (args.AverageBytesPerSecondSpeed > 0)
                         {
                             eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) / args.AverageBytesPerSecondSpeed)
-                                .Seconds().Humanize(minUnit: TimeUnit.Second);
+                                .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2) + " left";
                         }
 
                         updateWindow.SetProgress(args.ProgressPercentage);
-                        updateWindow.SetMessage($"Progress: {(args.ProgressPercentage / 100):P0} ETA: {eta}\n" +
-                                                $"Downloaded: {args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}\n" +
-                                                $"Speed: {args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#", TimeUnit.Second)} Average: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#", TimeUnit.Second)}");
+                        updateWindow.SetMessage($"{(args.ProgressPercentage / 100):P0}".PadRight(4)+$" - {eta}\n" +
+                                                $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}\n" +
+                                                $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})");
                     }
                 };
                 downloader.DownloadFileCompleted += async (sender, args) =>
