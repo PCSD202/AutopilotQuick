@@ -193,6 +193,7 @@ namespace AutopilotQuick.Steps
                 //Download the update, and resubscribe
                 if (!wimCache.FileCached)
                 {
+                    Logger.LogInformation("Image was not cached, we need to download it");
                     InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                     _updatedImageAvailable = false;
                     await wimCache.DownloadUpdateAsync();
@@ -247,6 +248,8 @@ namespace AutopilotQuick.Steps
                 return await Run(context, pauseToken, StepOperation);
             }
 
+            //Get the latest cacher from WimMan in case the URL has changed
+            wimCache = WimMan.getInstance().GetCacherForModel();
             if (wimCache.FileCached && !_updatedImageAvailable)
                 return new StepResult(true, "Successfully applied image to drive");
 
