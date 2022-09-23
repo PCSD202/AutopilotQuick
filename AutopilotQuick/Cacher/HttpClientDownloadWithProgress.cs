@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using Humanizer;
 using MahApps.Metro.Controls;
 
@@ -13,17 +14,19 @@ public class HttpClientDownloadWithProgress : IDisposable
 {
     private readonly string _downloadUrl;
     private readonly string _destinationFilePath;
+    private readonly Bandwidth _bandwidth;
 
     private HttpClient _httpClient;
+    
 
-    public delegate void ProgressChangedHandler(long? totalFileSize, long totalBytesDownloaded, double? progressPercentage);
-
-    public event ProgressChangedHandler ProgressChanged;
+    public event EventHandler<DownloadProgressChangedEventArgs> ProgressChanged;
+    
 
     public HttpClientDownloadWithProgress(string downloadUrl, string destinationFilePath)
     {
         _downloadUrl = downloadUrl;
         _destinationFilePath = destinationFilePath;
+        _bandwidth = new Bandwidth();
     }
 
     public async Task StartDownload()
@@ -51,12 +54,7 @@ public class HttpClientDownloadWithProgress : IDisposable
         var buffer = new byte[bufferSize];
         var isMoreToRead = true;
         var shouldStop = false;
-        double? progressPercentage = null;
-        if (totalDownloadSize.HasValue)
-        {
-            progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
-        }
-        
+
         Application.Current.Invoke(() =>
         {
             Application.Current.Exit += (sender, args) =>
@@ -71,46 +69,37 @@ public class HttpClientDownloadWithProgress : IDisposable
             var cts = new CancellationTokenSource();
             cts.CancelAfter(10.Seconds());
             var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
+            _bandwidth.CalculateSpeed(bytesRead);
+            totalBytesRead += bytesRead;
+            var a = new DownloadProgressChangedEventArgs("")
+            {
+                ProgressedByteSize = bytesRead,
+                ReceivedBytesSize = totalBytesRead,
+                TotalBytesToReceive = totalDownloadSize ?? totalBytesRead,
+                AverageBytesPerSecondSpeed = _bandwidth.AverageSpeed,
+                BytesPerSecondSpeed = _bandwidth.Speed
+            };
+            
             if (bytesRead == 0)
             {
                 isMoreToRead = false;
-                TriggerProgressChanged(totalDownloadSize, totalBytesRead);
+                TriggerProgressChanged(a);
                 continue;
             }
-
+            
             await fileStream.WriteAsync(buffer, 0, bytesRead);
-
-            totalBytesRead += bytesRead;
-            readCount += 1;
-
-            if (totalDownloadSize.HasValue)
-            {
-                if (progressPercentage.HasValue)
-                {
-                    if (Math.Abs(progressPercentage.Value - Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2)) > 0.1)
-                    {
-                        progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
-                        TriggerProgressChanged(totalDownloadSize, totalBytesRead);
-                    };
-                }
-                
-            }
-            if (readCount % 100 == 0)
-                TriggerProgressChanged(totalDownloadSize, totalBytesRead);
+            TriggerProgressChanged(a);
         }
         while (isMoreToRead && !shouldStop);
     }
 
-    private void TriggerProgressChanged(long? totalDownloadSize, long totalBytesRead)
+    private void TriggerProgressChanged(DownloadProgressChangedEventArgs e)
     {
         if (ProgressChanged == null)
             return;
+        
 
-        double? progressPercentage = null;
-        if (totalDownloadSize.HasValue)
-            progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
-
-        ProgressChanged(totalDownloadSize, totalBytesRead, progressPercentage);
+        ProgressChanged(this, e);
     }
 
     public void Dispose()

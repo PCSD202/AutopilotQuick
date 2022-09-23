@@ -40,7 +40,16 @@ namespace AutopilotQuick
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("InternetManServiceServiceStarted");
                 Logger.LogInformation("Internet man service started");
-                _timer = new Timer(Run, null, 5.Seconds(), 5.Seconds()); //Give some time for the app to startup before we start checking for internet
+
+                _timer = new Timer(Run, null,
+#if DEBUG
+                    0.Seconds(),           
+#endif
+#if !DEBUG
+                    5.Seconds(),           
+#endif
+                    
+                    5.Seconds()); //Give some time for the app to startup before we start checking for internet
             }
             
         }
