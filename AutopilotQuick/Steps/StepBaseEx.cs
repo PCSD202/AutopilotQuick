@@ -8,8 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
 using Humanizer;
+using LazyCache;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using NLog;
@@ -24,6 +26,8 @@ namespace AutopilotQuick.Steps
     {
         public override double ProgressWeight() => 1;
 
+        private readonly IAppCache _appCache = new CachingService();
+        
         public void WaitWhilePaused(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
             using (App.telemetryClient.StartOperation<RequestTelemetry>("Paused"))
@@ -35,25 +39,17 @@ namespace AutopilotQuick.Steps
                 Status = oldStatus;
             }
         }
-        
+
+        [Obsolete(message:"Use DeviceInfoHelper.DeviceModel")]
         public string GetDeviceModel(PauseToken pauseToken) {
             WaitWhilePaused(pauseToken);
-            using var modelLookup = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up model");
-            WMIHelper helper = new WMIHelper("root\\CimV2");
-            var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
-            modelLookup.Telemetry.Success = true;
-            modelLookup.Telemetry.Properties["Model"] = model;
-            return model;
+            return DeviceInfoHelper.DeviceModel;
         }
         
+        [Obsolete(message:"Use DeviceInfoHelper.ServiceTag")]
         public string GetServiceTag(PauseToken pauseToken) {
             WaitWhilePaused(pauseToken);
-            using var serviceTagLookup = App.telemetryClient.StartOperation<RequestTelemetry>("Looking up service tag");
-            WMIHelper helper = new WMIHelper("root\\CimV2");
-            var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
-            serviceTagLookup.Telemetry.Success = true;
-            serviceTagLookup.Telemetry.Properties["ServiceTag"] = serviceTag;
-            return serviceTag;
+            return DeviceInfoHelper.ServiceTag;
         }
 
         public async Task CountDown(PauseToken pauseToken, double ms)

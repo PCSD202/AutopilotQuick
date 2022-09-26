@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using AutopilotQuick.Annotations;
+using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
 using ORMi;
 
@@ -14,6 +15,7 @@ public partial class DebugWindow : INotifyPropertyChanged
     private string _version;
     private string _serviceTag;
     private string _model;
+    private string _biosVersion;
 
     public string DeviceID
     {
@@ -70,15 +72,27 @@ public partial class DebugWindow : INotifyPropertyChanged
         }
     }
 
-    public DebugWindow(string DeviceID, string SessionID, string Version, string ServiceTag)
+    public string BiosVersion
+    {
+        get => _biosVersion;
+        set
+        {
+            if (value == _biosVersion) return;
+            _biosVersion = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public DebugWindow()
     {
         InitializeComponent();
         DataContext = this;
-        this.DeviceID = DeviceID;
-        this.SessionID = SessionID;
-        this.Version = Version;
-        this.ServiceTag = ServiceTag;
-        this.Model = WimMan.getInstance().ModelName;
+        this.DeviceID = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+        this.SessionID = App.SessionID;
+        this.Version = $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}";
+        this.ServiceTag = DeviceInfoHelper.ServiceTag;
+        this.Model = DeviceInfoHelper.DeviceModel;
+        this.BiosVersion = DeviceInfoHelper.BiosVersion;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

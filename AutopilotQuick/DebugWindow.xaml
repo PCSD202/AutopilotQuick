@@ -14,5 +14,6 @@
         <mah:MetroHeader Header="Version:"><TextBox IsReadOnly="True" Text="{Binding Version}"/></mah:MetroHeader>
         <mah:MetroHeader Header="Service Tag:"><TextBox IsReadOnly="True" Text="{Binding ServiceTag}"/></mah:MetroHeader>
         <mah:MetroHeader Header="Model:"><TextBox IsReadOnly="True" Text="{Binding Model}"/></mah:MetroHeader>
+        <mah:MetroHeader Header="Bios Version:"><TextBox IsReadOnly="True" Text="{Binding BiosVersion}"/></mah:MetroHeader>
     </StackPanel>
 </mah:MetroWindow>

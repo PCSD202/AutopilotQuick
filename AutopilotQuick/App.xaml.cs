@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
 using Humanizer;
 using MahApps.Metro.Controls;
@@ -140,23 +141,11 @@ namespace AutopilotQuick
         public class MyTelemetryInitializer : ITelemetryInitializer
         {
             public static string SessionID = App.SessionID;
-            public string? model = null;
-            public string? serviceTag = null;
+            
             public string? version = null;
             public DiskDrive? bootDrive = null;
             public void Initialize(ITelemetry telemetry)
             {
-                if (model is null)
-                {
-                    WMIHelper helper = new WMIHelper("root\\CimV2");
-                    model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
-                }
-
-                if (serviceTag is null)
-                {
-                    WMIHelper helper = new WMIHelper("root\\CimV2");
-                    serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
-                }
 
                 if (version is null)
                 {
@@ -171,8 +160,8 @@ namespace AutopilotQuick
                 
                 telemetry.Context.User.Id = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
                 telemetry.Context.GlobalProperties["DeviceID"] = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
-                telemetry.Context.GlobalProperties["ServiceTag"] = serviceTag;
-                telemetry.Context.GlobalProperties["Model"] = model;
+                telemetry.Context.GlobalProperties["ServiceTag"] = DeviceInfoHelper.ServiceTag;
+                telemetry.Context.GlobalProperties["Model"] = DeviceInfoHelper.DeviceModel;
                 telemetry.Context.GlobalProperties["DriveModel"] = bootDrive.Model;
                 telemetry.Context.GlobalProperties["Drive"] = JsonConvert.SerializeObject(bootDrive);
                 telemetry.Context.Component.Version = version;
@@ -258,9 +247,8 @@ namespace AutopilotQuick
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
             var LoggingConfig = new NLog.Config.LoggingConfiguration();
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
-            WMIHelper helper = new WMIHelper("root\\CimV2");
-            var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
-            var serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
+            var model = DeviceInfoHelper.DeviceModel;
+            var serviceTag = DeviceInfoHelper.ServiceTag;
             var logfile = new NLog.Targets.FileTarget("logfile")
             {
                 FileName = $"{appFolder}/logs/latest.log",
