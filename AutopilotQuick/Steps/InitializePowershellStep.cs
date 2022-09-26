@@ -12,7 +12,7 @@ namespace AutopilotQuick.Steps;
 public class InitializePowershellStep : StepBaseEx
 {
     public override string Name() => "Initialize powershell step";
-    public readonly ILogger Logger = App.GetLogger<FormatStep>();
+    public readonly ILogger Logger = App.GetLogger<InitializePowershellStep>();
     public override bool IsCritical()
     {
         return false;
