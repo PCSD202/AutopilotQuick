@@ -631,20 +631,10 @@ namespace AutopilotQuick
             
         }
 
-        private async void F7KeyPressed_OnExecuted(object? sender, object e)
+        private  void F7KeyPressed_OnExecuted(object? sender, object e)
         {
-            WMIHelper helper = new WMIHelper("root\\CimV2");
-            string serviceTag = helper.QueryFirstOrDefault<Bios>().SerialNumber;
-            Dispatcher.BeginInvoke(async () =>
-            {
-                var debugWindow = new DebugWindow(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
-                    App.SessionID,
-                    $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}",
-                    serviceTag
-                    );
-                debugWindow.Show();
-            });
-
+            var debugWindow = new DebugWindow();
+            debugWindow.Show();
         }
 
         public record struct GroupManConfig(string APIKEY, string URL);
