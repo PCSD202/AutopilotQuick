@@ -42,6 +42,7 @@ using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using NHotkey.Wpf;
 using NHotkey;
+using Notification.Wpf;
 
 namespace AutopilotQuick
 {
@@ -56,7 +57,7 @@ namespace AutopilotQuick
         private readonly PauseTokenSource _taskManagerPauseTokenSource = new ();
         private readonly CancellationTokenSource _cancelTokenSource = new();
         private bool Updating = false;
-        
+
         public MainWindow()
         {
             this.Dispatcher.UnhandledException += (sender, args) => App.GetLogger<App>().LogError(args.Exception, "Unhandled exception: {e}", args.Exception);
