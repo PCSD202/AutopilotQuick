@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using AQ.DeviceInfo;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
@@ -25,8 +26,8 @@ public class BiosUpdateStep : StepBaseEx
         }
 
         var DellVersion = await InvokePowershellScriptAndGetResultAsync("(Get-MyDellBios | Sort-Object ReleaseDate -Descending | Select-Object -First 1).DellVersion", CancellationToken.None);
-        Logger.LogInformation("Current Bios version: {version}, Latest Dell version: {latest}",  DeviceInfoHelper.BiosVersion, DellVersion);
-        if (DellVersion == DeviceInfoHelper.BiosVersion)
+        Logger.LogInformation("Current Bios version: {version}, Latest Dell version: {latest}",  DeviceInfo.BiosVersion, DellVersion);
+        if (DellVersion == DeviceInfo.BiosVersion)
         {
             return new StepResult(true, "Bios was already up to date");
         }

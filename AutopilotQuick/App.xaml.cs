@@ -1,40 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Threading;
+using AQ.DeviceInfo;
 using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
 using Humanizer;
-using MahApps.Metro.Controls;
-using MahApps.Metro.Controls.Dialogs;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using NLog;
 using NLog.Config;
 using NLog.Extensions.Logging;
-using NLog.LayoutRenderers;
 using NLog.Targets;
 using ORMi;
-using Application = System.Windows.Application;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace AutopilotQuick
@@ -81,25 +73,25 @@ namespace AutopilotQuick
                 Environment.Exit(0);
             };
 
-            Application.Current.Exit += (sender, args) =>
+            Current.Exit += (sender, args) =>
             {
                 FlushTelemetry();
                 MainWindow.Close();
-                NLog.LogManager.Shutdown();
+                LogManager.Shutdown();
             };
-            App.Current.DispatcherUnhandledException += CurrentOnDispatcherUnhandledException;
-            App.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            Current.DispatcherUnhandledException += CurrentOnDispatcherUnhandledException;
+            Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             mainWindow.Show();
         }
 
         private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            App.GetLogger<App>().LogError((Exception?)e.ExceptionObject, "Unhandled exception: {e}", (Exception?)e.ExceptionObject);
+            GetLogger<App>().LogError((Exception?)e.ExceptionObject, "Unhandled exception: {e}", (Exception?)e.ExceptionObject);
             if (e.IsTerminating)
             {
-                App.GetLogger<App>().LogError("App terminating");
-                App.FlushTelemetry();
+                GetLogger<App>().LogError("App terminating");
+                FlushTelemetry();
                 LogManager.Flush();
                 LogManager.Shutdown();
             }
@@ -107,7 +99,7 @@ namespace AutopilotQuick
 
         private void CurrentOnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            App.GetLogger<App>().LogError(e.Exception, "Unhandled exception: {e}", e.Exception);
+            GetLogger<App>().LogError(e.Exception, "Unhandled exception: {e}", e.Exception);
         }
 
         public static FileVersionInfo GetVersion()
@@ -117,7 +109,7 @@ namespace AutopilotQuick
 
         public static DiskDrive GetBootDrive()
         {
-            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
+            var EnvironmentDrive = Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
             WMIHelper helper = new WMIHelper("root\\CimV2");
             var drives = helper.Query<DiskDrive>();
             if (EnvironmentDrive is not null)
@@ -149,7 +141,7 @@ namespace AutopilotQuick
 
                 if (version is null)
                 {
-                    FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
+                    FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
                     version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
                 }
 
@@ -158,10 +150,10 @@ namespace AutopilotQuick
                     bootDrive = GetBootDrive();
                 }
                 
-                telemetry.Context.User.Id = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
-                telemetry.Context.GlobalProperties["DeviceID"] = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
-                telemetry.Context.GlobalProperties["ServiceTag"] = DeviceInfoHelper.ServiceTag;
-                telemetry.Context.GlobalProperties["Model"] = DeviceInfoHelper.DeviceModel;
+                telemetry.Context.User.Id = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+                telemetry.Context.GlobalProperties["DeviceID"] = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+                telemetry.Context.GlobalProperties["ServiceTag"] = DeviceInfo.ServiceTag;
+                telemetry.Context.GlobalProperties["Model"] = DeviceInfo.DeviceModel;
                 telemetry.Context.GlobalProperties["DriveModel"] = bootDrive.Model;
                 telemetry.Context.GlobalProperties["Drive"] = JsonConvert.SerializeObject(bootDrive);
                 telemetry.Context.Component.Version = version;
@@ -204,7 +196,7 @@ namespace AutopilotQuick
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder
-                    .AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    .AddFilter<ApplicationInsightsLoggerProvider>(
                         "", LogLevel.Information);
                 loggingBuilder.AddNLog();
             });
@@ -245,11 +237,11 @@ namespace AutopilotQuick
         {
             ConfigurationItemFactory.Default.LayoutRenderers.RegisterDefinition("elapsedtime", typeof (ElapsedTimeLayoutRenderer));
             var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
-            var LoggingConfig = new NLog.Config.LoggingConfiguration();
+            var LoggingConfig = new LoggingConfiguration();
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
-            var model = DeviceInfoHelper.DeviceModel;
-            var serviceTag = DeviceInfoHelper.ServiceTag;
-            var logfile = new NLog.Targets.FileTarget("logfile")
+            var model = DeviceInfo.DeviceModel;
+            var serviceTag = DeviceInfo.ServiceTag;
+            var logfile = new FileTarget("logfile")
             {
                 FileName = $"{appFolder}/logs/latest.log",
                 ArchiveFileName = $"{appFolder}/logs/{{#}}.log",
@@ -258,23 +250,23 @@ namespace AutopilotQuick
                 MaxArchiveFiles = 100,
                 ArchiveOldFileOnStartup = true,
                 ArchiveDateFormat = "yyyy-MM-dd HH_mm_ss",
-                Header = $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
-                Footer = $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
+                Header = $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
+                Footer = $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
-            var logConsole = new NLog.Targets.ConsoleTarget("logconsole")
+            var logConsole = new ConsoleTarget("logconsole")
             {
                 AutoFlush = true,
                 DetectConsoleAvailable = false,
                 Layout = "${time:universalTime=True}|${elapsedtime}" + $"|{serviceTag}|{model}|" +
                          "${level:uppercase=true}|${logger}|${message}",
                 Header =
-                    $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
+                    $"AutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}\n",
                 Footer =
-                    $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
+                    $"\nAutopilotQuick version: {v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.FilePrivatePart} DeviceID: {DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}"
             };
             LoggingConfig.AddRule( NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
             LoggingConfig.AddRule( NLog.LogLevel.Debug,  NLog.LogLevel.Fatal, logConsole);
-            NLog.LogManager.Configuration = LoggingConfig;
+            LogManager.Configuration = LoggingConfig;
         }
         public static string GetExecutablePath()
         {

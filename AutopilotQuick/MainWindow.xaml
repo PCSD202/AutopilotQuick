@@ -141,7 +141,7 @@
                 <RowDefinition Height="2*"></RowDefinition>
                 <RowDefinition Height="auto"></RowDefinition>
             </Grid.RowDefinitions>
-            <Viewbox Grid.Row="0" Stretch="Uniform">
+            <Viewbox Grid.Row="0" Stretch="Uniform" MaxHeight="150" HorizontalAlignment="Left">
                 <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center">
                     <TextBlock.Inlines>
                         <Run Text="{Binding CurrentStepName}"/>

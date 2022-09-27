@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AQ.DeviceInfo;
 using AutopilotQuick.WMI;
 using Humanizer;
 using LazyCache;
@@ -43,13 +44,13 @@ namespace AutopilotQuick.Steps
         [Obsolete(message:"Use DeviceInfoHelper.DeviceModel")]
         public string GetDeviceModel(PauseToken pauseToken) {
             WaitWhilePaused(pauseToken);
-            return DeviceInfoHelper.DeviceModel;
+            return DeviceInfo.DeviceModel;
         }
         
         [Obsolete(message:"Use DeviceInfoHelper.ServiceTag")]
         public string GetServiceTag(PauseToken pauseToken) {
             WaitWhilePaused(pauseToken);
-            return DeviceInfoHelper.ServiceTag;
+            return DeviceInfo.ServiceTag;
         }
 
         public async Task CountDown(PauseToken pauseToken, double ms)

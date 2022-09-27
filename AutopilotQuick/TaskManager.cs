@@ -118,7 +118,7 @@ namespace AutopilotQuick
                     ImageOp.Telemetry.Success = false;
                     try
                     {
-                        var result = await step.Run(context, pauseToken, ImageOp);
+                        var result = await step.Run(context, pauseToken, ImageOp).ConfigureAwait(false);
                         ImageOp.Telemetry.Success = result.Success;
                         telemetryClient.TrackEvent(step.Name() + " completed",
                             new Dictionary<string, string>() { { "Output", result.Message } });
@@ -185,7 +185,7 @@ namespace AutopilotQuick
             
         }
 
-        private double CalculateWeightedTotalProgress(List<StepBase> stepsToCalculateOn)
+        private static double CalculateWeightedTotalProgress(IReadOnlyCollection<StepBase> stepsToCalculateOn)
         {
             var weightedProgress = stepsToCalculateOn.Sum(x => x.Progress * x.ProgressWeight());
             var weightTotal = stepsToCalculateOn.Sum(x => x.ProgressWeight());
@@ -195,7 +195,7 @@ namespace AutopilotQuick
         private void StepOnStepUpdated(object? sender, StepBase.StepStatus e)
         {
             //double totalProgress = Steps.Average(x => x.Progress);
-            double totalProgress = CalculateWeightedTotalProgress(Steps);
+            var totalProgress = CalculateWeightedTotalProgress(Steps);
             
             InvokeTotalTaskProgressChanged(totalProgress);
             InvokeCurrentTaskMessageChanged(e.Message);
