@@ -18,6 +18,7 @@ public class SharedPCGroupStep : StepBaseEx
         if (!IsEnabled)
         {
             Title = "SharedPC Step - Disabled";
+            context.SharedPCCheckboxEnabled = false;
             await CountDown(pauseToken, 5000);
             return new StepResult(true, "SharedPC Step - Disabled");
         }

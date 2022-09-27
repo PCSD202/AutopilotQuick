@@ -35,11 +35,11 @@ public class LogTakeHomeStep : StepBaseEx
     
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
     {
+        Title = "Logging take home";
         if (!context.TakeHomeToggleOn)
         {
             return new StepResult(true, "Skipped logging take home because take home is off");
         }
-        Title = "Logging take home";
         Message = "Loading credentials";
         IsIndeterminate = false;
         Progress = 0;

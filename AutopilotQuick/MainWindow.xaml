@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:AutopilotQuick"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
-        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters"
+        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters" xmlns:notifications="clr-namespace:Notification.Wpf.Controls;assembly=Notification.Wpf"
                  mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"
         WindowStartupLocation="CenterScreen"
@@ -57,7 +57,7 @@
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
                 <mah:MetroHeader Header="Shared PC:" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{StaticResource MahApps.Brushes.Gray.SemiTransparent}"/>
+                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{DynamicResource MahApps.Brushes.Gray2}"/>
             </StackPanel>
 
             <Viewbox Width="22" Height="22" UseLayoutRounding="False">
@@ -181,7 +181,7 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel VerticalAlignment="Bottom">
-                <mah:MetroHeader Header="{Binding CurrentTime}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Opacity="0.5"/>
+                <TextBlock Text="{Binding CurrentTime}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Opacity="0.5"/>
                 <mah:MetroProgressBar Foreground="{StaticResource ProgressBrush}" VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"/>
             </StackPanel>
         </Grid>
