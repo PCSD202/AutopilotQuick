@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using AQ.DeviceInfo;
 using AutopilotQuick.Annotations;
 using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
@@ -90,9 +91,9 @@ public partial class DebugWindow : INotifyPropertyChanged
         this.DeviceID = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
         this.SessionID = App.SessionID;
         this.Version = $"{App.GetVersion().FileMajorPart}.{App.GetVersion().FileMinorPart}.{App.GetVersion().FileBuildPart}";
-        this.ServiceTag = DeviceInfoHelper.ServiceTag;
-        this.Model = DeviceInfoHelper.DeviceModel;
-        this.BiosVersion = DeviceInfoHelper.BiosVersion;
+        this.ServiceTag = DeviceInfo.ServiceTag;
+        this.Model = DeviceInfo.DeviceModel;
+        this.BiosVersion = DeviceInfo.BiosVersion;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

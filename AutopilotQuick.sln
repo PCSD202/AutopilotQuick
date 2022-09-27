@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.GroupManagementLibrary",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.GroupManagementLibraryTests", "AQ.GroupManagementLibraryTests\AQ.GroupManagementLibraryTests.csproj", "{1835B75E-FA16-4C04-8820-153234587A29}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQ.DeviceInfo", "AQ.DeviceInfo\AQ.DeviceInfo.csproj", "{FD7DE045-99E0-4E70-A8B6-023CB49F37F6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{1835B75E-FA16-4C04-8820-153234587A29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1835B75E-FA16-4C04-8820-153234587A29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1835B75E-FA16-4C04-8820-153234587A29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD7DE045-99E0-4E70-A8B6-023CB49F37F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD7DE045-99E0-4E70-A8B6-023CB49F37F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD7DE045-99E0-4E70-A8B6-023CB49F37F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD7DE045-99E0-4E70-A8B6-023CB49F37F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

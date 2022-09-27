@@ -1,29 +1,20 @@
-﻿using MahApps.Metro.Controls.Dialogs;
-using NLog;
-using Octokit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
 using AutopilotQuick.Annotations;
-using ControlzEx.Theming;
+using AutopilotQuick.DeviceID;
 using Humanizer;
 using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
+using NLog;
+using Octokit;
 using Polly;
 using Polly.Retry;
-using Application = System.Windows.Application;
-using System.Windows.Data;
-using Octokit.Internal;
 
 namespace AutopilotQuick
 {
@@ -220,7 +211,7 @@ namespace AutopilotQuick
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(App.GetExecutablePath());
             Version = $"{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}";
             OnPropertyChanged(nameof(Version));
-            Title = $" - {Version} | ID: {DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}";
+            Title = $" - {Version} | ID: {DeviceIdentifierMan.getInstance().GetDeviceIdentifier()}";
             OnPropertyChanged(nameof(Title));
             
             SetCurrentTime(DateTime.Now);
