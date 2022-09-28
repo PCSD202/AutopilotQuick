@@ -177,14 +177,29 @@ namespace AutopilotQuick
                     {
                         if (!ElevatorWaitingMusic.GetInstance().IsPlaying())
                         {
+                            HotkeyManager.Current.AddOrReplace("PlayPortalMusic", Key.P, ModifierKeys.None, true, (o, args) =>
+                            {
+                                if (ElevatorWaitingMusic.GetInstance().IsPlaying())
+                                {
+                                    ElevatorWaitingMusic.GetInstance().SwitchSongs();
+                                    Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(), cancellationToken);
+                                }
+                                args.Handled = false;
+                            });
                             Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(), cancellationToken);
                         }
                         else
                         {
+                            HotkeyManager.Current.Remove("PlayPortalMusic");
                             ElevatorWaitingMusic.GetInstance().Stop();
+                            if (ElevatorWaitingMusic.GetInstance().Portal)
+                            {
+                                ElevatorWaitingMusic.GetInstance().Portal = false;
+                            }
                         }
                         
                     });
+                    
                     HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
                     {
                         ElevatorWaitingMusic.GetInstance().IncVolume();
