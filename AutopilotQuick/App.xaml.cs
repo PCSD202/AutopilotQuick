@@ -10,7 +10,6 @@ using System.Windows;
 using System.Windows.Threading;
 using AQ.DeviceInfo;
 using AutopilotQuick.DeviceID;
-using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
 using Humanizer;
 using Microsoft.ApplicationInsights;
@@ -273,6 +272,11 @@ namespace AutopilotQuick
         public static string GetExecutablePath()
         {
             return Process.GetCurrentProcess().MainModule.FileName;
+        }
+
+        public static string GetExecutableFolder()
+        {
+            return Path.GetDirectoryName(GetExecutablePath());
         }
         
         [DllImport("kernel32.dll", SetLastError = true)]
