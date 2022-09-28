@@ -26,6 +26,7 @@ using System.Threading;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
 using AutopilotQuick.CookieEgg;
+using AutopilotQuick.ElevatorWaitingMusicEgg;
 using AutopilotQuick.LogMan;
 using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
@@ -36,6 +37,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using NAudio.CoreAudioApi;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using ORMi;
@@ -116,7 +118,7 @@ namespace AutopilotQuick
             }
         }
         
-
+        private MediaPlayer mediaPlayer = new MediaPlayer();
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             
@@ -170,6 +172,27 @@ namespace AutopilotQuick
                     });
                     HotkeyManager.Current.AddOrReplace("OpenPowerMenu", Key.P, ModifierKeys.Control,
                         true, (o, args) => { ShutdownButton_OnClick(this, new RoutedEventArgs()); });
+                    
+                    HotkeyManager.Current.AddOrReplace("PlayPauseElevatorMusic", Key.M, ModifierKeys.Control, true, (o, args) =>
+                    {
+                        if (!ElevatorWaitingMusic.GetInstance().IsPlaying())
+                        {
+                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(), cancellationToken);
+                        }
+                        else
+                        {
+                            ElevatorWaitingMusic.GetInstance().Stop();
+                        }
+                        
+                    });
+                    HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
+                    {
+                        ElevatorWaitingMusic.GetInstance().IncVolume();
+                    });
+                    HotkeyManager.Current.AddOrReplace("DecVolume", Key.OemMinus, ModifierKeys.None, false, (o, args) =>
+                    {
+                        ElevatorWaitingMusic.GetInstance().DecVolume();
+                    });
                 }, DispatcherPriority.Normal
             );
             

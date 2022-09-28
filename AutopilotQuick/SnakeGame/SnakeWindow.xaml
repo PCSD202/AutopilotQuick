@@ -19,7 +19,7 @@
         </CollectionViewSource>
     </Window.Resources>
     <DockPanel Background="Transparent">  
-        <Grid DockPanel.Dock="Top" Name="pnlTitleBar">  
+        <Grid DockPanel.Dock="Bottom" Name="pnlTitleBar" ZIndex="1">  
             <Grid.ColumnDefinitions>  
                 <ColumnDefinition Width="*" />  
                 <ColumnDefinition Width="*" />  
@@ -33,16 +33,16 @@
                     <Setter Property="FontWeight" Value="Bold" />  
                 </Style>  
             </Grid.Resources>  
-        <WrapPanel Margin="10,0,0,0">  
+        <WrapPanel Margin="10,40,0,0">  
             <TextBlock>Score:</TextBlock>  
             <TextBlock Name="tbStatusScore">0</TextBlock>  
         </WrapPanel>  
-        <WrapPanel Grid.Column="1">  
+        <WrapPanel Grid.Column="1" Margin="10,40,0,0">  
             <TextBlock>Speed:</TextBlock>  
             <TextBlock Name="tbStatusSpeed">0</TextBlock>  
         </WrapPanel>  
         </Grid>
-        <Canvas x:Name="SnakeCanvas" Width="{Binding ScreenWidth}" Height="{Binding ScreenHeight}" Background="Transparent">
+        <Canvas x:Name="SnakeCanvas" DockPanel.Dock="Top" Width="{Binding ScreenWidth}" Height="{Binding ScreenHeight}" Background="Transparent">
             <Border BorderBrush="Silver" BorderThickness="2" Width="300" Height="300" Canvas.Left="50" Canvas.Top="50" Name="bdrWelcomeMessage" Panel.ZIndex="1">
                 <StackPanel Orientation="Vertical" Background="AliceBlue">
                     <TextBlock FontWeight="Bold" FontSize="50" HorizontalAlignment="Center" Margin="0,20,0,0">SnakeWPF</TextBlock>

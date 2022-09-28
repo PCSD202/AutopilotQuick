@@ -10,11 +10,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows.Threading;
 using System.Xml.Serialization;
 using AutopilotQuick.Annotations;
-using MahApps.Metro.Controls;
 using NHotkey.Wpf;
+using Path = System.IO.Path;
 
 namespace AutopilotQuick.SnakeGame;
 
@@ -68,6 +67,8 @@ public partial class SnakeWindow : Window
         Up,
         Down
     };
+
+    private string SaveLocation = Path.Combine(App.GetExecutableFolder(), "Cache", "Snake.xml");
 
     private SnakeDirection snakeDirection = SnakeDirection.Right;
     private int snakeLength;
@@ -269,9 +270,11 @@ public partial class SnakeWindow : Window
                 break;
         }
 
-        if (gameTickTimer.IsEnabled)
+        if (originalSnakeDirection != snakeDirection)
         {
-            MoveSnake(); 
+            gameTickTimer.Stop();
+            MoveSnake();
+            gameTickTimer.Start();
         }
         
 
@@ -353,26 +356,20 @@ public partial class SnakeWindow : Window
     }
     private void SaveHighscoreList()
     {
-        XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnakeHighscore>));
-        using(Stream writer = new FileStream("snake_highscorelist.xml", FileMode.Create))
-        {
-            serializer.Serialize(writer, this.HighscoreList);
-        }
+        var serializer = new XmlSerializer(typeof(ObservableCollection<SnakeHighscore>));
+        using Stream writer = new FileStream(SaveLocation, FileMode.Create);
+        serializer.Serialize(writer, this.HighscoreList);
     }
     
     private void LoadHighscoreList()
     {
-        if(File.Exists("snake_highscorelist.xml"))
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(List<SnakeHighscore>));
-            using(Stream reader = new FileStream("snake_highscorelist.xml", FileMode.Open))
-            {            
-                List<SnakeHighscore> tempList = (List<SnakeHighscore>)serializer.Deserialize(reader);
-                this.HighscoreList.Clear();
-                foreach(var item in tempList.OrderByDescending(x => x.Score))
-                    this.HighscoreList.Add(item);
-            }
-        }
+        if (!File.Exists(SaveLocation)) return;
+        XmlSerializer serializer = new XmlSerializer(typeof(List<SnakeHighscore>));
+        using Stream reader = new FileStream(SaveLocation, FileMode.Open);
+        List<SnakeHighscore> tempList = (List<SnakeHighscore>)serializer.Deserialize(reader);
+        this.HighscoreList.Clear();
+        foreach(var item in tempList.OrderByDescending(x => x.Score))
+            this.HighscoreList.Add(item);
     }
 
     private void BtnShowHighscoreList_OnClick(object sender, RoutedEventArgs e)
