@@ -182,11 +182,11 @@ namespace AutopilotQuick
                                 if (ElevatorWaitingMusic.GetInstance().IsPlaying())
                                 {
                                     ElevatorWaitingMusic.GetInstance().SwitchSongs();
-                                    Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(), cancellationToken);
+                                    Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
                                 }
                                 args.Handled = false;
                             });
-                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(), cancellationToken);
+                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
                         }
                         else
                         {

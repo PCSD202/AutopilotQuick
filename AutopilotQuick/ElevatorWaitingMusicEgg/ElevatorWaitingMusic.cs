@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using Humanizer;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -47,18 +48,23 @@ public class ElevatorWaitingMusic
     
     public Stream LoadAudioStream(string name = "Elevator Music.mp3")
     {
-        string resourceName = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single(str => str.EndsWith(name));
+        string resourceName = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(str => str.EndsWith(name), "");
+        Stream? resource = null;
+        try
+        {
+            resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        }
+        catch (Exception)
+        {
+            if (File.Exists(name))
+            {
+                Logger.LogInformation("Loading file");
+                resource = File.OpenRead(name);
+            }
+        }
+
+        Logger.LogInformation("Stream loaded. Length: {length}", resource.Length);
         
-        var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-        if (resource is null)
-        {
-            Logger.LogError("{name} not found in application", name);
-            throw new FileNotFoundException();
-        }
-        else
-        {
-            Logger.LogInformation("Stream loaded. Length: {length}", resource.Length);
-        }
         
         return resource;
     }
@@ -115,8 +121,14 @@ public class ElevatorWaitingMusic
         Portal = !Portal;
         Stop();
     }
+    public static Random rnd = new Random();
     
-    public async Task Play()
+    public static double Map (double value, double fromSource, double toSource, double fromTarget, double toTarget)
+    {
+        return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
+    }
+    
+    public async Task Play(UserDataContext context)
     {
         var selectedDevice = -2;
         for (int n = 0; n < WaveOut.DeviceCount; n++)
@@ -127,7 +139,15 @@ public class ElevatorWaitingMusic
             selectedDevice = n;
             break;
         }
-        
+
+        var cachedMusic = new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/Music.mp3", "Music.mp3", context);
+        if (InternetMan.GetInstance().IsConnected)
+        {
+            if (!cachedMusic.FileCached || !cachedMusic.IsUpToDate)
+            {
+                await cachedMusic.DownloadUpdateAsync();
+            }
+        }
         
         if(selectedDevice == -2) return;
 
@@ -137,12 +157,22 @@ public class ElevatorWaitingMusic
             file = "Portal.mp3";
         }
 
-        await using var audioStream = LoadAudioStream(file);
+        if (cachedMusic.FileCached && !Portal)
+        {
+            file = cachedMusic.FilePath;
+        }
         try
         {
+            await using var audioStream = LoadAudioStream(file);
             output = new WaveOutEvent() { DeviceNumber = selectedDevice, Volume = volume };
             await using var player = new ManagedMpegStream(audioStream);
             await using var loopPlayer = new LoopStream(player);
+            if (!Portal && cachedMusic.FileCached)
+            {
+                var randPos = rnd.NextDouble();
+                var randSeconds = Map(randPos, 0, 1, 0, player.TotalTime.TotalSeconds);
+                player.CurrentTime = randSeconds.Seconds();
+            }
             output.Init(loopPlayer);
             output.Play();
             while (output.PlaybackState == PlaybackState.Playing)
