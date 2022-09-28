@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AQ.DeviceInfo;
 using AutopilotQuick.DeviceID;
+using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
 using Humanizer;
 using Microsoft.ApplicationInsights;
@@ -66,6 +67,7 @@ namespace AutopilotQuick
             }
 
             var mainWindow = new MainWindow();
+            //var mainWindow = new SnakeWindow();
             this.MainWindow = mainWindow;
             mainWindow.Closed += (sender, args2) =>
             {

@@ -27,6 +27,7 @@ using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
 using AutopilotQuick.CookieEgg;
 using AutopilotQuick.LogMan;
+using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
 using ControlzEx.Theming;
 using Humanizer.Localisation;
@@ -139,6 +140,15 @@ namespace AutopilotQuick
                             this.ToggleFlyout(0);
                         });
                     });
+                    HotkeyManager.Current.AddOrReplace("Snake", Key.N, ModifierKeys.Control, true, (o, args) =>
+                    {
+                        if (_snakeWindow is null)
+                        {
+                            _snakeWindow = new SnakeWindow();
+                            _snakeWindow.Closed += (sender1, eventArgs) => { _snakeWindow = null; };
+                            _snakeWindow.Show();
+                        }
+                    });
                     HotkeyManager.Current.AddOrReplace("ToggleTakeHome", Key.T, ModifierKeys.Control, true, (o, args) =>
                     {
                         if (TakeHomeToggle.IsEnabled)
@@ -185,6 +195,7 @@ namespace AutopilotQuick
         }
 
         private CookieWindow? _cookieWindow = null;
+        private SnakeWindow? _snakeWindow = null;
         private DateTime LastCookieTime = DateTime.MinValue;
         private int msHeldCookieDelay = 100;
         private void WinOnKeyDown(object sender, KeyEventArgs e)
