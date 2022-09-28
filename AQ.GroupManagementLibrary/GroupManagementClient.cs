@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RestSharp;
 using RestSharp.Authenticators;
