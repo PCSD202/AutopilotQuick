@@ -44,28 +44,22 @@ public class ElevatorWaitingMusic
 
         return outputFile;
     }
-
-    public Stream? audioStream = null;
-    public Stream LoadAudioStream()
+    
+    public Stream LoadAudioStream(string name = "Elevator Music.mp3")
     {
-        if (audioStream is not null && audioStream.CanRead)
-        {
-            return audioStream;
-        }
-        
-        string resourceName = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single(str => str.EndsWith("Elevator Music.mp3"));
+        string resourceName = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single(str => str.EndsWith(name));
         
         var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
         if (resource is null)
         {
-            Logger.LogError("Elevator Music.mp3 not found in application");
+            Logger.LogError("{name} not found in application", name);
             throw new FileNotFoundException();
         }
         else
         {
             Logger.LogInformation("Stream loaded. Length: {length}", resource.Length);
         }
-        audioStream = resource;
+        
         return resource;
     }
     
@@ -74,7 +68,7 @@ public class ElevatorWaitingMusic
         output?.Stop();
     }
 
-    private float ChangeAmount = 0.1f;
+    private float ChangeAmount = 0.05f;
     
     public void IncVolume()
     {
@@ -114,6 +108,13 @@ public class ElevatorWaitingMusic
 
         return output.PlaybackState == PlaybackState.Playing;
     }
+
+    public bool Portal = false;
+    public void SwitchSongs()
+    {
+        Portal = !Portal;
+        Stop();
+    }
     
     public async Task Play()
     {
@@ -129,7 +130,14 @@ public class ElevatorWaitingMusic
         
         
         if(selectedDevice == -2) return;
-        var audioStream = LoadAudioStream();
+
+        var file = "Elevator Music.mp3";
+        if (Portal)
+        {
+            file = "Portal.mp3";
+        }
+
+        await using var audioStream = LoadAudioStream(file);
         try
         {
             output = new WaveOutEvent() { DeviceNumber = selectedDevice, Volume = volume };

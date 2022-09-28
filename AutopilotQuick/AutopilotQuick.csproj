@@ -33,6 +33,8 @@
 	  <EmbeddedResource Include="Resources\UpdateScript.ps1" />
 	  <None Remove="ElevatorWaitingMusicEgg\Music\Elevator Music.mp3" />
 	  <EmbeddedResource Include="ElevatorWaitingMusicEgg\Music\Elevator Music.mp3" />
+	  <None Remove="ElevatorWaitingMusicEgg\Music\Portal.mp3" />
+	  <EmbeddedResource Include="ElevatorWaitingMusicEgg\Music\Portal.mp3" />
 	</ItemGroup>
 	
   <ItemGroup>
