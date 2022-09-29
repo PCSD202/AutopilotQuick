@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,8 @@ using Humanizer;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using Newtonsoft.Json;
+using Nito.AsyncEx;
 using NLayer.NAudioSupport;
 
 
@@ -140,14 +143,66 @@ public class ElevatorWaitingMusic
             break;
         }
 
+        try
+        {
+            for (int n = 0; n < WaveIn.DeviceCount; n++)
+            {
+                var caps = WaveIn.GetCapabilities(n);
+                Console.WriteLine($"{n}: {caps.ProductName}");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Got error while looking for DSO devices");
+        }
+        
+
+        try
+        {
+            Console.WriteLine("Direct sound out:");
+            foreach (var dev in DirectSoundOut.Devices)
+            {
+                Console.WriteLine($"\t{dev.Guid} {dev.ModuleName} {dev.Description}");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Got error while looking for DSO devices");
+        }
+        
+
+        try
+        {
+            var enumerator = new MMDeviceEnumerator();
+            Console.WriteLine("WASAPI:");
+            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
+            {
+                Console.WriteLine(
+                    $"\t{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Got error while looking for WASAPI devices");
+        }
+        
+        var times = new Dictionary<string, TimeSpan>();
         var cachedMusic = new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/Music.mp3", "Music.mp3", context);
+        var cachedMusicStartTimes = new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/SongStartingPoints.json", "SongStartingPoints.json", context);
         if (InternetMan.GetInstance().IsConnected)
         {
             if (!cachedMusic.FileCached || !cachedMusic.IsUpToDate)
             {
                 await cachedMusic.DownloadUpdateAsync();
             }
+
+            if (!cachedMusicStartTimes.FileCached || !cachedMusicStartTimes.IsUpToDate)
+            {
+                await cachedMusicStartTimes.DownloadUpdateAsync();
+            }
         }
+
+
         
         if(selectedDevice == -2) return;
 
@@ -169,22 +224,40 @@ public class ElevatorWaitingMusic
             await using var loopPlayer = new LoopStream(player);
             if (!Portal && cachedMusic.FileCached)
             {
+
                 var randPos = rnd.NextDouble();
                 var randSeconds = Map(randPos, 0, 1, 0, player.TotalTime.TotalSeconds);
+                if (cachedMusicStartTimes.FileCached)
+                {
+                    try
+                    {
+                        //Load json file
+                        var songData =
+                            JsonConvert.DeserializeObject<Dictionary<string, TimeSpan>>(
+                                await cachedMusicStartTimes.ReadAllTextAsync());
+                        var index = rnd.Next(songData.Values.ToList().Count);
+                        randSeconds = songData.Values.ToList()[index].TotalSeconds;
+                    }
+                    catch (JsonException e)
+                    {
+                        //Delete file
+                        cachedMusicStartTimes.Delete();
+                    }
+                     
+                }
+                
                 player.CurrentTime = randSeconds.Seconds();
             }
             output.Init(loopPlayer);
             output.Play();
-            while (output.PlaybackState == PlaybackState.Playing)
-            {
-                await Task.Delay(500);
-            }
+            var mre = new AsyncManualResetEvent();
+            output.PlaybackStopped += (sender, args) => mre.Set();
+            await mre.WaitAsync();
         }
         catch (Exception e)
         {
             Logger.LogError(e, "Got error while playing music {e}", e);
         }
         Logger.LogInformation("Playback finished");
-
     }
 }
