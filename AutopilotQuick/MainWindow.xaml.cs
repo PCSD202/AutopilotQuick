@@ -177,28 +177,27 @@ namespace AutopilotQuick
                     {
                         if (!ElevatorWaitingMusic.GetInstance().IsPlaying())
                         {
-                            HotkeyManager.Current.AddOrReplace("PlayPortalMusic", Key.P, ModifierKeys.None, true, (o, args) =>
-                            {
-                                if (ElevatorWaitingMusic.GetInstance().IsPlaying())
-                                {
-                                    ElevatorWaitingMusic.GetInstance().SwitchSongs();
-                                    Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
-                                }
-                                args.Handled = false;
-                            });
                             Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
                         }
                         else
                         {
-                            HotkeyManager.Current.Remove("PlayPortalMusic");
                             ElevatorWaitingMusic.GetInstance().Stop();
                             if (ElevatorWaitingMusic.GetInstance().Portal)
                             {
                                 ElevatorWaitingMusic.GetInstance().Portal = false;
                             }
                         }
-                        
                     });
+                    HotkeyManager.Current.AddOrReplace("PlayPortalMusic", Key.P, ModifierKeys.None, true, (o, args) =>
+                    {
+                        if (ElevatorWaitingMusic.GetInstance().IsPlaying())
+                        {
+                            ElevatorWaitingMusic.GetInstance().SwitchSongs();
+                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
+                        }
+                        args.Handled = false;
+                    });
+                    
                     
                     HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
                     {
@@ -225,6 +224,7 @@ namespace AutopilotQuick
             
             InternetMan.GetInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
             InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
+            await Task.Run(() => HeadphoneMan.GetInstance().StartTimer(context), cancellationToken);
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.GetInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.GetInstance().StartTimer(), cancellationToken);

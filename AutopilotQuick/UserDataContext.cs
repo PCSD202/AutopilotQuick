@@ -155,6 +155,18 @@ namespace AutopilotQuick
                 OnPropertyChanged();
             }
         }
+
+        public bool HeadphonesActive
+        {
+            get => _headphonesActive;
+            set
+            {
+                if (value == _headphonesActive) return;
+                _headphonesActive = value;
+                OnPropertyChanged();
+            }
+        }
+
         public record struct HotkeyListItem(string Name, HotKey HotKey, HotkeyType HotkeyType);
 
 
@@ -177,6 +189,7 @@ namespace AutopilotQuick
         };
 
         private string _currentTime;
+        private bool _headphonesActive;
 
         public IEnumerable<HotkeyListItem> NormalHotkeyList
         {

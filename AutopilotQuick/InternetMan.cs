@@ -97,7 +97,7 @@ namespace AutopilotQuick
         public void Run(Object? o)
         {
             if(!NetworkInterface.GetIsNetworkAvailable()){ return; } //No network available so don't even try
-            var internet = CheckForInternetConnection(500, "https://www.google.com");
+            var internet = CheckForInternetConnection(1000, "https://www.google.com");
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
