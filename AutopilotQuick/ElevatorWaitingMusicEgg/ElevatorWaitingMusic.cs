@@ -22,7 +22,7 @@ public class ElevatorWaitingMusic
 {
     private readonly ILogger Logger = App.GetLogger<ElevatorWaitingMusic>();
 
-    private WaveOutEvent? output = null;
+    private List<WasapiOut> outputs = new List<WasapiOut>();
     private float volume = 0.5f;
     private static ElevatorWaitingMusic? Instance = null;
     public static ElevatorWaitingMusic? GetInstance()
@@ -74,48 +74,69 @@ public class ElevatorWaitingMusic
     
     public void Stop()
     {
-        output?.Stop();
+        lock (outputs)
+        {
+            foreach (var output in outputs)
+            {
+                output?.Stop();
+                output?.Dispose();
+            }
+
+            outputs.Clear();
+        }
     }
+    
 
     private float ChangeAmount = 0.05f;
     
     public void IncVolume()
     {
-        if(output is null) {return;}
+        if(outputs.Count == 0) {return;}
 
-        var newVolume = output.Volume + ChangeAmount;
+        var newVolume = outputs[0].Volume + ChangeAmount;
         if (newVolume > 1)
         {
             return;
         }
 
         volume = newVolume;
-        output.Volume = newVolume;
+        foreach (var output in outputs)
+        {
+            output.Volume = newVolume;
+        }
+        
     }
 
     public void DecVolume()
     {
-        if(output is null) {return;}
+        if(outputs.Count == 0) {return;}
 
-        var newVolume = output.Volume - ChangeAmount;
+        var newVolume = outputs[0].Volume - ChangeAmount;
         if (newVolume < 0)
         {
             return;
         }
 
         volume = newVolume;
-        output.Volume = newVolume;
+        foreach (var output in outputs)
+        {
+            output.Volume = newVolume;
+        }
 
     }
 
     public bool IsPlaying()
     {
-        if (output is null)
+        lock (outputs)
         {
-            return false;
-        }
+            if (outputs.Count == 0)
+            {
+                return false;
+            }
 
-        return output.PlaybackState == PlaybackState.Playing;
+            return outputs.Any(x => x.PlaybackState == PlaybackState.Playing);
+        }
+        
     }
 
     public bool Portal = false;
@@ -130,65 +151,48 @@ public class ElevatorWaitingMusic
     {
         return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
     }
-    
-    public async Task Play(UserDataContext context)
+
+    public async Task Play(UserDataContext context, bool HeadphoneOnly = false)
     {
-        var selectedDevice = -2;
-        for (int n = 0; n < WaveOut.DeviceCount; n++)
-        {
-            var caps = WaveOut.GetCapabilities(n);
-            Console.WriteLine($"WAVE: {n}: {caps.ProductName}");
-            if (!caps.ProductName.ToLower().Contains("speaker")) continue;
-            selectedDevice = n;
-            break;
-        }
-
-        try
-        {
-            for (int n = 0; n < WaveIn.DeviceCount; n++)
-            {
-                var caps = WaveIn.GetCapabilities(n);
-                Console.WriteLine($"{n}: {caps.ProductName}");
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Got error while looking for DSO devices");
-        }
-        
-
-        try
-        {
-            Console.WriteLine("Direct sound out:");
-            foreach (var dev in DirectSoundOut.Devices)
-            {
-                Console.WriteLine($"\t{dev.Guid} {dev.ModuleName} {dev.Description}");
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Got error while looking for DSO devices");
-        }
-        
-
+        var speakers = new List<MMDevice>();
+        var headphones = new List<MMDevice>();
+        var SelectedDevices = new List<MMDevice>();
         try
         {
             var enumerator = new MMDeviceEnumerator();
-            Console.WriteLine("WASAPI:");
-            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
+            var activeDevices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
+            foreach (var wasapi in activeDevices)
             {
-                Console.WriteLine(
-                    $"\t{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}");
+                try
+                {
+                    Console.WriteLine(
+                        $"\t{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}");
+                    if (wasapi.FriendlyName.ToLower().Contains("headphone"))
+                    {
+                        headphones.Add(wasapi);
+                    }
+                    else if (wasapi.FriendlyName.ToLower().Contains("speaker"))
+                    {
+                        speakers.Add(wasapi);
+                    }
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
         }
         catch (Exception e)
         {
             Console.WriteLine("Got error while looking for WASAPI devices");
         }
-        
-        var times = new Dictionary<string, TimeSpan>();
+
+        SelectedDevices.AddRange(headphones.Count == 0 && !HeadphoneOnly ? speakers : headphones);
+
         var cachedMusic = new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/Music.mp3", "Music.mp3", context);
-        var cachedMusicStartTimes = new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/SongStartingPoints.json", "SongStartingPoints.json", context);
+        var cachedMusicStartTimes =
+            new Cacher("https://nettools.psd202.org/AutoPilotFast/Music/SongStartingPoints.json",
+                "SongStartingPoints.json", context);
         if (InternetMan.GetInstance().IsConnected)
         {
             if (!cachedMusic.FileCached || !cachedMusic.IsUpToDate)
@@ -203,8 +207,8 @@ public class ElevatorWaitingMusic
         }
 
 
-        
-        if(selectedDevice == -2) return;
+
+        if (SelectedDevices.Count == 0) return;
 
         var file = "Elevator Music.mp3";
         if (Portal)
@@ -216,17 +220,32 @@ public class ElevatorWaitingMusic
         {
             file = cachedMusic.FilePath;
         }
+
+        var WavePlayers = new List<WaveStream>();
+        var LoopPlayers = new List<WaveStream>();
         try
         {
+
             await using var audioStream = LoadAudioStream(file);
-            output = new WaveOutEvent() { DeviceNumber = selectedDevice, Volume = volume };
-            await using var player = new ManagedMpegStream(audioStream);
-            await using var loopPlayer = new LoopStream(player);
+            foreach (var device in SelectedDevices)
+            {
+                outputs.Add(new WasapiOut(device, AudioClientShareMode.Shared, true, 200) { Volume = volume });
+            }
+
+            foreach (var output in outputs)
+            {
+                var player = new ManagedMpegStream(audioStream);
+                var loopPlayer = new LoopStream(player);
+                LoopPlayers.Add(loopPlayer);
+                WavePlayers.Add(player);
+                output.Init(loopPlayer);
+            }
+
             if (!Portal && cachedMusic.FileCached)
             {
 
                 var randPos = rnd.NextDouble();
-                var randSeconds = Map(randPos, 0, 1, 0, player.TotalTime.TotalSeconds);
+                var randSeconds = Map(randPos, 0, 1, 0, WavePlayers[0].TotalTime.TotalSeconds);
                 if (cachedMusicStartTimes.FileCached)
                 {
                     try
@@ -243,21 +262,43 @@ public class ElevatorWaitingMusic
                         //Delete file
                         cachedMusicStartTimes.Delete();
                     }
-                     
+
                 }
-                
-                player.CurrentTime = randSeconds.Seconds();
+
+                foreach (var wavePlayer in WavePlayers)
+                {
+                    wavePlayer.CurrentTime = randSeconds.Seconds();
+                }
             }
-            output.Init(loopPlayer);
-            output.Play();
-            var mre = new AsyncManualResetEvent();
-            output.PlaybackStopped += (sender, args) => mre.Set();
-            await mre.WaitAsync();
+
+            foreach (var output in outputs)
+            {
+                output.Play();
+            }
+
+            while (IsPlaying())
+            {
+                await Task.Delay(50);
+            }
         }
         catch (Exception e)
         {
             Logger.LogError(e, "Got error while playing music {e}", e);
         }
+        finally
+        {
+            foreach (var loopPlayer in LoopPlayers)
+            {
+                await loopPlayer.DisposeAsync();
+            }
+
+            foreach (var wavePlayer in WavePlayers)
+            {
+                await wavePlayer.DisposeAsync();
+            }
+
+        }
+
         Logger.LogInformation("Playback finished");
     }
 }

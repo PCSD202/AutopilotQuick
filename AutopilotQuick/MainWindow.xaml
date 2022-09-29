@@ -46,10 +46,7 @@
     
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
-            <mah:MetroHeader Style="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" Header="Internet" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0 0 5 0" mah:ControlsHelper.ContentCharacterCasing="Normal">
-                <Ellipse Fill="{Binding ConnectedToInternet, Converter={StaticResource StatusConverter}}" Height="20" Stroke="Black" Width="20"/>
-            </mah:MetroHeader>
-
+            
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
                 <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
                 <mah:ToggleSwitch x:Name="TakeHomeToggle" OnContent="" OffContent="" VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
@@ -59,7 +56,37 @@
                 <mah:MetroHeader Header="Shared PC:" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
                 <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{DynamicResource MahApps.Brushes.Gray2}"/>
             </StackPanel>
-
+            
+            <iconPacks:PackIconUnicons ToolTip="Headphone availability" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <iconPacks:PackIconUnicons.Style>
+                    <Style TargetType="iconPacks:PackIconUnicons">
+                        <Setter Property="Kind" Value="HeadphoneSlash"/>
+                        <Setter Property="Foreground" Value="Red"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="True">
+                                <Setter Property="Kind" Value="Headphones"/>
+                                <Setter Property="Foreground" Value="LawnGreen"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </iconPacks:PackIconUnicons.Style>
+            </iconPacks:PackIconUnicons>
+            
+            <iconPacks:PackIconMaterial ToolTip="Internet availability" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <iconPacks:PackIconMaterial.Style>
+                    <Style TargetType="iconPacks:PackIconMaterial">
+                        <Setter Property="Kind" Value="AccessPointNetworkOff"/>
+                        <Setter Property="Foreground" Value="Red"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="True">
+                                <Setter Property="Kind" Value="AccessPointNetwork"/>
+                                <Setter Property="Foreground" Value="LawnGreen"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </iconPacks:PackIconMaterial.Style>
+            </iconPacks:PackIconMaterial>
+            
             <Viewbox Width="22" Height="22" UseLayoutRounding="False">
                 <StackPanel Orientation="Vertical">
                     <Border Background="{StaticResource ProgressBrush}" CornerRadius="2,2,0,0" Padding="2" Width="20" Height="7" Margin="0,-2,0,-2" HorizontalAlignment="Center"/>
