@@ -57,15 +57,40 @@
                 <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{DynamicResource MahApps.Brushes.Gray2}"/>
             </StackPanel>
             
+            <iconPacks:PackIconUnicons ToolTip="Sound Playing" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <iconPacks:PackIconUnicons.Style>
+                    <Style TargetType="iconPacks:PackIconUnicons">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Playing}" Value="True">
+                                <Setter Property="Kind" Value="Volume"/>
+                                <Setter Property="Foreground" Value="LawnGreen"/>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Playing}" Value="False">
+                                <Setter Property="Kind" Value="Volume"/>
+                                <Setter Property="Foreground" Value="Red"/>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </iconPacks:PackIconUnicons.Style>
+            </iconPacks:PackIconUnicons>
+            
             <iconPacks:PackIconUnicons ToolTip="Headphone availability" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <iconPacks:PackIconUnicons.Style>
                     <Style TargetType="iconPacks:PackIconUnicons">
-                        <Setter Property="Kind" Value="HeadphoneSlash"/>
-                        <Setter Property="Foreground" Value="Red"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="True">
+                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.Connected}">
                                 <Setter Property="Kind" Value="Headphones"/>
                                 <Setter Property="Foreground" Value="LawnGreen"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.NotFound}">
+                                <Setter Property="Kind" Value="HeadphoneSlash"/>
+                                <Setter Property="Foreground" Value="Red"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.Disconnected}">
+                                <Setter Property="Kind" Value="HeadphoneSlash"/>
+                                <Setter Property="Foreground" Value="Yellow"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -75,11 +100,11 @@
             <iconPacks:PackIconMaterial ToolTip="Internet availability" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <iconPacks:PackIconMaterial.Style>
                     <Style TargetType="iconPacks:PackIconMaterial">
-                        <Setter Property="Kind" Value="AccessPointNetworkOff"/>
+                        <Setter Property="Kind" Value="WifiOff"/>
                         <Setter Property="Foreground" Value="Red"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ConnectedToInternet}" Value="True">
-                                <Setter Property="Kind" Value="AccessPointNetwork"/>
+                                <Setter Property="Kind" Value="Wifi"/>
                                 <Setter Property="Foreground" Value="LawnGreen"/>
                             </DataTrigger>
                         </Style.Triggers>

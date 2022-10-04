@@ -278,6 +278,7 @@ public class ElevatorWaitingMusic
 
             while (IsPlaying())
             {
+                context.Playing = true;
                 await Task.Delay(50);
             }
         }
@@ -297,6 +298,7 @@ public class ElevatorWaitingMusic
                 await wavePlayer.DisposeAsync();
             }
 
+            context.Playing = false;
         }
 
         Logger.LogInformation("Playback finished");
