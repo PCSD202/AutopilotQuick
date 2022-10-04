@@ -32,15 +32,17 @@ namespace AutopilotQuick
         public event EventHandler? InternetBecameUnavailable;
         
         private Timer _timer = null;
+        private UserDataContext _context;
         
-        public void StartTimer()
+        public void StartTimer(UserDataContext context)
         {
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Starting InternetMan service"))
             {
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("InternetManServiceServiceStarted");
                 Logger.LogInformation("Internet man service started");
-
+                _context = context;
+                
                 _timer = new Timer(Run, null,
 #if DEBUG
                     0.Seconds(),           
@@ -51,7 +53,9 @@ namespace AutopilotQuick
                     
                     5.Seconds()); //Give some time for the app to startup before we start checking for internet
             }
+
             
+
         }
         
         public static void WaitForInternet(UserDataContext context) {
@@ -96,6 +100,19 @@ namespace AutopilotQuick
 
         public void Run(Object? o)
         {
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            if (adapters.All(x => x.NetworkInterfaceType != NetworkInterfaceType.Wireless80211))
+            {
+                _context.ConnectedToInternet = InternetConnectionStatus.NoAdapter;
+            }
+            else if(!IsConnected)
+            {
+                _context.ConnectedToInternet = InternetConnectionStatus.Disconnected;
+            } else if (IsConnected)
+            {
+                _context.ConnectedToInternet = InternetConnectionStatus.Connected;
+            }
+            
             if(!NetworkInterface.GetIsNetworkAvailable()){ return; } //No network available so don't even try
             var internet = CheckForInternetConnection(1000, "https://www.google.com");
             if (internet && !IsConnected)

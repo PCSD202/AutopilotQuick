@@ -275,12 +275,13 @@ public class ElevatorWaitingMusic
             {
                 output.Play();
             }
-
+            
+            context.Playing = true;
             while (IsPlaying())
             {
-                context.Playing = true;
                 await Task.Delay(50);
             }
+            context.Playing = false;
         }
         catch (Exception e)
         {

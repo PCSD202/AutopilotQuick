@@ -101,11 +101,19 @@
                 <iconPacks:PackIconMaterial.Style>
                     <Style TargetType="iconPacks:PackIconMaterial">
                         <Setter Property="Kind" Value="WifiOff"/>
-                        <Setter Property="Foreground" Value="Red"/>
+                        <Setter Property="Foreground" Value="Yellow"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="True">
+                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Connected}">
                                 <Setter Property="Kind" Value="Wifi"/>
                                 <Setter Property="Foreground" Value="LawnGreen"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Disconnected}">
+                                <Setter Property="Kind" Value="WifiOff"/>
+                                <Setter Property="Foreground" Value="Yellow"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.NoAdapter}">
+                                <Setter Property="Kind" Value="WifiRemove"/>
+                                <Setter Property="Foreground" Value="Red"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
