@@ -90,7 +90,6 @@ public class HeadphoneMan
                 }
             }
         }
-        Console.WriteLine($"Status: {newState}");
         _context.HeadphonesActive = newState;
     }
 }
