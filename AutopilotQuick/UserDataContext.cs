@@ -156,13 +156,24 @@ namespace AutopilotQuick
             }
         }
 
-        public bool HeadphonesActive
+        public HeadphoneState HeadphonesActive
         {
             get => _headphonesActive;
             set
             {
                 if (value == _headphonesActive) return;
                 _headphonesActive = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool Playing
+        {
+            get => _playing;
+            set
+            {
+                if (value == _playing) return;
+                _playing = value;
                 OnPropertyChanged();
             }
         }
@@ -189,7 +200,8 @@ namespace AutopilotQuick
         };
 
         private string _currentTime;
-        private bool _headphonesActive;
+        private HeadphoneState _headphonesActive = HeadphoneState.NotFound;
+        private bool _playing = false;
 
         public IEnumerable<HotkeyListItem> NormalHotkeyList
         {

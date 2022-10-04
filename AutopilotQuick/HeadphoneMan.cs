@@ -10,6 +10,12 @@ using Octokit;
 
 namespace AutopilotQuick;
 
+public enum HeadphoneState
+{
+    NotFound,
+    Disconnected,
+    Connected
+}
 public class HeadphoneMan
 {
     private static HeadphoneMan Instance = new HeadphoneMan();
@@ -25,8 +31,9 @@ public class HeadphoneMan
     public void StartTimer(UserDataContext context)
     {
         _context = context;
-        _timer = new Timer(Run, null,0.Seconds(), 1.Seconds()); //Give some time for the app to startup before we start checking for internet
+        _timer = new Timer(Run, null,0.Seconds(), 1.Seconds());
     }
+    
     
     public void Run(object? o)
     {
@@ -34,7 +41,7 @@ public class HeadphoneMan
         try
         {
             var enumerator = new MMDeviceEnumerator();
-            var activeDevices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
+            var activeDevices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.All).ToList();
             foreach (var wasapi in activeDevices)
             {
                 try
@@ -55,11 +62,15 @@ public class HeadphoneMan
             Console.WriteLine("Got error while looking for WASAPI devices");
         }
 
-        var newState = headphones.Count != 0;
-        
+        HeadphoneState newState = HeadphoneState.NotFound;
+        if (headphones.Any())
+        {
+            newState = headphones.Any(x => x.State == DeviceState.Active) ? HeadphoneState.Connected : HeadphoneState.Disconnected;
+        }
+
         if (_context.HeadphonesActive != newState)
         {
-            if (newState)
+            if (newState == HeadphoneState.Connected)
             {
                 var ewm = ElevatorWaitingMusicEgg.ElevatorWaitingMusic.GetInstance();
                 if (ewm.IsPlaying())
@@ -71,7 +82,5 @@ public class HeadphoneMan
             }
         }
         _context.HeadphonesActive = newState;
-        
-
     }
 }
