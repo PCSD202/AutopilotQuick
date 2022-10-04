@@ -223,11 +223,11 @@ namespace AutopilotQuick
             
             
             InternetMan.GetInstance().InternetBecameAvailable += MainWindow_InternetBecameAvailable;
-            InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = false));
+            InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = InternetConnectionStatus.Disconnected));
             await Task.Run(() => HeadphoneMan.GetInstance().StartTimer(context), cancellationToken);
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() =>BatteryMan.GetInstance().StartTimer(), cancellationToken);
-            await Task.Run(() =>InternetMan.GetInstance().StartTimer(), cancellationToken);
+            await Task.Run(() =>InternetMan.GetInstance().StartTimer(context), cancellationToken);
             var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.GetInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         }
@@ -292,7 +292,7 @@ namespace AutopilotQuick
         private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
         {
             
-            context.ConnectedToInternet = true;
+            context.ConnectedToInternet = InternetConnectionStatus.Connected;
             if (!AlreadyRanUpdater)
             {
                 AlreadyRanUpdater = true;

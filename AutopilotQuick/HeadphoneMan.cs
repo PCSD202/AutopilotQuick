@@ -46,7 +46,7 @@ public class HeadphoneMan
             {
                 try
                 {
-                    if (wasapi.FriendlyName.ToLower().Contains("headphone"))
+                    if (wasapi.FriendlyName.ToLower().Contains("headphone") && wasapi.State is DeviceState.Active or DeviceState.Unplugged)
                     {
                         headphones.Add(wasapi);
                     }
@@ -63,7 +63,7 @@ public class HeadphoneMan
         }
 
         HeadphoneState newState = HeadphoneState.NotFound;
-        if (headphones.Any())
+        if (headphones.Count > 0)
         {
             newState = headphones.Any(x => x.State == DeviceState.Active) ? HeadphoneState.Connected : HeadphoneState.Disconnected;
         }
@@ -80,7 +80,17 @@ public class HeadphoneMan
 
                 Task.Run(async ()=> await ewm.Play(_context, true));
             }
+
+            if (newState == HeadphoneState.Disconnected)
+            {
+                var ewm = ElevatorWaitingMusicEgg.ElevatorWaitingMusic.GetInstance();
+                if (ewm.IsPlaying())
+                {
+                    ewm.Stop();
+                }
+            }
         }
+        Console.WriteLine($"Status: {newState}");
         _context.HeadphonesActive = newState;
     }
 }

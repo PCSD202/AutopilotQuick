@@ -31,8 +31,8 @@ namespace AutopilotQuick
         public string LatestReleaseAssetURL { get; set; }
         public string LatestReleaseAssetSignedHashURL { get; set; }
 
-        private bool _connectedToInternet { get; set; } = false;
-        public bool ConnectedToInternet { get { return _connectedToInternet; } set { _connectedToInternet = value; OnPropertyChanged(nameof(ConnectedToInternet)); } }
+        private InternetConnectionStatus _connectedToInternet { get; set; } = InternetConnectionStatus.NoAdapter;
+        public InternetConnectionStatus ConnectedToInternet { get { return _connectedToInternet; } set { _connectedToInternet = value; OnPropertyChanged(nameof(ConnectedToInternet)); } }
 
 
         private double _totalProgress = 0;
@@ -289,12 +289,6 @@ namespace AutopilotQuick
             }
         }
 
-
-
-
-
-
-
         public event PropertyChangedEventHandler? PropertyChanged;
         
         [NotifyPropertyChangedInvocator]
@@ -308,6 +302,13 @@ namespace AutopilotQuick
             Normal,
             EasterEgg
         }
+    }
+
+    public enum InternetConnectionStatus
+    {
+        NoAdapter,
+        Disconnected,
+        Connected
     }
 
 }
