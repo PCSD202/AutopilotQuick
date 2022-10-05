@@ -16,6 +16,8 @@ using Newtonsoft.Json;
 using Nito.AsyncEx;
 using NLayer.NAudioSupport;
 using Notification.Wpf;
+using RandN;
+using RandN.Distributions;
 
 
 namespace AutopilotQuick.ElevatorWaitingMusicEgg;
@@ -147,7 +149,8 @@ public class ElevatorWaitingMusic
         Portal = !Portal;
         Stop();
     }
-    public static Random rnd = new Random();
+    
+    private static StandardRng rng = StandardRng.Create();
     
     public static double Map (double value, double fromSource, double toSource, double fromTarget, double toTarget)
     {
@@ -245,19 +248,19 @@ public class ElevatorWaitingMusic
 
             if (!Portal && cachedMusic.FileCached)
             {
-
-                var randPos = rnd.NextDouble();
-                var randSeconds = Map(randPos, 0, 1, 0, WavePlayers[0].TotalTime.TotalSeconds);
+                var timeRand = Uniform.NewInclusive(0.Seconds(), WavePlayers[0].TotalTime);
+                var randSeconds  = timeRand.Sample(rng).TotalSeconds;
                 if (cachedMusicStartTimes.FileCached)
                 {
                     try
                     {
                         //Load json file
-                        var songData =
-                            JsonConvert.DeserializeObject<Dictionary<string, TimeSpan>>(
-                                await cachedMusicStartTimes.ReadAllTextAsync());
-                        var index = rnd.Next(songData.Values.ToList().Count);
-                        var kvp = songData.FirstOrDefault(x => x.Value == songData.Values.ToList()[index]);
+                        var songData = JsonConvert.DeserializeObject<Dictionary<string, TimeSpan>>(await cachedMusicStartTimes.ReadAllTextAsync());
+                        
+                        var dx = Uniform.NewInclusive(0, songData.Count-1);
+                        
+                        var index = dx.Sample(rng);
+                        var kvp = songData.ElementAt(index);
                         randSeconds = kvp.Value.TotalSeconds;
                         context.NotifcationManager.Show("Now Playing", $"{kvp.Key}", NotificationType.Information,
                             "", 5.Seconds());
