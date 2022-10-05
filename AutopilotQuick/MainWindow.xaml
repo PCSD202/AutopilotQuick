@@ -63,7 +63,7 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Playing}" Value="True">
                                 <Setter Property="Kind" Value="Volume"/>
-                                <Setter Property="Foreground" Value="LawnGreen"/>
+                                <Setter Property="Foreground" Value="LimeGreen"/>
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Playing}" Value="False">
@@ -82,7 +82,7 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.Connected}">
                                 <Setter Property="Kind" Value="Headphones"/>
-                                <Setter Property="Foreground" Value="LawnGreen"/>
+                                <Setter Property="Foreground" Value="LimeGreen"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.NotFound}">
                                 <Setter Property="Kind" Value="HeadphoneSlash"/>
@@ -105,7 +105,7 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Connected}">
                                 <Setter Property="Kind" Value="Wifi"/>
-                                <Setter Property="Foreground" Value="LawnGreen"/>
+                                <Setter Property="Foreground" Value="LimeGreen"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Disconnected}">
                                 <Setter Property="Kind" Value="WifiOff"/>
@@ -120,25 +120,10 @@
                 </iconPacks:PackIconMaterial.Style>
             </iconPacks:PackIconMaterial>
             
-            <Viewbox Width="22" Height="22" UseLayoutRounding="False">
-                <StackPanel Orientation="Vertical">
-                    <Border Background="{StaticResource ProgressBrush}" CornerRadius="2,2,0,0" Padding="2" Width="20" Height="7" Margin="0,-2,0,-2" HorizontalAlignment="Center"/>
-                    <Border BorderBrush="{StaticResource ProgressBrush}" BorderThickness="2" CornerRadius="5" Padding="2" Width="50" Height="100">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Border Height="{Binding BatteryPercent}" Grid.Row="1" Background="{StaticResource ProgressBrush}" CornerRadius="2" Padding="2" />
-                            <iconPacks:PackIconBootstrapIcons Visibility="{Binding IsCharging,Converter={StaticResource BooleanToVisibilityConverter}}" Grid.Row="0" Grid.RowSpan="2" Foreground="White" Kind="LightningChargeFill" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4" VerticalContentAlignment="Stretch" Width="42" Height="42" UseLayoutRounding="True">
-                                <iconPacks:PackIconBootstrapIcons.Effect>
-                                    <DropShadowEffect ShadowDepth="0" Opacity="1" BlurRadius="4" Color="Black"/>
-                                </iconPacks:PackIconBootstrapIcons.Effect>
-                            </iconPacks:PackIconBootstrapIcons>
-                        </Grid>
-                    </Border>
-                </StackPanel>
+            <Viewbox Width="22" Height="22" Margin="5 0 5 0">
+                <local:BatteryIndicator/>
             </Viewbox>
+            
             
             <Button VerticalAlignment="Center" ToolTip="Hotkeys" VerticalContentAlignment="Center" Click="HotKeyFlyoutButton_Click">
                 <iconPacks:PackIconForkAwesome Kind="KeyboardOutline" Width="22" Height="22"/>

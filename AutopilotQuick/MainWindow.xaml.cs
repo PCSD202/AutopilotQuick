@@ -213,7 +213,7 @@ namespace AutopilotQuick
             KeyDown += WinOnKeyDown;
             
 
-            BatteryMan.GetInstance().BatteryUpdated += MainWindow_BatteryUpdated;
+            //BatteryMan.GetInstance().BatteryUpdated += MainWindow_BatteryUpdated;
 
             
             TaskManager.GetInstance().TotalTaskProgressChanged += MainWindow_TotalTaskProgressChanged;
@@ -226,7 +226,7 @@ namespace AutopilotQuick
             InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = InternetConnectionStatus.Disconnected));
             await Task.Run(() => HeadphoneMan.GetInstance().StartTimer(context), cancellationToken);
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
-            await Task.Run(() =>BatteryMan.GetInstance().StartTimer(), cancellationToken);
+            //await Task.Run(() =>BatteryMan.GetInstance().StartTimer(), cancellationToken);
             await Task.Run(() =>InternetMan.GetInstance().StartTimer(context), cancellationToken);
             var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.GetInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
