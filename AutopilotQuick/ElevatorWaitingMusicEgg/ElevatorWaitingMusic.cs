@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using System.Windows.Media;
 using Humanizer;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using NAudio.Wave;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using NLayer.NAudioSupport;
+using Notification.Wpf;
 
 
 namespace AutopilotQuick.ElevatorWaitingMusicEgg;
@@ -255,7 +257,11 @@ public class ElevatorWaitingMusic
                             JsonConvert.DeserializeObject<Dictionary<string, TimeSpan>>(
                                 await cachedMusicStartTimes.ReadAllTextAsync());
                         var index = rnd.Next(songData.Values.ToList().Count);
-                        randSeconds = songData.Values.ToList()[index].TotalSeconds;
+                        var kvp = songData.FirstOrDefault(x => x.Value == songData.Values.ToList()[index]);
+                        randSeconds = kvp.Value.TotalSeconds;
+                        context.NotifcationManager.Show("Now Playing", $"{kvp.Key}", NotificationType.Information,
+                            "", 5.Seconds());
+
                     }
                     catch (JsonException e)
                     {

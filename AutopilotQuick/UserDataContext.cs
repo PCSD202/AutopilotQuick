@@ -12,6 +12,7 @@ using Humanizer;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using NLog;
+using Notification.Wpf;
 using Octokit;
 using Polly;
 using Polly.Retry;
@@ -30,6 +31,8 @@ namespace AutopilotQuick
         public string LatestVersion { get; set; }
         public string LatestReleaseAssetURL { get; set; }
         public string LatestReleaseAssetSignedHashURL { get; set; }
+        
+        public NotificationManager NotifcationManager = new NotificationManager();
 
         private InternetConnectionStatus _connectedToInternet { get; set; } = InternetConnectionStatus.NoAdapter;
         public InternetConnectionStatus ConnectedToInternet { get { return _connectedToInternet; } set { _connectedToInternet = value; OnPropertyChanged(nameof(ConnectedToInternet)); } }
