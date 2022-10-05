@@ -101,7 +101,7 @@ namespace AutopilotQuick
         public void Run(Object? o)
         {
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-            if (adapters.All(x => x.NetworkInterfaceType != NetworkInterfaceType.Wireless80211))
+            if (adapters.All(x => x.NetworkInterfaceType is not (NetworkInterfaceType.Wireless80211 or NetworkInterfaceType.Ethernet)))
             {
                 _context.ConnectedToInternet = InternetConnectionStatus.NoAdapter;
             }
