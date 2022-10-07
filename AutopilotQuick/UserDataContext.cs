@@ -125,9 +125,11 @@ namespace AutopilotQuick
             get { return _developerModeEnabled; }
             set { _developerModeEnabled = value; OnPropertyChanged(nameof(DeveloperModeEnabled)); }
         }
+
+        public bool KeyboardTestEnabled = false;
         public ICommand EnableDeveloperModeCmd => new SimpleCommand
         {
-            CanExecuteDelegate = x => !DeveloperModeEnabled,
+            CanExecuteDelegate = x => !DeveloperModeEnabled && !KeyboardTestEnabled,
             ExecuteDelegate = async x =>
             {
                 DeveloperModeEnabled = true;
