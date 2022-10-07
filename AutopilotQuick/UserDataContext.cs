@@ -119,7 +119,6 @@ namespace AutopilotQuick
         private bool? _sharedPcChecked;
         private bool _sharedPcCheckboxEnabled = true;
 
-
         public bool DeveloperModeEnabled
         {
             get { return _developerModeEnabled; }
