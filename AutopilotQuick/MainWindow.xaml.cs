@@ -1,21 +1,14 @@
 ﻿using MahApps.Metro.Controls.Dialogs;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using Humanizer;
 using System.IO;
 using System.IO.Compression;
@@ -25,8 +18,9 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
+using AutopilotQuick.Banshee;
 using AutopilotQuick.CookieEgg;
-using AutopilotQuick.ElevatorWaitingMusicEgg;
+using AutopilotQuick.KeyboardTester;
 using AutopilotQuick.LogMan;
 using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
@@ -36,16 +30,12 @@ using MahApps.Metro.Controls;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
-using NAudio.CoreAudioApi;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using ORMi;
 using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using NHotkey.Wpf;
-using NHotkey;
-using Notification.Wpf;
 
 namespace AutopilotQuick
 {
@@ -117,8 +107,49 @@ namespace AutopilotQuick
                 }
             }
         }
+
+        private void UnregisterConflictingKeybinds()
+        {
+            var keys = new List<string>()
+            {
+                "RainbowMode",
+                "PlayPortalMusic",
+                "DebugMenu",
+                "IncVolume",
+                "DecVolume"
+            };
+            foreach (var key in keys)
+            {
+                try
+                {
+                    HotkeyManager.Current.Remove(key);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Failed to de-register hotkey: {key}, Error: {e}",key, e);
+                }
+                
+            }
+            
+        }
+
+        private void RegisterConflictingKeybinds()
+        {
+            HotkeyManager.Current.AddOrReplace("RainbowMode", Key.F10, ModifierKeys.None, true, F10KeyPressed_OnExecuted);
+            HotkeyManager.Current.AddOrReplace("DebugMenu", Key.F7, ModifierKeys.None, true, F7KeyPressed_OnExecuted);
+            HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
+            {
+                BansheePlayer.GetInstance().IncVolume();
+            });
+            HotkeyManager.Current.AddOrReplace("DecVolume", Key.OemMinus, ModifierKeys.None, false, (o, args) =>
+            {
+                BansheePlayer.GetInstance().DecVolume();
+            });
+            
+        }
+
+        private KeyboardWindow? _keyboardWindow = null;
         
-        private MediaPlayer mediaPlayer = new MediaPlayer();
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             
@@ -129,12 +160,26 @@ namespace AutopilotQuick
                 _cancelTokenSource.Cancel();
                 Close();
             };
+
+            
             _ = Dispatcher.BeginInvoke(() =>
                 {
-                    HotkeyManager.Current.AddOrReplace("RainbowMode", Key.F10, ModifierKeys.None, true,
-                        F10KeyPressed_OnExecuted);
-                    HotkeyManager.Current.AddOrReplace("DebugMenu", Key.F7, ModifierKeys.None, true,
-                        F7KeyPressed_OnExecuted);
+                    
+                    HotkeyManager.Current.AddOrReplace("OpenKeyboardTest", Key.K, ModifierKeys.Control, true,
+                        (o, args) =>
+                        {
+                            _keyboardWindow ??= new KeyboardWindow();
+                            _keyboardWindow.Closed += (o, args) =>
+                            {
+                                context.KeyboardTestEnabled = false;
+                                RegisterConflictingKeybinds();
+                                _keyboardWindow = null;
+                            };
+                            context.KeyboardTestEnabled = true;
+                            UnregisterConflictingKeybinds();
+                            _keyboardWindow.Show();
+                        });
+                    
                     HotkeyManager.Current.AddOrReplace("HotkeyMenu", Key.H, ModifierKeys.Control, true, (o, args) =>
                     {
                         this.Dispatcher.Invoke(() =>
@@ -175,41 +220,18 @@ namespace AutopilotQuick
                     
                     HotkeyManager.Current.AddOrReplace("PlayPauseElevatorMusic", Key.M, ModifierKeys.Control, true, (o, args) =>
                     {
-                        if (!ElevatorWaitingMusic.GetInstance().IsPlaying())
+                        if (!BansheePlayer.GetInstance().IsPlaying())
                         {
-                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
+                            Task.Run(()=>BansheePlayer.GetInstance().Play(context));
                         }
                         else
                         {
-                            ElevatorWaitingMusic.GetInstance().Stop();
-                            if (ElevatorWaitingMusic.GetInstance().Portal)
-                            {
-                                ElevatorWaitingMusic.GetInstance().Portal = false;
-                            }
+                            BansheePlayer.GetInstance().Stop();
                         }
                     });
-                    HotkeyManager.Current.AddOrReplace("PlayPortalMusic", Key.P, ModifierKeys.None, true, (o, args) =>
-                    {
-                        if (ElevatorWaitingMusic.GetInstance().IsPlaying())
-                        {
-                            ElevatorWaitingMusic.GetInstance().SwitchSongs();
-                            Task.Run(async ()=>await ElevatorWaitingMusic.GetInstance().Play(context), cancellationToken);
-                        }
-                        args.Handled = false;
-                    });
-                    
-                    
-                    HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
-                    {
-                        ElevatorWaitingMusic.GetInstance().IncVolume();
-                    });
-                    HotkeyManager.Current.AddOrReplace("DecVolume", Key.OemMinus, ModifierKeys.None, false, (o, args) =>
-                    {
-                        ElevatorWaitingMusic.GetInstance().DecVolume();
-                    });
+                    RegisterConflictingKeybinds();
                 }, DispatcherPriority.Normal
             );
-            
             KeyDown += WinOnKeyDown;
             
 
