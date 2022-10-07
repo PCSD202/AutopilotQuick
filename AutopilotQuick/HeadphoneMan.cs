@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Documents;
+using AutopilotQuick.Banshee;
 using Humanizer;
 using NAudio.CoreAudioApi;
 using Octokit;
@@ -37,53 +38,29 @@ public class HeadphoneMan
     
     public void Run(object? o)
     {
-        var headphones = new List<MMDevice>();
-        try
-        {
-            var enumerator = new MMDeviceEnumerator();
-            var activeDevices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.All).ToList();
-            foreach (var wasapi in activeDevices)
-            {
-                try
-                {
-                    if (wasapi.FriendlyName.ToLower().Contains("headphone") && wasapi.State is DeviceState.Active or DeviceState.Unplugged)
-                    {
-                        headphones.Add(wasapi);
-                    }
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Got error while looking for WASAPI devices");
-        }
+        var headphones = SoundUtils.GetHeadphone();
 
         HeadphoneState newState = HeadphoneState.NotFound;
-        if (headphones.Count > 0)
+        if (headphones is not null)
         {
-            newState = headphones.Any(x => x.State == DeviceState.Active) ? HeadphoneState.Connected : HeadphoneState.Disconnected;
+            newState = headphones.State == DeviceState.Active ? HeadphoneState.Connected : HeadphoneState.Disconnected;
         }
 
         if (_context.HeadphonesActive != newState)
         {
+            var ewm = BansheePlayer.GetInstance();
             if (newState == HeadphoneState.Connected)
             {
-                var ewm = ElevatorWaitingMusicEgg.ElevatorWaitingMusic.GetInstance();
+                
                 if (ewm.IsPlaying())
                 {
                     ewm.Stop();
                 }
 
-                Task.Run(async ()=> await ewm.Play(_context, true));
+                Task.Run(()=>ewm.Play(_context, true));
             }
-
             if (newState == HeadphoneState.Disconnected)
             {
-                var ewm = ElevatorWaitingMusicEgg.ElevatorWaitingMusic.GetInstance();
                 if (ewm.IsPlaying())
                 {
                     ewm.Stop();
