@@ -19,7 +19,9 @@ namespace AutopilotQuick.Steps;
 public class CleanupRecordsStep : StepBaseEx
 {
     public readonly ILogger Logger = App.GetLogger<CleanupRecordsStep>();
-    
+
+    public override bool IsCritical() => false;
+
     public override string Name() => "Cleanup records step";
     
     public class PostData
@@ -130,11 +132,12 @@ public class CleanupRecordsStep : StepBaseEx
             return new StepResult(false, "Failed to process cleanup with azure");
 
         }
-        catch
+        catch (Exception e)
         {
             t.Telemetry.Success = false;
             App.GetTelemetryClient().TrackEvent("CleanupError", new Dictionary<string, string>(){{"ServiceTag", GetServiceTag(pauseToken)}});
-            return new StepResult(false, "Failed to clean up records");
+            Logger.LogError(e, "Failed to clean up records {e}", e);
+            return new StepResult(false, $"Failed to clean up records {e}");
         }
     }
 }
