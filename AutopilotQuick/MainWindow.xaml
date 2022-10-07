@@ -41,7 +41,7 @@
     </mah:MetroWindow.TitleTemplate>
 
     <Window.InputBindings>
-        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" HotkeyManager.RegisterGlobalHotkey="True"/>
+        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" HotkeyManager.RegisterGlobalHotkey="False"/>
     </Window.InputBindings>
     
     <mah:MetroWindow.RightWindowCommands>
