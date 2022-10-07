@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Nito.AsyncEx;
@@ -39,9 +40,15 @@ namespace AutopilotQuick.Steps
                 TaskManager.GetInstance().TaskManOp.Dispose();
                 App.FlushTelemetry();
                 await CountDown(pauseToken, 5000);
+                while (context.KeyboardTestEnabled)
+                {
+                    IsIndeterminate = true;
+                    Message = "Waiting for Keyboard Test to close...";
+                }
+                IsIndeterminate = false;
                 formatProcess.Start();
                 await formatProcess.WaitForExitAsync();
-                Environment.Exit(0);
+                Application.Current.Shutdown();
 
                 return new StepResult(true, "Imaging complete - Rebooting machine");
             }

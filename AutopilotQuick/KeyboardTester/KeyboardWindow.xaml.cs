@@ -25,7 +25,6 @@ public partial class KeyboardWindow : Window
         }
         private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
         {
-            Console.WriteLine("keyDown: " + e.SystemKey.ToString());
             var keyControl = GetKeyControl(e);
             if (keyControl == null)
                 return;
@@ -38,7 +37,6 @@ public partial class KeyboardWindow : Window
         
         private void MainWindow_OnKeyUp(object sender, KeyEventArgs e)
         {
-            Console.WriteLine("keyUp: " + e.SystemKey.ToString());
             var keyControl = GetKeyControl(e);
             if (keyControl == null)
                 return;
@@ -69,8 +67,6 @@ public partial class KeyboardWindow : Window
 
             if (keyEvent.Key == Key.System)
             {
-                if (IsModifier(ModifierKeys.Alt))
-                    return LeftAlt;
                 if (keyEvent.SystemKey == Key.F10)
                     return F10;
                 if (keyEvent.SystemKey == Key.F11)
@@ -81,7 +77,6 @@ public partial class KeyboardWindow : Window
                 {
                     return LeftAlt;
                 }
-                    
                 if (keyEvent.SystemKey == Key.RightAlt)
                     return RightAlt;
             }

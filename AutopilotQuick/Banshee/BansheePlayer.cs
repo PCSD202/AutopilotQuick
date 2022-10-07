@@ -43,7 +43,7 @@ public class BansheePlayer
         lock (_wavePlayer)
         {
             var newVolume = _wavePlayer.Volume + amount;
-            if (newVolume > 1)
+            if (newVolume is > 1 or < 0)
             {
                 return;
             }

@@ -9,7 +9,7 @@
         KeyDown="MainWindow_OnKeyDown"
         KeyUp="MainWindow_OnKeyUp"
         Height="250" Width="715"
-        Title="KeyboardWindow">
+        Title="Keyboard Tester" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <ResourceDictionary>
            <Style x:Key="FunctionKeyStyle" TargetType="{x:Type keyboard:KeyboardKey}">
