@@ -198,7 +198,6 @@ namespace AutopilotQuick
             new HotkeyListItem("Make cookies rain down", new HotKey(Key.C), HotkeyType.EasterEgg),
             new HotkeyListItem("Play snake", new HotKey(Key.N, ModifierKeys.Control), HotkeyType.EasterEgg),
             new HotkeyListItem("Play/Pause music", new HotKey(Key.M, ModifierKeys.Control), HotkeyType.EasterEgg),
-            new HotkeyListItem("Switch music", new HotKey(Key.P), HotkeyType.EasterEgg),
             new HotkeyListItem("Increase music volume", new HotKey(Key.OemPlus), HotkeyType.EasterEgg),
             new HotkeyListItem("Decrease music volume", new HotKey(Key.OemMinus), HotkeyType.EasterEgg),
         };
