@@ -11,6 +11,7 @@ using System.Windows;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using DiskQueue;
+using Humanizer;
 using LazyCache;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -96,7 +97,7 @@ namespace AutopilotQuick.LogMan
                 {
                     InternetMan.GetInstance().InternetBecameAvailable += OnInternetBecameAvailable;
                 }
-                _timer = new Timer(Run, null, 0, 1000);
+                _timer = new Timer(Run, null, 0.Seconds(), 5.Seconds());
             }
             
         }
