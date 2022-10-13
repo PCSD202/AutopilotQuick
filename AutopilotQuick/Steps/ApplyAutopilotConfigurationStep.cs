@@ -32,14 +32,6 @@ namespace AutopilotQuick.Steps
                 if (!context.TakeHomeToggleOn)
                 {
                     var resourceLocation = "AutopilotQuick.Resources.AutopilotConfigurationFile.json";
-                    WMIHelper helper = new WMIHelper("root\\CimV2");
-                    var model = helper.QueryFirstOrDefault<ComputerSystem>().Model;
-                    if (model == "Precision 7560" || context.SharedPCChecked == true)
-                    {
-                        resourceLocation = "AutopilotQuick.Resources.sharedpc.json";
-                        Message = "Copying sharedpc autopilot config to windows";
-                    }
-
                     try
                     {
                         await using var resource =
