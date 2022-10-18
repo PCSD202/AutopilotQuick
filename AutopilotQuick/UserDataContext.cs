@@ -194,6 +194,7 @@ namespace AutopilotQuick
             new HotkeyListItem("Open power menu", new HotKey(Key.P, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Toggle SharedPC", new HotKey(Key.S, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Launch powershell", new HotKey(Key.F10, ModifierKeys.Shift), HotkeyType.Normal),
+            new HotkeyListItem("Launch keyboard test", new HotKey(Key.K, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Enable Rainbow mode", new HotKey(Key.F10), HotkeyType.EasterEgg),
             new HotkeyListItem("Make cookies rain down", new HotKey(Key.C), HotkeyType.EasterEgg),
             new HotkeyListItem("Play snake", new HotKey(Key.N, ModifierKeys.Control), HotkeyType.EasterEgg),
