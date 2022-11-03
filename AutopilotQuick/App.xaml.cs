@@ -157,6 +157,7 @@ namespace AutopilotQuick
                 telemetry.Context.GlobalProperties["Model"] = DeviceInfo.DeviceModel;
                 telemetry.Context.GlobalProperties["DriveModel"] = bootDrive.Model;
                 telemetry.Context.GlobalProperties["Drive"] = JsonConvert.SerializeObject(bootDrive);
+                telemetry.Context.GlobalProperties["BatteryHealthPercent"] = $"{DeviceInfo.BatteryHealth}";
                 telemetry.Context.Component.Version = version;
                 telemetry.Context.Session.Id = SessionID;
             }
