@@ -55,10 +55,17 @@ public static class DeviceInfo
     {
         get
         {
-            var result = _wmiHelper.Query<Battery>();
-            if (result is null) return null;
-            var batteryList = result.ToList();
-            return batteryList.Any() ? batteryList.First() : null;
+            try
+            {
+                var result = _wmiHelper.Query<Battery>();
+                if (result is null) return null;
+                var batteryList = result.ToList();
+                return batteryList.Any() ? batteryList.First() : null;
+            }
+            catch (System.Runtime.InteropServices.COMException e)
+            {
+                return null;
+            }
         }
     }
     
@@ -66,10 +73,18 @@ public static class DeviceInfo
     {
         get
         {
-            var BSD = _wmiHelperRoot.Query<BatteryStaticData>();
-            if (BSD is null) return null;
-            var batteryList = BSD.ToList();
-            return batteryList.Any() ? batteryList.First() : null;
+            try
+            {
+                var BSD = _wmiHelperRoot.Query<BatteryStaticData>();
+                if (BSD is null) return null;
+                var batteryList = BSD.ToList();
+                return batteryList.Any() ? batteryList.First() : null;
+            }
+            catch (System.Runtime.InteropServices.COMException e)
+            {
+                return null;
+            }
+            
         }
     }
     
@@ -77,10 +92,18 @@ public static class DeviceInfo
     {
         get
         {
-            var BFCC = _wmiHelperRoot.Query<BatteryFullChargedCapacity>();
-            if (BFCC is null) return null;
-            var batteryList = BFCC.ToList();
-            return batteryList.Any() ? batteryList.First() : null;
+            try
+            {
+                var BFCC = _wmiHelperRoot.Query<BatteryFullChargedCapacity>();
+                if (BFCC is null) return null;
+                var batteryList = BFCC.ToList();
+                return batteryList.Any() ? batteryList.First() : null;
+            }
+            catch (System.Runtime.InteropServices.COMException e)
+            {
+                return null;
+            }
+            
         }
     }
 
@@ -93,12 +116,21 @@ public static class DeviceInfo
     {
         get
         {
-            if (batteryStaticData is null || batteryFullChargedCapacity is null || Win32_Battery is null)
+            try
+            {
+                if (batteryStaticData is null || batteryFullChargedCapacity is null || Win32_Battery is null)
+                {
+                    return 0;
+                }
+
+                return (uint)(((double)batteryFullChargedCapacity.FullChargedCapacity /
+                               batteryStaticData.DesignedCapacity) * 100);
+            }
+            catch (Exception e)
             {
                 return 0;
             }
-
-            return (uint)(((double)batteryFullChargedCapacity.FullChargedCapacity / batteryStaticData.DesignedCapacity) * 100);
+            
         }
     }
 
