@@ -71,7 +71,7 @@ public class BansheePlayer
         }
     }
     
-    private static StandardRng rng = StandardRng.Create();
+    private StandardRng rng = StandardRng.Create();
     
     private Stream LoadAudioStream(string name = "Elevator Music.mp3")
     {
