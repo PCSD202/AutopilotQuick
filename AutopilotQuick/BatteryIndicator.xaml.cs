@@ -210,12 +210,24 @@ public partial class BatteryIndicator : INotifyPropertyChanged
     {
         Dispatcher.CurrentDispatcher.Invoke(() =>
         {
-            BatteryConnected = DeviceInfo.BatteryConnected;
-            BatteryHealth = DeviceInfo.BatteryHealth;
-            PowerStatus pwr = SystemInformation.PowerStatus;
-            BatteryPercent = (int)Math.Round(pwr.BatteryLifePercent * 100, 0);
-            IsCharging = pwr.PowerLineStatus == PowerLineStatus.Online;
-            CalculateNewIcon();
+            try
+            {
+                BatteryConnected = DeviceInfo.BatteryConnected;
+                BatteryHealth = DeviceInfo.BatteryHealth;
+                var pwr = SystemInformation.PowerStatus;
+                BatteryPercent = (int)Math.Round(pwr.BatteryLifePercent * 100, 0);
+                IsCharging = pwr.PowerLineStatus == PowerLineStatus.Online;
+                CalculateNewIcon();
+            }
+            catch (Exception e)
+            {
+                BatteryConnected = false;
+                BatteryHealth = 0;
+                BatteryPercent = 0;
+                IsCharging = false;
+                CalculateNewIcon();
+            }
+            
         });
     }
 
