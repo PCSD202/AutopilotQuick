@@ -130,13 +130,10 @@ public class BansheePlayer
             {
                 //Load json file
                 var songData = JsonConvert.DeserializeObject<Dictionary<string, TimeSpan>>(cachedMusicStartTimes.ReadAllText());
-                        
-                var dx = Uniform.NewInclusive(0, songData.Count-1);
-                        
-                var index = dx.Sample(rng);
-                var kvp = songData.ElementAt(index);
-                randSeconds = kvp.Value.TotalSeconds;
-                context.NotifcationManager.Show("Now Playing", $"{kvp.Key}", NotificationType.Information, "", 5.Seconds());
+                var sp = new SongPicker();
+                var pickedSong = sp.PickSong(songData);
+                randSeconds = pickedSong.startPoint.TotalSeconds;
+                context.NotifcationManager.Show("Now Playing", $"{pickedSong.Name}", NotificationType.Information, "", 5.Seconds());
 
             }
             catch (JsonException e)
