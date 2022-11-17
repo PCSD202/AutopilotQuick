@@ -33,8 +33,8 @@
     <mah:MetroWindow.TitleTemplate>
         <DataTemplate>
             <TextBlock Margin="8 -1 1 0" VerticalAlignment="Center" FontFamily="{DynamicResource MahApps.Fonts.Family.Window.Title}" FontSize="{DynamicResource MahApps.Font.Size.Window.Title}" TextTrimming="CharacterEllipsis">
-                <Run Text="AUTOPILOT" FontFamily="Lucida Sans Unicode, Verdana" FontWeight="Medium"/>
-                <Run Text="QUICK" FontFamily="Lucida Sans Unicode, Verdana" FontWeight="Medium" FontStyle="Italic"/>
+                <Run Text="AUTOPILOT" FontFamily="Segoe UI, Lucida Sans Unicode, Verdana" FontWeight="Medium"/>
+                <Run Text="QUICK" FontFamily="Segoe UI, Lucida Sans Unicode, Verdana" FontWeight="Medium" FontStyle="Italic"/>
                 <Run Text="{TemplateBinding Content}"/>
             </TextBlock>
         </DataTemplate>
