@@ -13,6 +13,7 @@ namespace AutopilotQuick;
 
 public enum HeadphoneState
 {
+    Loading,
     NotFound,
     Disconnected,
     Connected
@@ -32,7 +33,7 @@ public class HeadphoneMan
     public void StartTimer(UserDataContext context)
     {
         _context = context;
-        _timer = new Timer(Run, null,0.Seconds(), 1.Seconds());
+        _timer = new Timer(Run, null,0.Seconds(), 100.Milliseconds());
     }
     
     
@@ -57,7 +58,7 @@ public class HeadphoneMan
                     ewm.Stop();
                 }
 
-                Task.Run(()=>ewm.Play(_context, true));
+                ewm.Play(_context, true);
             }
             if (newState == HeadphoneState.Disconnected)
             {

@@ -206,7 +206,7 @@ namespace AutopilotQuick
         };
 
         private string _currentTime;
-        private HeadphoneState _headphonesActive = HeadphoneState.NotFound;
+        private HeadphoneState _headphonesActive = HeadphoneState.Loading;
         private bool _playing = false;
         
 

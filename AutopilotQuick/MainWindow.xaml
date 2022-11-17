@@ -92,6 +92,10 @@
                                 <Setter Property="Kind" Value="HeadphoneSlash"/>
                                 <Setter Property="Foreground" Value="Yellow"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding HeadphonesActive}" Value="{x:Static local:HeadphoneState.Loading}">
+                                <Setter Property="Kind" Value="Headphones"/>
+                                <Setter Property="Foreground" Value="Yellow"/>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </iconPacks:PackIconUnicons.Style>
