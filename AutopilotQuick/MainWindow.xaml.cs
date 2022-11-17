@@ -222,7 +222,10 @@ namespace AutopilotQuick
                     {
                         if (!BansheePlayer.GetInstance().IsPlaying())
                         {
-                            Task.Run(()=>BansheePlayer.GetInstance().Play(context));
+                            Task.Run(() =>
+                            {
+                                BansheePlayer.GetInstance().Play(context);
+                            });
                         }
                         else
                         {

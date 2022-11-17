@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Humanizer;
+using LazyCache;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -72,6 +74,7 @@ public class BansheePlayer
     }
     
     private StandardRng rng = StandardRng.Create();
+    
     
     private Stream LoadAudioStream(string name = "Elevator Music.mp3")
     {
@@ -148,40 +151,65 @@ public class BansheePlayer
         return loopPlayer;
 
     }
+    
+    
+    private static AutoResetEvent startingPlayback = new AutoResetEvent(true);
 
     public void Play(UserDataContext context, bool headphoneOnly = false)
     {
-        PlayingDevice = null;
-        if (SoundUtils.HeadphonesPresent())
+        startingPlayback.WaitOne();
+        try
         {
-            PlayingDevice = SoundUtils.GetHeadphone();
-        } 
-        else if (SoundUtils.SpeakerPresent() && !headphoneOnly)
-        {
-            PlayingDevice = SoundUtils.GetSpeaker();
-        }
-
-        if (PlayingDevice is null)
-        {
-            Logger.LogInformation("Could not find any device to play audio on");
-        }
-        
-        Logger.LogInformation("Using {deviceName} to play audio...", PlayingDevice?.FriendlyName);
-        
-        if(IsPlaying()) {Stop();}
-        var audioTrack = LoadTrack(context);
-        _wavePlayer = new WasapiOut(AudioClientShareMode.Shared, true, 100){Volume = _volume};
-        lock (_wavePlayer)
-        {
-            _wavePlayer.Init(audioTrack);
-            _wavePlayer.Play();
-            context.Playing = true;
-            _wavePlayer.PlaybackStopped += (sender, args) =>
+            Stop();
+            context.Playing = PlayState.Loading;
+            PlayingDevice = null;
+            if (SoundUtils.HeadphonesPresent())
             {
-                Logger.LogInformation("Playback finished");
-                context.Playing = false;
-            };
+                PlayingDevice = SoundUtils.GetHeadphone();
+            }
+            else if (SoundUtils.SpeakerPresent() && !headphoneOnly)
+            {
+                PlayingDevice = SoundUtils.GetSpeaker();
+            }
+
+            if (PlayingDevice is null)
+            {
+                Logger.LogInformation("Could not find any device to play audio on");
+                try
+                {
+                    PlayingDevice = SoundUtils.DeviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+                }
+                catch (Exception)
+                {
+                    Logger.LogInformation("Unable to load default audio endpoint");
+                }
+            }
+
+            Logger.LogInformation("Using {deviceName} to play audio...", PlayingDevice?.FriendlyName);
+
+
+
+            var audioTrack = LoadTrack(context);
+            _wavePlayer = new WasapiOut(PlayingDevice, AudioClientShareMode.Shared, true, 100) { Volume = _volume };
+            lock (_wavePlayer)
+            {
+                _wavePlayer.Init(audioTrack);
+                _wavePlayer.Play();
+                context.Playing = PlayState.Playing;
+                _wavePlayer.PlaybackStopped += (sender, args) =>
+                {
+                    Logger.LogInformation("Playback finished");
+                    context.Playing = PlayState.NotPlaying;
+                };
+            }
+
+            Logger.LogInformation("Started playback of audio");
         }
-        Logger.LogInformation("Started playback of audio");
+        finally
+        {
+            startingPlayback.Set();
+        }
+        
+
     }
 }
