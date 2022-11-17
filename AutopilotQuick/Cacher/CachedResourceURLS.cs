@@ -30,6 +30,7 @@ namespace AutopilotQuick
         public static readonly CachedResourceData DellBiosSettingsZip = new CachedResourceData("DellBiosSettings.zip");
         public static readonly CachedResourceData OsdImage = new CachedResourceData("OSDCloud_NoPrompt.iso", "OSDImage.iso");
         public static readonly CachedResourceData AzureLogSettings = new CachedResourceData( "AzureLogSettings.json");
+        public static readonly CachedResourceData GithubCreds = new CachedResourceData( "GithubCreds.json");
     }
 }
 

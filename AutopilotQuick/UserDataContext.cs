@@ -11,9 +11,11 @@ using AutopilotQuick.DeviceID;
 using Humanizer;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
+using Newtonsoft.Json;
 using NLog;
 using Notification.Wpf;
 using Octokit;
+using Octokit.Internal;
 using Polly;
 using Polly.Retry;
 
@@ -255,6 +257,8 @@ namespace AutopilotQuick
             
         }
 
+        private record GithubCreds(string ClientID, string ClientSecret);
+
         public MainWindow MainWindow { get; }
         public void RefreshLatestVersion()
         {
@@ -265,8 +269,15 @@ namespace AutopilotQuick
             try
             {
                 RetryPolicy retry = Policy.Handle<AggregateException>().WaitAndRetry(5, retryAttempt => 5.Seconds());
+                var credCacher = new Cacher(CachedResourceUris.GithubCreds, this);
+                if (!credCacher.FileCached || !credCacher.IsUpToDate)
+                {
+                    credCacher.DownloadUpdate();
+                }
+
+                var creds = JsonConvert.DeserializeObject<GithubCreds>(credCacher.ReadAllText()); 
                 
-                GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version));
+                GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version), new InMemoryCredentialStore(new Credentials(creds.ClientID,creds.ClientSecret, AuthenticationType.Basic)));
                 Release latest = new Release();
                 var result = retry.ExecuteAndCapture<Release>(() => client.Repository.Release.GetLatest("PCSD202", "AutopilotQuick").Result);
                 if (result.Outcome == OutcomeType.Successful)
