@@ -53,7 +53,7 @@ public static class GradientStopCollectionExtensions
 public partial class BatteryIndicator : INotifyPropertyChanged
 {
     private Timer _timer = null;
-    private PackIconMaterialKind _iconKind = PackIconMaterialKind.Battery10;
+    private PackIconMaterialKind _iconKind;
     private Brush _batteryColor;
 
     public string TooltipText
@@ -69,15 +69,21 @@ public partial class BatteryIndicator : INotifyPropertyChanged
 
     private bool IsAnimating = false;
     private string _tooltipText = "";
-
-
+    
     public BatteryIndicator()
     {
         DataContext = this;
-        CalculateNewIcon();
         InitializeComponent();
-        _timer = new Timer(Run, null, 100, 100);
     }
+    
+    private void BatteryIndicator_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        BatteryColor = new SolidColorBrush(Colors.Yellow);
+        TooltipText = "Battery Unknown";
+        IconKind =  PackIconMaterialKind.BatteryUnknown;
+        _timer = new Timer(Run, null, 100.Milliseconds(), 100.Milliseconds());
+    }
+    
     
 
     private void CalculateNewIcon()
@@ -296,4 +302,6 @@ public partial class BatteryIndicator : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+
 }
