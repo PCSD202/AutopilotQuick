@@ -49,6 +49,7 @@ public class HeadphoneMan
 
         if (_context.HeadphonesActive != newState)
         {
+            _context.HeadphonesActive = newState;
             var ewm = BansheePlayer.GetInstance();
             if (newState == HeadphoneState.Connected)
             {
@@ -68,6 +69,6 @@ public class HeadphoneMan
                 }
             }
         }
-        _context.HeadphonesActive = newState;
+        
     }
 }
