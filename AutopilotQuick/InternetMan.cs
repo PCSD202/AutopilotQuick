@@ -98,28 +98,32 @@ namespace AutopilotQuick
             }
         }
 
-        public void Run(Object? o)
+        private void UpdateStatus()
         {
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
             if (adapters.All(x => x.NetworkInterfaceType is not (NetworkInterfaceType.Wireless80211 or NetworkInterfaceType.Ethernet)))
             {
                 _context.ConnectedToInternet = InternetConnectionStatus.NoAdapter;
             }
-            else if(!IsConnected)
+            else
             {
-                _context.ConnectedToInternet = InternetConnectionStatus.Disconnected;
-            } else if (IsConnected)
-            {
-                _context.ConnectedToInternet = InternetConnectionStatus.Connected;
+                _context.ConnectedToInternet = IsConnected?InternetConnectionStatus.Connected:InternetConnectionStatus.Disconnected;
             }
-            
-            if(!NetworkInterface.GetIsNetworkAvailable()){ return; } //No network available so don't even try
+        }
+        public void Run(Object? o)
+        {
+            if (!NetworkInterface.GetIsNetworkAvailable())
+            {
+                UpdateStatus();
+                return;
+            } //No network available so don't even try
             var internet = CheckForInternetConnection(1000, "https://www.google.com");
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
                 Logger.LogInformation("I decree internet is available");
                 IsConnected = internet;
+                UpdateStatus();
                 InternetAvailable.Set();
                 InternetBecameAvailable?.Invoke(this, EventArgs.Empty);
                 Logger.LogInformation("InternetAvailabe event finished firing");
@@ -130,9 +134,11 @@ namespace AutopilotQuick
                 Logger.LogInformation("Where did the internet go? Nobody knows.");
                 App.GetTelemetryClient().TrackEvent("InternetLost");
                 InternetAvailable.Reset();
+                UpdateStatus();
                 InternetBecameUnavailable?.Invoke(this, EventArgs.Empty);
             }
             IsConnected = internet;
+            
         }
     }
 }

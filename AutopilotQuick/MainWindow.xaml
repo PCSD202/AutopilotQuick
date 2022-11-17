@@ -103,6 +103,10 @@
                         <Setter Property="Kind" Value="WifiOff"/>
                         <Setter Property="Foreground" Value="Yellow"/>
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Loading}">
+                                <Setter Property="Kind" Value="WifiSync"/>
+                                <Setter Property="Foreground" Value="Yellow"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding ConnectedToInternet}" Value="{x:Static local:InternetConnectionStatus.Connected}">
                                 <Setter Property="Kind" Value="Wifi"/>
                                 <Setter Property="Foreground" Value="LimeGreen"/>

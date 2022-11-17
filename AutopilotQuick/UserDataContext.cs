@@ -34,7 +34,9 @@ namespace AutopilotQuick
         
         public NotificationManager NotifcationManager = new NotificationManager();
 
-        private InternetConnectionStatus _connectedToInternet { get; set; } = InternetConnectionStatus.NoAdapter;
+        private InternetConnectionStatus _connectedToInternet { get; set; } = InternetConnectionStatus.Loading;
+        
+
         public InternetConnectionStatus ConnectedToInternet { get { return _connectedToInternet; } set { _connectedToInternet = value; OnPropertyChanged(nameof(ConnectedToInternet)); } }
 
 
@@ -206,6 +208,7 @@ namespace AutopilotQuick
         private string _currentTime;
         private HeadphoneState _headphonesActive = HeadphoneState.NotFound;
         private bool _playing = false;
+        
 
         public IEnumerable<HotkeyListItem> NormalHotkeyList
         {
@@ -307,9 +310,11 @@ namespace AutopilotQuick
             EasterEgg
         }
     }
+    
 
     public enum InternetConnectionStatus
     {
+        Loading,
         NoAdapter,
         Disconnected,
         Connected
