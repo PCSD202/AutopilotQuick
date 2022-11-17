@@ -173,7 +173,7 @@ namespace AutopilotQuick
             }
         }
 
-        public bool Playing
+        public PlayState Playing
         {
             get => _playing;
             set
@@ -207,7 +207,7 @@ namespace AutopilotQuick
 
         private string _currentTime;
         private HeadphoneState _headphonesActive = HeadphoneState.Loading;
-        private bool _playing = false;
+        private PlayState _playing = PlayState.NotPlaying;
         
 
         public IEnumerable<HotkeyListItem> NormalHotkeyList
@@ -319,5 +319,11 @@ namespace AutopilotQuick
         Disconnected,
         Connected
     }
-
+    
+    public enum PlayState
+    {
+        Playing,
+        NotPlaying,
+        Loading
+    }
 }

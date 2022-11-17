@@ -45,6 +45,7 @@ public static class SoundUtils
         try
         {
             var devices = GetDevices(DataFlow.Render, DeviceState.All);
+            Console.WriteLine(string.Join(", ", devices.Select(x=>x.FriendlyName)));
             return devices.FirstOrDefault(x => x.FriendlyName.ToLower().Contains("speaker"));
         }
         catch (Exception)

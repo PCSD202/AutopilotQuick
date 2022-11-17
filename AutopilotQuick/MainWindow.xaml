@@ -61,12 +61,17 @@
                 <iconPacks:PackIconUnicons.Style>
                     <Style TargetType="iconPacks:PackIconUnicons">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Playing}" Value="True">
+                            <DataTrigger Binding="{Binding Playing}" Value="{x:Static local:PlayState.Playing}">
                                 <Setter Property="Kind" Value="Volume"/>
                                 <Setter Property="Foreground" Value="LimeGreen"/>
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Playing}" Value="False">
+                            <DataTrigger Binding="{Binding Playing}" Value="{x:Static local:PlayState.Loading}">
+                                <Setter Property="Kind" Value="Volume"/>
+                                <Setter Property="Foreground" Value="Yellow"/>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Playing}" Value="{x:Static local:PlayState.NotPlaying}">
                                 <Setter Property="Kind" Value="Volume"/>
                                 <Setter Property="Foreground" Value="Red"/>
                                 <Setter Property="Visibility" Value="Collapsed"/>
