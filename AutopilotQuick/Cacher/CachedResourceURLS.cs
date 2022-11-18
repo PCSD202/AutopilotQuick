@@ -31,6 +31,7 @@ namespace AutopilotQuick
         public static readonly CachedResourceData OsdImage = new CachedResourceData("OSDCloud_NoPrompt.iso", "OSDImage.iso");
         public static readonly CachedResourceData AzureLogSettings = new CachedResourceData( "AzureLogSettings.json");
         public static readonly CachedResourceData GithubCreds = new CachedResourceData( "GithubCreds.json");
+        public static readonly CachedResourceData HardwareTester = new CachedResourceData( "HardwareTester/HardwareTester.exe", "HardwareTester.exe");
     }
 }
 

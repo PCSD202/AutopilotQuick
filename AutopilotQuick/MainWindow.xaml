@@ -14,6 +14,8 @@
         Style="{DynamicResource MahApps.Styles.MetroWindow.Clean}"
         TitleAlignment="Left"
         TitleCharacterCasing="Normal"
+        ShowSystemMenuOnRightClick="False"
+        ShowSystemMenu="False"
         Title="{Binding Title}" Height="450" Width="800">
 
     <mah:MetroWindow.Resources>
