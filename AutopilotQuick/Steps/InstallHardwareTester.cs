@@ -8,6 +8,11 @@ namespace AutopilotQuick.Steps;
 
 public class InstallHardwareTester : StepBaseEx
 {
+    public override bool IsCritical()
+    {
+        return false;
+    }
+
     public override string Name()
     {
         return "Install hardware tester";
