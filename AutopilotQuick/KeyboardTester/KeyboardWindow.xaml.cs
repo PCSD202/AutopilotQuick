@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 
 namespace AutopilotQuick.KeyboardTester;
 
-public partial class KeyboardWindow : Window
+public partial class KeyboardWindow
 {
     public KeyboardWindow()
         {
