@@ -27,6 +27,7 @@ using AutopilotQuick.WMI;
 using ControlzEx.Theming;
 using Humanizer.Localisation;
 using MahApps.Metro.Controls;
+using MahApps.Metro.SimpleChildWindow;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -165,11 +166,18 @@ namespace AutopilotQuick
             _ = Dispatcher.BeginInvoke(() =>
                 {
                     
-                    HotkeyManager.Current.AddOrReplace("OpenKeyboardTest", Key.K, ModifierKeys.Control, true,
-                        (o, args) =>
+                    HotkeyManager.Current.AddOrReplace("OpenKeyboardTest", Key.K, ModifierKeys.Control, true, async (o, args) =>
                         {
-                            _keyboardWindow ??= new KeyboardWindow();
-                            _keyboardWindow.Closed += (o, args) =>
+                            if (_keyboardWindow is not null)
+                            {
+                                if (_keyboardWindow.IsOpen)
+                                {
+                                    _keyboardWindow.Close();
+                                    return;
+                                }
+                            }
+                            _keyboardWindow ??= new KeyboardWindow(){ IsModal = false };
+                            _keyboardWindow.ClosingFinished += (o, args) =>
                             {
                                 context.KeyboardTestEnabled = false;
                                 RegisterConflictingKeybinds();
@@ -177,7 +185,8 @@ namespace AutopilotQuick
                             };
                             context.KeyboardTestEnabled = true;
                             UnregisterConflictingKeybinds();
-                            _keyboardWindow.Show();
+                            
+                            await this.ShowChildWindowAsync(_keyboardWindow);
                         });
                     
                     HotkeyManager.Current.AddOrReplace("HotkeyMenu", Key.H, ModifierKeys.Control, true, (o, args) =>

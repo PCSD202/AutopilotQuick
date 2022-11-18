@@ -9,15 +9,15 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <Style x:Key="KeyStyle" TargetType="{x:Type TextBlock}">
-                <Setter Property="Background" Value="LightSlateGray" />
-                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray8}" />
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding ViewModel.PreviouslyPressed}" Value="True">
-                        <Setter Property="Background" Value="DodgerBlue" />
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}" />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding ViewModel.Pressed}" Value="True">
-                        <Setter Property="Background" Value="Blue" />
-                        <Setter Property="Foreground" Value="DimGray" />
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent3}" />
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}" />
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding DefaultPadding}" Value="True">

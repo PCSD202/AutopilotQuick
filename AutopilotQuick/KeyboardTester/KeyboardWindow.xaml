@@ -1,22 +1,25 @@
-﻿<Window x:Class="AutopilotQuick.KeyboardTester.KeyboardWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:AutopilotQuick.KeyboardTester"
-        xmlns:keyboard="clr-namespace:AutopilotQuick.KeyboardTester"
-        mc:Ignorable="d"
-        KeyDown="MainWindow_OnKeyDown"
-        KeyUp="MainWindow_OnKeyUp"
-        Height="250" Width="715"
-        Title="Keyboard Tester" WindowStartupLocation="CenterScreen">
-    <Window.Resources>
+﻿<simpleChildWindow:ChildWindow x:Class="AutopilotQuick.KeyboardTester.KeyboardWindow"
+                               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                               xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                               xmlns:local="clr-namespace:AutopilotQuick.KeyboardTester"
+                               xmlns:keyboard="clr-namespace:AutopilotQuick.KeyboardTester"
+                               xmlns:simpleChildWindow="clr-namespace:MahApps.Metro.SimpleChildWindow;assembly=MahApps.Metro.SimpleChildWindow"
+                               mc:Ignorable="d"
+                               KeyDown="MainWindow_OnKeyDown"
+                               KeyUp="MainWindow_OnKeyUp"
+                               Height="250" Width="715"
+                               CloseByEscape="False"
+                               ShowCloseButton="False"
+                               Title="Keyboard Tester (Ctrl+K to quit)">
+    <simpleChildWindow:ChildWindow.Resources>
         <ResourceDictionary>
            <Style x:Key="FunctionKeyStyle" TargetType="{x:Type keyboard:KeyboardKey}">
                 <Setter Property="DefaultPadding" Value="False" />
             </Style>
         </ResourceDictionary>
-    </Window.Resources>
+    </simpleChildWindow:ChildWindow.Resources>
     
     <StackPanel Orientation="Horizontal">
     
@@ -106,7 +109,7 @@
                                       Text="F11"/>
 
                 <keyboard:KeyboardKey x:Name="F12"
-                                      Width="30"
+                                      Width="29"
                                       Style="{StaticResource FunctionKeyStyle}"
                                       Text="F12"/>
                 </StackPanel>
@@ -158,7 +161,7 @@
                                       Text="+"/>
 
                 <keyboard:KeyboardKey x:Name="Back"
-                                      Text="←            "/>
+                                      Text="←           " Width="71"/>
 
             </StackPanel>
 
@@ -556,4 +559,4 @@
         </Grid>
        
     </StackPanel>
-</Window>
+</simpleChildWindow:ChildWindow>
