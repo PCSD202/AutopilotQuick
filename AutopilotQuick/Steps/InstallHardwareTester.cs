@@ -41,8 +41,8 @@ public class InstallHardwareTester : StepBaseEx
         var fileCopier = new CustomFileCopier(source, dest);
         fileCopier.OnProgressChanged += (long size, long downloaded, double percentage, ref bool cancel) =>
         {
-            Progress = percentage * 100;
-            Message = $"Copying hardware tester... {percentage:P1} ({downloaded.Bytes().Humanize()} / {size.Bytes().Humanize()})";
+            Progress = percentage;
+            Message = $"Copying hardware tester... {percentage/100:P1} ({downloaded.Bytes().Humanize()} / {size.Bytes().Humanize()})";
         };
         await fileCopier.CopyAsync();
         return new StepResult(true, "Successfully installed the hardware tester");
