@@ -30,7 +30,8 @@ public class InstallHardwareTester : StepBaseEx
         }
         Message = "Checking for hardware tester updates";
         var hwtCacher = new Cacher(CachedResourceUris.HardwareTester, context);
-        if (!hwtCacher.FileCached || !hwtCacher.IsUpToDate)
+        if (!hwtCacher.FileCached ||
+            (InternetMan.GetInstance().IsConnected && !hwtCacher.IsUpToDate))
         {
             await hwtCacher.DownloadUpdateAsync();
         }
