@@ -11,6 +11,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Microsoft.Wim;
+using Microsoft.Win32;
 using Nito.AsyncEx;
 
 
@@ -23,6 +24,8 @@ namespace AutopilotQuick.Steps
 
         private double? CalculatedWeight;
 
+        private bool StopBecauseOfTimeChange = false;
+
         public override double ProgressWeight()
         {
             if (CalculatedWeight.HasValue) return CalculatedWeight.Value;
@@ -32,12 +35,13 @@ namespace AutopilotQuick.Steps
             var stepListWithoutMe = new List<StepBase>(stepList);
             stepListWithoutMe.RemoveAt(indexOfMe);
             var stepListBeforeMe = stepList.GetRange(0, indexOfMe);
-            double endProgress = 85; //When I am at 100% progress, I want the total progress to be 85
+            double endProgress = 50; //When I am at 100% progress, I want the total progress to be 85
             // We need to find out what weight I need to be at
             var weightedProgressWithoutMe = stepListBeforeMe.Sum(x => 100 * x.ProgressWeight()); //Calculate it like the steps before me are at 100%
             var weightsNotIncludingMine = stepListWithoutMe.Sum(x => x.ProgressWeight());
 
-            var myWeightNeedsToBe = 1d / 15d * (endProgress * weightsNotIncludingMine - weightedProgressWithoutMe);
+            //var myWeightNeedsToBe = 1d / 15d * (endProgress * weightsNotIncludingMine - weightedProgressWithoutMe);
+            var myWeightNeedsToBe = (weightedProgressWithoutMe - (endProgress * weightsNotIncludingMine)) / (endProgress - 100);
             
             //The idea is that (100*x+weightedProgressWithoutMe) / (x+weightsNotIncludingMine) = endProgress
             CalculatedWeight = myWeightNeedsToBe;
@@ -59,7 +63,7 @@ namespace AutopilotQuick.Steps
                     // Get the message as a WimMessageProgress object
                     WimMessageProgress progressMessage = (WimMessageProgress)message;
 
-                    Message = $"Applying image {progressMessage.PercentComplete}%";
+                    Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2)}";
                     // Print the progress
                     Progress = progressMessage.PercentComplete;
 
@@ -88,7 +92,7 @@ namespace AutopilotQuick.Steps
             // Depending on what this method returns, the WIMGAPI will continue or cancel.
             //
             // Return WimMessageResult.Abort to cancel.  In this case we return Success so WIMGAPI keeps going
-            return _updatedImageAvailable ? WimMessageResult.Abort : WimMessageResult.Success;
+            return _updatedImageAvailable || StopBecauseOfTimeChange ? WimMessageResult.Abort : WimMessageResult.Success;
         }
 
         private bool _updatedImageAvailable = false;
@@ -223,11 +227,18 @@ namespace AutopilotQuick.Steps
                     // Get a handle to a specific image inside of the .wim
                     using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
                     // Apply the image
+                    SystemEvents.TimeChanged += SystemEventsOnTimeChanged;
                     WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                    SystemEvents.TimeChanged -= SystemEventsOnTimeChanged;
                 }
                 catch (OperationCanceledException ex)
                 {
-                    Logger.LogInformation("Operation was canceled, we must have an update");
+                    Logger.LogInformation("Operation was canceled, we must have an update, or time changed");
+                    if (StopBecauseOfTimeChange)
+                    {
+                        StopBecauseOfTimeChange = false;
+                        return await Run(context, pauseToken, StepOperation);
+                    }
                 }
                 catch (Win32Exception ex)
                 {
@@ -258,6 +269,12 @@ namespace AutopilotQuick.Steps
             await wimCache.DownloadUpdateAsync();
             InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
             return await Run(context, pauseToken, StepOperation);
+        }
+
+        private void SystemEventsOnTimeChanged(object? sender, EventArgs e)
+        {
+            Logger.LogWarning("System time changed while applying image");
+            StopBecauseOfTimeChange = true;
         }
     }
 }
