@@ -9,6 +9,6 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid x:Name="LayoutRoot">
-        <mah:MetroProgressBar x:Name="Bar" VerticalContentAlignment="Center" autopilotQuick:ProgressBarSmoother.SmoothValue="{Binding Progress}" Grid.Column="0" IsIndeterminate="{Binding Indeterminate}" VerticalAlignment="Bottom"/>
+        <mah:MetroProgressBar x:Name="Bar" Foreground="{Binding RelativeSource={RelativeSource AncestorType=local:StepProgressBar}, Path=Foreground}" VerticalContentAlignment="Center" autopilotQuick:ProgressBarSmoother.SmoothValue="{Binding Progress}" Grid.Column="0" IsIndeterminate="{Binding Indeterminate}" VerticalAlignment="Bottom"/>
     </Grid>
 </UserControl>
