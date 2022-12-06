@@ -62,8 +62,18 @@ namespace AutopilotQuick.Steps
 
                     // Get the message as a WimMessageProgress object
                     WimMessageProgress progressMessage = (WimMessageProgress)message;
-
-                    Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2)}";
+                    
+                    
+                    
+                    if (progressMessage.EstimatedTimeRemaining != TimeSpan.Zero)
+                    {
+                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2)}";
+                    }
+                    else
+                    {
+                        Message = $"Applying image {progressMessage.PercentComplete}%";
+                    }
+                    
                     // Print the progress
                     Progress = progressMessage.PercentComplete;
 
@@ -92,7 +102,7 @@ namespace AutopilotQuick.Steps
             // Depending on what this method returns, the WIMGAPI will continue or cancel.
             //
             // Return WimMessageResult.Abort to cancel.  In this case we return Success so WIMGAPI keeps going
-            return _updatedImageAvailable || StopBecauseOfTimeChange ? WimMessageResult.Abort : WimMessageResult.Success;
+            return _updatedImageAvailable ? WimMessageResult.Abort : WimMessageResult.Success;
         }
 
         private bool _updatedImageAvailable = false;
@@ -227,18 +237,11 @@ namespace AutopilotQuick.Steps
                     // Get a handle to a specific image inside of the .wim
                     using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
                     // Apply the image
-                    SystemEvents.TimeChanged += SystemEventsOnTimeChanged;
                     WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
-                    SystemEvents.TimeChanged -= SystemEventsOnTimeChanged;
                 }
                 catch (OperationCanceledException ex)
                 {
-                    Logger.LogInformation("Operation was canceled, we must have an update, or time changed");
-                    if (StopBecauseOfTimeChange)
-                    {
-                        StopBecauseOfTimeChange = false;
-                        return await Run(context, pauseToken, StepOperation);
-                    }
+                    Logger.LogInformation("Operation was canceled, we must have an update");
                 }
                 catch (Win32Exception ex)
                 {
@@ -269,12 +272,6 @@ namespace AutopilotQuick.Steps
             await wimCache.DownloadUpdateAsync();
             InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
             return await Run(context, pauseToken, StepOperation);
-        }
-
-        private void SystemEventsOnTimeChanged(object? sender, EventArgs e)
-        {
-            Logger.LogWarning("System time changed while applying image");
-            StopBecauseOfTimeChange = true;
         }
     }
 }
