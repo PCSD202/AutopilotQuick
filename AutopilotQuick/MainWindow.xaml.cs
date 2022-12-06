@@ -260,7 +260,7 @@ namespace AutopilotQuick
             InternetMan.GetInstance().InternetBecameUnavailable += ((o, args) => this.Dispatcher.Invoke(()=>context.ConnectedToInternet = InternetConnectionStatus.Disconnected));
             await Task.Run(() => HeadphoneMan.GetInstance().StartTimer(context), cancellationToken);
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
-            await Task.Run(() =>InternetMan.GetInstance().StartTimer(context), cancellationToken);
+            await Task.Run(() => InternetMan.GetInstance().StartTimer(context), cancellationToken);
             var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.GetInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         }
@@ -322,14 +322,14 @@ namespace AutopilotQuick
         }
 
         private bool AlreadyRanUpdater = false;
-        private void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
+        private async void MainWindow_InternetBecameAvailable(object? sender, EventArgs e)
         {
             
             if (!AlreadyRanUpdater)
             {
                 AlreadyRanUpdater = true;
-                Task.Factory.StartNew(UpdateSharedPCBoxWhenInternet, TaskCreationOptions.LongRunning);
-                Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
+                await Task.Factory.StartNew(UpdateSharedPCBoxWhenInternet, TaskCreationOptions.LongRunning);
+                await Task.Factory.StartNew(UpdateWithPause, TaskCreationOptions.LongRunning);
             }
             
         }

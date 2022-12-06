@@ -29,6 +29,7 @@
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot, or azureAD record, or because we already applied the settings"></Setter>
+                    <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray9}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -56,8 +57,18 @@
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
-                <mah:MetroHeader Header="Shared PC:" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck" mah:CheckBoxHelper.ForegroundUncheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundCheckedDisabled="{DynamicResource MahApps.Brushes.Gray2}" mah:CheckBoxHelper.ForegroundIndeterminateDisabled="{DynamicResource MahApps.Brushes.Gray2}"/>
+                <mah:MetroHeader Header="Shared PC:" IsEnabled="False" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0">
+                    <mah:MetroHeader.Style>
+                        <Style BasedOn="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" TargetType="mah:MetroHeader">
+                            <Style.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Control.Disabled}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </mah:MetroHeader.Style>
+                </mah:MetroHeader>
+                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck"/>
             </StackPanel>
             
             <iconPacks:PackIconUnicons ToolTip="Sound Playing" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">

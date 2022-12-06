@@ -86,10 +86,10 @@ public partial class StepProgressBar : UserControl, INotifyPropertyChanged
                 Height = Bar.Height,
                 IsHitTestVisible = false,
                 Opacity = 0.25,
-                Fill = (Brush)FindResource("MahApps.Brushes.Text"),
+                Fill = (Brush)FindResource("MahApps.Brushes.Separator"),
                 SnapsToDevicePixels = true,
                 UseLayoutRounding = true,
-                HorizontalAlignment = HorizontalAlignment.Left
+                HorizontalAlignment = HorizontalAlignment.Right
             };
 
             Grid.SetZIndex(sep, 1);
