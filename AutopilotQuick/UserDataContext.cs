@@ -46,7 +46,11 @@ namespace AutopilotQuick
         public double TotalProgress
         {
             get { return _totalProgress; }
-            set { _totalProgress = value; OnPropertyChanged(nameof(TotalProgress)); }
+            set
+            {
+                _totalProgress = value;
+                OnPropertyChanged();
+            }
         }
 
         private bool _isCharging = false;

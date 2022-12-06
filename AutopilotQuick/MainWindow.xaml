@@ -7,7 +7,8 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
         xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters" xmlns:notifications="clr-namespace:Notification.Wpf.Controls;assembly=Notification.Wpf"
-                 mc:Ignorable="d"
+        xmlns:stepDisplay="clr-namespace:AutopilotQuick.StepDisplay"
+        mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"
         WindowStartupLocation="CenterScreen"
         dialogs:DialogParticipation.Register="{Binding}"
@@ -242,7 +243,7 @@
 
             <StackPanel VerticalAlignment="Bottom">
                 <TextBlock Text="{Binding CurrentTime}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Opacity="0.5"/>
-                <mah:MetroProgressBar Foreground="{StaticResource ProgressBrush}" VerticalContentAlignment="Center" local:ProgressBarSmoother.SmoothValue="{Binding TotalProgress}" Grid.Column="0" IsIndeterminate="{Binding TotalStepIndeterminate}" VerticalAlignment="Bottom"/>
+                <stepDisplay:StepProgressBar Indeterminate="{Binding TotalStepIndeterminate}" Progress="{Binding TotalProgress}" Foreground="{StaticResource ProgressBrush}"/>
             </StackPanel>
         </Grid>
 

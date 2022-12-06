@@ -19,10 +19,9 @@ namespace AutopilotQuick.Steps
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
             IOperationHolder<RequestTelemetry> StepOperation)
         {
+            Title = "Making disk bootable";
             if (IsEnabled)
             {
-                Title = "Making disk bootable";
-                
                 IsIndeterminate  = true;
                 var script = @"
 W:\Windows\System32\bcdboot W:\Windows /s S:
