@@ -85,7 +85,7 @@ public partial class StepProgressBar : UserControl, INotifyPropertyChanged
                 Width = 1,
                 Height = Bar.Height,
                 IsHitTestVisible = false,
-                Opacity = 0.25,
+                Opacity = 0.5,
                 Fill = (Brush)FindResource("MahApps.Brushes.Separator"),
                 SnapsToDevicePixels = true,
                 UseLayoutRounding = true,

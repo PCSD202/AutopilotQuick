@@ -17,6 +17,7 @@
         TitleCharacterCasing="Normal"
         ShowSystemMenuOnRightClick="False"
         ShowSystemMenu="False"
+        Topmost="True"
         Title="{Binding Title}" Height="450" Width="800">
 
     <mah:MetroWindow.Resources>

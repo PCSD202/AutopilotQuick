@@ -245,7 +245,7 @@ namespace AutopilotQuick
                 }, DispatcherPriority.Normal
             );
             KeyDown += WinOnKeyDown;
-            
+            this.Focus();
 
             //BatteryMan.GetInstance().BatteryUpdated += MainWindow_BatteryUpdated;
 
@@ -262,7 +262,6 @@ namespace AutopilotQuick
             await Task.Run(() => DurableAzureBackgroundTask.getInstance().StartTimer(context), cancellationToken);
             await Task.Run(() => InternetMan.GetInstance().StartTimer(context), cancellationToken);
             var TaskManagerTask = Task.Factory.StartNew(async ()=>await TaskManager.GetInstance().Run(context, _taskManagerPauseTokenSource.Token),cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
         }
 
         private CookieWindow? _cookieWindow = null;
