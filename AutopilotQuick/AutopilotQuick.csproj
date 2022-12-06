@@ -113,6 +113,11 @@
 	
   <ItemGroup>
     <Folder Include="ElevatorWaitingMusicEgg\Music" />
+    <Folder Include="Updater" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Compile Remove="Updater\Updater.cs" />
   </ItemGroup>
 
 </Project>
