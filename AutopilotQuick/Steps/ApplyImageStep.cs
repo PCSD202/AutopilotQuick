@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
 using Humanizer.Localisation;
@@ -67,7 +68,7 @@ namespace AutopilotQuick.Steps
                     
                     if (progressMessage.EstimatedTimeRemaining != TimeSpan.Zero)
                     {
-                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2)}";
+                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2, maxUnit: TimeUnit.Second)}";
                     }
                     else
                     {
@@ -234,10 +235,14 @@ namespace AutopilotQuick.Steps
 
                 try
                 {
-                    // Get a handle to a specific image inside of the .wim
-                    using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
-                    // Apply the image
-                    WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                    // Create OS-wide named object. (It will not use WaitOne/Release)
+                    using (Mutex myMutex = new Mutex(true, "Time", out var owned))
+                    {
+                        // Get a handle to a specific image inside of the .wim
+                        using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
+                        // Apply the image
+                        WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                    }
                 }
                 catch (OperationCanceledException ex)
                 {
