@@ -68,7 +68,7 @@ namespace AutopilotQuick.Steps
                     
                     if (progressMessage.EstimatedTimeRemaining != TimeSpan.Zero)
                     {
-                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2, maxUnit: TimeUnit.Second)}";
+                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2, minUnit: TimeUnit.Second)}";
                     }
                     else
                     {
