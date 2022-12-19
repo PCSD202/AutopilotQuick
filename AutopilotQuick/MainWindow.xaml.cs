@@ -117,7 +117,8 @@ namespace AutopilotQuick
                 "PlayPortalMusic",
                 "DebugMenu",
                 "IncVolume",
-                "DecVolume"
+                "DecVolume",
+                "DeveloperMode"
             };
             foreach (var key in keys)
             {
@@ -136,6 +137,7 @@ namespace AutopilotQuick
 
         private void RegisterConflictingKeybinds()
         {
+            HotkeyManager.Current.AddOrReplace("DeveloperMode", Key.F1, ModifierKeys.None, true, F1KeyPressed_OnExecuted);
             HotkeyManager.Current.AddOrReplace("RainbowMode", Key.F10, ModifierKeys.None, true, F10KeyPressed_OnExecuted);
             HotkeyManager.Current.AddOrReplace("DebugMenu", Key.F7, ModifierKeys.None, true, F7KeyPressed_OnExecuted);
             HotkeyManager.Current.AddOrReplace("IncVolume", Key.OemPlus, ModifierKeys.None, false, (o, args) =>
@@ -712,6 +714,17 @@ namespace AutopilotQuick
             
         }
 
+        private async void F1KeyPressed_OnExecuted(object? sender, object e)
+        {
+            if (!context.DeveloperModeEnabled)
+            {
+                context.DeveloperModeEnabled = true;
+                await context.DialogCoordinator.ShowMessageAsync(context, "Developer mode",
+                    "Developer mode was enabled by pressing F1.\n" +
+                    "The Machine will not reboot automatically at the end of the task sequence, you can press the reboot button when you are done."); 
+            }
+        }
+
         private  void F7KeyPressed_OnExecuted(object? sender, object e)
         {
             var debugWindow = new DebugWindow();
@@ -794,6 +807,18 @@ namespace AutopilotQuick
             }
             context.UserRequestedChangeSharedPC = true; //User pressed the button so we need to flip this,
             count++;
+        }
+
+        private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Alt && e.SystemKey == Key.Space)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                base.OnKeyDown(e);
+            }
         }
     }
 }

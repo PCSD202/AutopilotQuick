@@ -17,6 +17,7 @@
         TitleCharacterCasing="Normal"
         ShowSystemMenuOnRightClick="False"
         ShowSystemMenu="False"
+        KeyDown="MainWindow_OnKeyDown"
         Title="{Binding Title}" Height="450" Width="800">
 
     <mah:MetroWindow.Resources>
@@ -43,10 +44,6 @@
             </TextBlock>
         </DataTemplate>
     </mah:MetroWindow.TitleTemplate>
-
-    <Window.InputBindings>
-        <KeyBinding Key="F1" Command="{Binding EnableDeveloperModeCmd}" HotkeyManager.RegisterGlobalHotkey="False"/>
-    </Window.InputBindings>
     
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
