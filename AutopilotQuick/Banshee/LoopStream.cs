@@ -68,4 +68,10 @@ public class LoopStream: WaveStream
         }
         return totalBytesRead;
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        this.sourceStream.Dispose();
+        base.Dispose(disposing);
+    }
 }
