@@ -122,7 +122,7 @@ public class BansheePlayer
             file = cachedMusic.FilePath;
         }
         var audioStream = LoadAudioStream(file);
-        var player = new ManagedMpegStream(audioStream);
+        var player = new ManagedMpegStream(audioStream, true);
         var loopPlayer = new LoopStream(player);
 
         if (cachedMusic.FileCached && cachedMusicStartTimes.FileCached)
@@ -198,6 +198,7 @@ public class BansheePlayer
                 context.Playing = PlayState.Playing;
                 _wavePlayer.PlaybackStopped += (sender, args) =>
                 {
+                    audioTrack.Dispose();
                     Logger.LogInformation("Playback finished");
                     context.Playing = PlayState.NotPlaying;
                 };
