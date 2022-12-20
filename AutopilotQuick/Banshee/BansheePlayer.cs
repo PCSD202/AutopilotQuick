@@ -182,6 +182,7 @@ public class BansheePlayer
                 catch (Exception)
                 {
                     Logger.LogInformation("Unable to load default audio endpoint");
+                    return; //Return if we couldn't find an audio endpoint to prevent crashing
                 }
             }
 
