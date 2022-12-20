@@ -25,14 +25,30 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <SolidColorBrush x:Key="ProgressBrush" x:Name="ColorBrush" Color="{DynamicResource MahApps.Colors.Accent}"/>
         <Style BasedOn="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" TargetType="mah:MetroHeader" />
-        <Style x:Key="tooltipThing" BasedOn="{StaticResource MahApps.Styles.CheckBox}" TargetType="CheckBox">
+        <Style x:Key="SharedPCCheckboxStyle" BasedOn="{StaticResource MahApps.Styles.CheckBox.Win10}" TargetType="{x:Type CheckBox}">
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="Shared PC"></TextBlock>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="ToolTip" Value="SharedPC"/>
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot, or azureAD record, or because we already applied the settings"></Setter>
-                    <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray9}"/>
+                    <Setter Property="ToolTip" Value="Disabled because this device either does not have an autopilot / azureAD record, or because we already applied the settings"></Setter>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+        <Style x:Key="TakeHomeCheckboxStyle" BasedOn="{StaticResource MahApps.Styles.CheckBox.Win10}" TargetType="{x:Type CheckBox}">
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="Take Home"></TextBlock>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ToolTip" Value="Take Home"/>
         </Style>
     </mah:MetroWindow.Resources>
     <mah:MetroWindow.TitleTemplate>
@@ -48,24 +64,12 @@
     <mah:MetroWindow.RightWindowCommands>
         <mah:WindowCommands>
             
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
-                <mah:MetroHeader Header="Take home?" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0"/>
-                <mah:ToggleSwitch x:Name="TakeHomeToggle" OnContent="" OffContent="" VerticalContentAlignment="Center" Padding="5 0 5 0" MinWidth="0" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Toggled="ToggleSwitch_Toggled" IsOn="{Binding TakeHomeToggleOn}" IsEnabled="{Binding TakeHomeToggleEnabled}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 5 0">
+                <CheckBox MinWidth="0" HorizontalAlignment="Center" HorizontalContentAlignment="Right" Style="{StaticResource TakeHomeCheckboxStyle}" IsEnabled="{Binding TakeHomeToggleEnabled}" IsChecked="{Binding TakeHomeToggleOn, Mode=TwoWay}" Click="ToggleSwitch_Toggled"/>
             </StackPanel>
             
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 0 0">
-                <mah:MetroHeader Header="Shared PC:" IsEnabled="False" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="0 0 2 0">
-                    <mah:MetroHeader.Style>
-                        <Style BasedOn="{StaticResource MahApps.Styles.MetroHeader.Horizontal}" TargetType="mah:MetroHeader">
-                            <Style.Triggers>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Control.Disabled}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </mah:MetroHeader.Style>
-                </mah:MetroHeader>
-                <CheckBox x:Name="SharedPCCheckbox" Style="{StaticResource tooltipThing}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5 0 5 0">
+                <CheckBox MinWidth="0" HorizontalAlignment="Center" HorizontalContentAlignment="Right" Style="{StaticResource SharedPCCheckboxStyle}" IsThreeState="True" IsEnabled="{Binding SharedPCCheckboxEnabled}" IsChecked="{Binding SharedPCChecked, Mode=TwoWay}" Click="SharedPCSwitch_OnCheckedOrUncheck"/>
             </StackPanel>
             
             <iconPacks:PackIconUnicons ToolTip="Sound Playing" Width="22" Height="22" Margin="5 0 5 0" VerticalAlignment="Center" HorizontalAlignment="Center">
