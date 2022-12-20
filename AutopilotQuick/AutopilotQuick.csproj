@@ -113,7 +113,6 @@
 	
   <ItemGroup>
     <Folder Include="ElevatorWaitingMusicEgg\Music" />
-    <Folder Include="Updater" />
   </ItemGroup>
 	
   <ItemGroup>

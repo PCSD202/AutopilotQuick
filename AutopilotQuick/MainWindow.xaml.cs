@@ -16,6 +16,7 @@ using System.Diagnostics;
 using PgpCore;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
 using AutopilotQuick.Banshee;
@@ -209,7 +210,7 @@ namespace AutopilotQuick
                     });
                     HotkeyManager.Current.AddOrReplace("ToggleTakeHome", Key.T, ModifierKeys.Control, true, (o, args) =>
                     {
-                        if (TakeHomeToggle.IsEnabled)
+                        if (context.TakeHomeToggleEnabled)
                         {
                             context.TakeHomeToggleOn = true;
                         }
@@ -356,8 +357,8 @@ namespace AutopilotQuick
         }
         private async void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
         {
-            ToggleSwitch toggleSwitch = sender as ToggleSwitch;
-            if (toggleSwitch != null && toggleSwitch.IsOn) {
+            CheckBox toggleSwitch = sender as CheckBox;
+            if (toggleSwitch?.IsChecked != null && toggleSwitch.IsChecked.Value) {
                 _taskManagerPauseTokenSource.IsPaused = true;
                 var result = await context.DialogCoordinator.ShowMessageAsync(context, "Apply take home?", "This removes the bios password, de-registers the device from autopilot, and does not apply autopilot or wifi config. If confirmed, this can only be undone by re-imaging. Would you like to continue?", MessageDialogStyle.AffirmativeAndNegative);
                 if (result == MessageDialogResult.Affirmative)
