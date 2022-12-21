@@ -55,7 +55,7 @@ public class CleanupRecordsStep : StepBaseEx
 
         try
         {
-            var info = JsonConvert.DeserializeObject<TakeHomeInfo>(await File.ReadAllTextAsync(takehomeCredsCacher.FilePath));
+            var info = JsonConvert.DeserializeObject<TakeHomeInfo>(await takehomeCredsCacher.ReadAllTextAsync());
             if (info is not null) return info;
             takehomeCredsCacher.Delete(); //Force it to redownload
             return await GetAPIInfo(context);

@@ -150,7 +150,7 @@ exit
             }
             catch (DriveNotFoundException)
             {
-                return new StepResult(false, "Failed to format drive. This could be because of a bad hard drive, or not having one installed.");
+                return new StepResult(false, "Failed to format drive. This could be because of a bad hard drive, not having one installed.");
             }
 
             Progress = 100;

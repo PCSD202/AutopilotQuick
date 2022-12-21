@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using AutopilotQuick.Annotations;
 using AutopilotQuick.DeviceID;
@@ -248,6 +250,34 @@ namespace AutopilotQuick
             
             SetCurrentTime(DateTime.Now);
             
+        }
+
+        public bool DrivePresent()
+        {
+            var driveToWaitFor = Path.GetPathRoot(App.GetExecutablePath());
+            return Directory.Exists(driveToWaitFor);
+        }
+        
+        public void WaitForDrive()
+        {
+            Task task = Task.Run(async () => await WaitForDriveAsync());
+            task.Wait();
+        }
+
+        public async Task WaitForDriveAsync()
+        {
+            
+            if(DrivePresent()){return;}
+
+            var messageBox = await DialogCoordinator.ShowProgressAsync(this, "Insert flash drive",
+                "Please insert the AutopilotQuick drive");
+            messageBox.SetIndeterminate();
+            while (!DrivePresent())
+            {
+                await Task.Delay(100);
+            }
+
+            await messageBox.CloseAsync();
         }
 
         private record GithubCreds(string ClientID, string ClientSecret);

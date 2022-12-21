@@ -45,7 +45,14 @@ public class Cacher
     /// Whether or not we have the file downloaded
     /// </summary>
     /// <remarks>Does not use internet, or check that the file is up to date, for that use <see cref="IsUpToDate"/></remarks>
-    public bool FileCached => File.Exists(FilePath);
+    public bool FileCached
+    {
+        get
+        {
+            _context.WaitForDrive();
+            return File.Exists(FilePath);
+        }
+    }
 
     /// <summary>
     /// The cache directory
@@ -109,6 +116,8 @@ public class Cacher
         cachedResourceData.FileName, context)
     {
     }
+    
+
 
     private Task? DownloadUpdateTask = null;
 
@@ -288,6 +297,7 @@ public class Cacher
     /// <returns>The last-modified information from disk, if not found returns <see cref="DateTime.MinValue"/></returns>
     public DateTime GetCachedFileLastModified()
     {
+        _context.WaitForDrive();
         if (!File.Exists(FileCacheDataPath))
         {
             return DateTime.MinValue;
@@ -295,6 +305,7 @@ public class Cacher
 
         try
         {
+            _context.WaitForDrive();
             CacherData data = JsonConvert.DeserializeObject<CacherData>(File.ReadAllText(FileCacheDataPath));
             return data.LastModified;
         }
@@ -302,6 +313,7 @@ public class Cacher
         {
             _logger.LogError(
                 $"Got error {e.Message} while trying to deserialize {FileCacheDataPath}. Deleting json file.");
+            _context.WaitForDrive();
             File.Delete(FileCacheDataPath);
             return DateTime.MinValue;
         }
@@ -313,12 +325,14 @@ public class Cacher
     /// <returns>The file's text</returns>
     public string ReadAllText()
     {
+        _context.WaitForDrive();
         return File.ReadAllText(FilePath);
     }
 
-    public Task<string> ReadAllTextAsync()
+    public async Task<string> ReadAllTextAsync()
     {
-        return File.ReadAllTextAsync(FilePath);
+        await _context.WaitForDriveAsync();
+        return await File.ReadAllTextAsync(FilePath);
     }
 
     ///<summary>
@@ -326,11 +340,13 @@ public class Cacher
     ///</summary>
     public void Delete()
     {
+        _context.WaitForDrive();
         if (File.Exists(FilePath))
         {
             File.Delete(FilePath);
         }
 
+        _context.WaitForDrive();
         if (File.Exists(FileCacheDataPath))
         {
             File.Delete(FileCacheDataPath);
@@ -347,6 +363,8 @@ public class Cacher
         {
             LastModified = LastModified.ToUniversalTime()
         };
+        
+        _context.WaitForDrive();
         File.WriteAllText(FileCacheDataPath, JsonConvert.SerializeObject(data, Formatting.Indented));
     }
 }

@@ -227,6 +227,13 @@ namespace AutopilotQuick
 
                         SharedPCSwitch_OnCheckedOrUncheck(this, new RoutedEventArgs());
                     });
+                    HotkeyManager.Current.AddOrReplace("ForceUpdate", Key.U, ModifierKeys.Control | ModifierKeys.Shift, true, async (o, args) =>
+                    {
+                        await Task.Factory.StartNew(async () =>
+                        {
+                            await Update(true);
+                        });
+                    });
                     HotkeyManager.Current.AddOrReplace("OpenPowerMenu", Key.P, ModifierKeys.Control,
                         true, (o, args) => { ShutdownButton_OnClick(this, new RoutedEventArgs()); });
                     
@@ -383,7 +390,10 @@ namespace AutopilotQuick
                     DefaultButtonFocus = MessageDialogResult.Affirmative,
                     AnimateShow = false
                 });
-            if (errorBox == MessageDialogResult.Affirmative) await Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+            if (errorBox == MessageDialogResult.Affirmative) await Task.Factory.StartNew(async ()=>
+            {
+                await Update();
+            }, TaskCreationOptions.LongRunning);
         }
         
 
@@ -420,7 +430,7 @@ namespace AutopilotQuick
             }
         }
 
-        public async Task Update()
+        public async Task Update(bool force = false)
         {
             var version = new Version();
             var latestVersion = new Version();
@@ -435,12 +445,21 @@ namespace AutopilotQuick
             {
                 Logger.LogError(e, "Got error {e}", e);
             }
-#if PUBLISH
             var PublicKey = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.AutopilotQuick_PubKey.asc");
             int maxStep = 6;
-            if (!(latestVersion.CompareTo(version) > 0)) {
+            bool pub = false;
+#if PUBLISH
+            pub = true;
+#endif
+            if (!pub && !force)
+            {
                 return;
             }
+            
+            if (!(latestVersion.CompareTo(version) > 0) && !force) {
+                return;
+            }
+            
             
             var DownloadProgress = await context.DialogCoordinator.ShowProgressAsync(context, $"Step 1/{maxStep} - Downloading", "Percent: 0% (0/0)", isCancelable: false, new MetroDialogSettings { AnimateHide = false });
             DownloadProgress.Maximum = 100;
@@ -587,6 +606,7 @@ namespace AutopilotQuick
             DownloadProgress.SetTitle($"Step 5/{maxStep} - Extracting");
             DownloadProgress.SetMessage("Please wait, we may go unresponsive but don't close the window, we will restart the program after.");
             DownloadProgress.SetIndeterminate();
+            await context.WaitForDriveAsync(); //Wait for the drive to be present
             var UpdateFolder =
                 System.IO.Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
                     "\\AutopilotQuick\\Update");
@@ -619,7 +639,10 @@ namespace AutopilotQuick
                         });
                     if (errorBox == MessageDialogResult.Affirmative)
                     {
-                        await Task.Factory.StartNew(Update, TaskCreationOptions.LongRunning);
+                        await Task.Factory.StartNew(async ()=>
+                        {
+                            await Update();
+                        }, TaskCreationOptions.LongRunning);
                     }
                 }
             }
@@ -663,8 +686,6 @@ namespace AutopilotQuick
                 Thread.Sleep(1000);
                 Environment.Exit(0);
             });
-#endif
-            
         }
 
         private async void ShutdownButton_OnClick(object sender, RoutedEventArgs e)

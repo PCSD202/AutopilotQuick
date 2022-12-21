@@ -40,19 +40,24 @@ namespace AutopilotQuick.Steps
             using (var updateAndExtract = App.telemetryClient.StartOperation<RequestTelemetry>("Updating/Extracting dell bios"))
             {
                 updateAndExtract.Telemetry.Properties["Downloaded"] = "false";
+                await context.WaitForDriveAsync(); //Wait for the drive to be present
                 //If the file is not cached, or if we have internet and the file is not up to date, or if the directory does not exist
                 if (!dellBiosSettingsCacher.FileCached ||
                     (InternetMan.GetInstance().IsConnected && !dellBiosSettingsCacher.IsUpToDate) ||
                     !Directory.Exists(dellBiosSettingsDir))
                 {
                     updateAndExtract.Telemetry.Properties["Downloaded"] = "true";
+                    await context.WaitForDriveAsync(); //Wait for the drive to be present
                     if (Directory.Exists(dellBiosSettingsDir))
                     {
+                        await context.WaitForDriveAsync(); //Wait for the drive to be present
                         Directory.Delete(dellBiosSettingsDir, true);
                     }
 
+                    await context.WaitForDriveAsync(); //Wait for the drive to be present
                     Directory.CreateDirectory(dellBiosSettingsDir);
                     await dellBiosSettingsCacher.DownloadUpdateAsync();
+                    await context.WaitForDriveAsync(); //Wait for the drive to be present
                     ZipFile.ExtractToDirectory(dellBiosSettingsCacher.FilePath, dellBiosSettingsDir);
                 }
 

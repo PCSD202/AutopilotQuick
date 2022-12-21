@@ -236,6 +236,7 @@ namespace AutopilotQuick.Steps
             }
 
             Message = "Opening image...";
+            await context.WaitForDriveAsync();
             var handleResult = GetWimHandle(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None);
             if (!handleResult.Success)
             {
@@ -260,10 +261,12 @@ namespace AutopilotQuick.Steps
                 {
                     Message = "Reading image...";
                     // Get a handle to a specific image inside of the .wim
+                    await context.WaitForDriveAsync();
                     using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
                     
                     Message = "Starting to apply...";
                     // Apply the image
+                    await context.WaitForDriveAsync();
                     WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
                 }
             }
@@ -281,7 +284,12 @@ namespace AutopilotQuick.Steps
             catch (Win32Exception ex)
             {
                 Logger.LogError(ex, "Got error {ex} while applying windows", ex);
-                return new StepResult(false, "Got error while applying windows.\nThis usually is due to a bad or failing SSD.");
+                if (!context.DrivePresent())
+                {
+                    await context.WaitForDriveAsync();
+                    return await Run(context, pauseToken, StepOperation);
+                }
+                return new StepResult(false, "Got error while applying windows.\nThis usually is due to a bad or failing SSD. It can also be caused by a loose USB connection.");
             }
             finally
             {

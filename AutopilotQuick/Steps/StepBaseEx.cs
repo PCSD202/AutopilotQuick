@@ -84,7 +84,7 @@ namespace AutopilotQuick.Steps
         {
             using (var powershellTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
             {
-                var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
+                var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetRealExecutablePath()),
                     $"script-{Guid.NewGuid()}.ps1");
                 File.WriteAllText(psscriptPath, script);
                 Process formatProcess = new Process();
@@ -107,7 +107,7 @@ namespace AutopilotQuick.Steps
             using (var powershellTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Powershell script"))
             {
                 var lines = new StringBuilder();
-                var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
+                var psscriptPath = Path.Join(Path.GetDirectoryName(App.GetRealExecutablePath()),
                     $"script-{Guid.NewGuid()}.ps1");
                 await File.WriteAllTextAsync(psscriptPath, script, cancellationToken);
                 Process powerShellProcess = new Process();
@@ -146,8 +146,7 @@ namespace AutopilotQuick.Steps
         {
             using (var diskpartScriptTele = App.GetTelemetryClient().StartOperation<RequestTelemetry>("Diskpart script"))
             {
-                var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetExecutablePath()),
-                    $"diskpart-(${Guid.NewGuid()}).txt");
+                var diskpartScriptPath = Path.Join(Path.GetDirectoryName(App.GetRealExecutablePath()), $"diskpart-(${Guid.NewGuid()}).txt");
                 RetryPolicy retry = Policy
                     .Handle<IOException>()
                     .WaitAndRetry(60, retryAttempt => TimeSpan.FromSeconds(5));

@@ -57,7 +57,7 @@ namespace AutopilotQuick
                 Progress = newProgressPercent
             });
         }
-        public bool Enabled = false;
+        public bool Enabled => App.Enabled;
         
         private void WaitForPause(PauseToken pauseToken) {
             if (!pauseToken.IsPaused) return;
@@ -110,6 +110,7 @@ namespace AutopilotQuick
                 foreach (var step in Steps)
                 {
                     WaitForPause(pauseToken);
+                    await context.WaitForDriveAsync(); //Wait for the drive to be present for each step before starting it
                     InvokeCurrentTaskMessageChanged("");
                     InvokeCurrentTaskNameChanged("");
                     InvokeCurrentTaskProgressChanged(0, false);
