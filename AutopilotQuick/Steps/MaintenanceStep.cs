@@ -38,7 +38,7 @@ public class MaintenanceStep : StepBaseEx
         Title = "AQ Maintenance";
         Message = "Running maintenance tasks (This should not take more than a couple seconds)";
         IsIndeterminate = true;
-        var scriptFilesPath = Path.GetDirectoryName(App.GetExecutablePath());
+        var scriptFilesPath = Path.GetDirectoryName(App.GetRealExecutablePath());
         var AllFiles = Directory.GetFiles(scriptFilesPath);
         var scriptFiles = AllFiles.Where(x => IsScript(Path.GetFileName(x))).ToList();
         var deletedCount = 0;

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using System.Windows.Threading;
 using AQ.DeviceInfo;
 using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
+using CommandLine;
 using Humanizer;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
@@ -27,6 +29,7 @@ using NLog.Config;
 using NLog.Extensions.Logging;
 using NLog.Targets;
 using ORMi;
+using Spectre.Console;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace AutopilotQuick
@@ -36,17 +39,51 @@ namespace AutopilotQuick
     /// </summary>
     public partial class App : Application
     {
+
+        public static bool Enabled = false;
         public static IServiceProvider ServiceProvider = null!;
 
         public static TelemetryClient telemetryClient;
 
         public static string SessionID = $"{Guid.NewGuid()}";
+
+        private static string DataDir = GetRealExecutablePath();
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
             AllocConsole();
+            
+            var args = e.Args.Select(x=>x.Replace("/", "--"));
+            Parser.Default.ParseArguments<CommandLineOptions>(args)
+                .WithParsed(o =>
+                {
+                    if (o.Enabled)
+                    {
+                        Enabled = true;
+                    }
+
+                    if (o.DataLocation != "")
+                    {
+                        DataDir = Base64Decode(o.DataLocation);
+                    }
+                });
+
+            if (RunningOnWinPE() && Path.GetPathRoot(GetRealExecutablePath()).ToLower() != @"x:\")
+            {
+                //We must be on the flash drive
+                //We need to copy ourselves to the ramdisk
+                var copiedPath = CopySelfToRamdisk();
+                var realPathB64 = Base64Encode(GetRealExecutablePath());
+                var start = new ProcessStartInfo(copiedPath)
+                {
+                    Arguments = $"--run --data {realPathB64}"
+                };
+                Process.Start(start);
+                Environment.Exit(0);
+            }
             var s = Stopwatch.StartNew();
             Console.WriteLine("Starting up...");
+            base.OnStartup(e);
+            
             SetupLoggingConfig();
             ServiceProvider = SetupAzureAppInsights();
             Console.WriteLine($"Startup took {s.Elapsed.Humanize()}.");
@@ -57,16 +94,12 @@ namespace AutopilotQuick
             
             LogManager.AutoShutdown = true;
 
-            for (int i = 0; i != e.Args.Length; ++i)
-            {
-                if (e.Args[i] == "/run")
-                {
-                    TaskManager.GetInstance().Enabled = true;
-                }
-            }
 
+
+            
+            
             var mainWindow = new MainWindow();
-            //var mainWindow = new SnakeWindow();
+            
             this.MainWindow = mainWindow;
             mainWindow.Closed += (sender, args2) =>
             {
@@ -86,6 +119,55 @@ namespace AutopilotQuick
             mainWindow.Show();
         }
 
+        private static string CopySelfToRamdisk()
+        {
+            var ramDiskFolderPath = @"X:\AQ";
+            
+            //Create folder on ramdisk to hold autopilotQuick
+            if (Directory.Exists(ramDiskFolderPath))
+            {
+                Directory.Delete(ramDiskFolderPath, true);
+            }
+
+            Directory.CreateDirectory(ramDiskFolderPath);
+            var aqRamdiskPath = Path.Join(ramDiskFolderPath, Path.GetFileName(GetRealExecutablePath()));
+            var fileCopier = new CustomFileCopier(GetRealExecutablePath(), aqRamdiskPath);
+            AnsiConsole.Progress()
+                .AutoClear(false) // Do not remove the task list when done
+                .Columns(new ProgressColumn[]
+                {
+                    new TaskDescriptionColumn(), // Task description
+                    new ProgressBarColumn(), // Progress bar
+                    new PercentageColumn(), // Percentage
+                    new SpinnerColumn(), // Spinner
+                })
+                .Start(ctx =>
+                {
+                    var copyTask = ctx.AddTask("[green]Copying to ramdisk[/]");
+                    fileCopier.OnProgressChanged += (long size, long downloaded, double percentage, ref bool cancel) =>
+                    {
+                        copyTask.MaxValue = size;
+                        copyTask.Value = downloaded;
+                    };
+                    fileCopier.OnComplete += () =>
+                    {
+                        copyTask.StopTask();
+                    };
+                    fileCopier.Copy();
+                });
+            return aqRamdiskPath;
+        }
+
+        private static string Base64Encode(string plainText) {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
+        
+        private  static string Base64Decode(string base64EncodedData) {
+            var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
         private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             GetLogger<App>().LogError((Exception?)e.ExceptionObject, "Unhandled exception: {e}", (Exception?)e.ExceptionObject);
@@ -96,6 +178,12 @@ namespace AutopilotQuick
                 LogManager.Flush();
                 LogManager.Shutdown();
             }
+        }
+
+        public static bool RunningOnWinPE()
+        {
+            var key = Registry.LocalMachine.OpenSubKey("System\\ControlSet001\\Control\\MiniNT");
+            return key != null;
         }
 
         private void CurrentOnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -185,7 +273,7 @@ namespace AutopilotQuick
             };
             services.AddSingleton<ITelemetryInitializer, MyTelemetryInitializer>();
 
-            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var appFolder = GetExecutableFolder();
             var telemetryChannel = new ServerTelemetryChannel();
             telemetryChannel.StorageFolder = Path.Combine(appFolder, "logs", "ApplicationInsights");
             Directory.CreateDirectory(telemetryChannel.StorageFolder);
@@ -270,9 +358,18 @@ namespace AutopilotQuick
             LoggingConfig.AddRule( NLog.LogLevel.Debug,  NLog.LogLevel.Fatal, logConsole);
             LogManager.Configuration = LoggingConfig;
         }
-        public static string GetExecutablePath()
+        
+        
+        //This is the real path to the executable, on the ramdisk
+        public static string GetRealExecutablePath()
         {
             return Process.GetCurrentProcess().MainModule.FileName;
+        }
+        
+        //This is the fake path to the executable on the flashDrive
+        public static string GetExecutablePath()
+        {
+            return DataDir;
         }
 
         public static string GetExecutableFolder()

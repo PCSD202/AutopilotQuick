@@ -45,6 +45,7 @@ public class InstallHardwareTester : StepBaseEx
             Progress = percentage;
             Message = $"Copying hardware tester... {percentage/100:P1} ({downloaded.Bytes().Humanize()} / {size.Bytes().Humanize()})";
         };
+        await context.WaitForDriveAsync(); //Wait for the drive to be present
         await fileCopier.CopyAsync();
         return new StepResult(true, "Successfully installed the hardware tester");
 

@@ -33,9 +33,11 @@ namespace AutopilotQuick.Steps
                 Title = "Applying WiFi configuration";
                 Message = "";
                 var DismTempDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "TempDism");
+                await context.WaitForDriveAsync(); //Wait for the drive to be present
                 Directory.CreateDirectory(DismTempDir);
                 await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.Wifi.ppkg");
                 await using var file = new FileStream(Path.Combine(DismTempDir, "Wifi.ppkg"), FileMode.Create, FileAccess.Write);
+                await context.WaitForDriveAsync(); //Wait for the drive to be present
                 await resource.CopyToAsync(file);
 
                 var output = await InvokePowershellScriptAndGetResultAsync(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Wifi.ppkg")}", CancellationToken.None);
