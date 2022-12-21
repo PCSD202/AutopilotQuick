@@ -168,9 +168,23 @@ namespace AutopilotQuick.Steps
             await copier.CopyAsync();
             return dest;
         }
+
+
+        private record WimHandleResult(bool Success, WimHandle Handle);
+        private WimHandleResult GetWimHandle(string path, WimFileAccess desiredAccess, WimCreationDisposition creationDisposition, WimCreateFileOptions options, WimCompressionType compressionType)
+        {
+            try
+            {
+                var handle = WimgApi.CreateFile(path, desiredAccess, creationDisposition, options, compressionType);
+                return new WimHandleResult(true, handle);
+            }
+            catch (Win32Exception)
+            {
+                return new WimHandleResult(false, WimHandle.Null);
+            }
+        }
         
-        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken,
-            IOperationHolder<RequestTelemetry> StepOperation)
+        public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
         {
             if (!InternetMan.GetInstance().IsConnected)
             {
@@ -199,84 +213,83 @@ namespace AutopilotQuick.Steps
             }
 
             Title = "Applying Windows";
-            Message = "Starting to apply";
+            Message = "Checking image...";
             IsIndeterminate = false;
+            
+            //If file is not cached, make sure not to accidentally trigger the InternetBecameAvailable event
+            //Make sure that we set UpdatedImagedAvailable to false if the internet event already fired
+            //Download the update, and resubscribe
+            if (!wimCache.FileCached)
+            {
+                Logger.LogInformation("Image was not cached, we need to download it");
+                InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
+                _updatedImageAvailable = false;
+                await wimCache.DownloadUpdateAsync();
+                InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+            }
+            
+            Message = "Creating scratch directory...";
+            var scratchDir = MakeScratchDir();
+            if (!scratchDir.Success)
+            {
+                return new StepResult(false, "Failed to create scratch directory. This could mean that the drive in the computer is faulty.");
+            }
+
+            Message = "Opening image...";
+            var handleResult = GetWimHandle(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None);
+            if (!handleResult.Success)
+            {
+                //Something must be wrong with our image. Lets delete it and re-download it
+                InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable; //Unsubscribe
+                _updatedImageAvailable = false;
+                await wimCache.DownloadUpdateAsync();
+                InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable; //Resubscribe
+            }
+            using var wimHandle = handleResult.Handle;
+
+            // Always set a temporary path
+            WimgApi.SetTemporaryPath(wimHandle, scratchDir.Path);
+
+            // Register a method to be called while actions are performed by WIMGAPi for this .wim file
+            WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
+
             try
             {
-                //If file is not cached, make sure not to accidentally trigger the InternetBecameAvailable event
-                //Make sure that we set UpdatedImagedAvailable to false if the internet event already fired
-                //Download the update, and resubscribe
-                if (!wimCache.FileCached)
+                // Create OS-wide named object. (It will not use WaitOne/Release)
+                using (Mutex myMutex = new Mutex(true, "Time", out var owned))
                 {
-                    Logger.LogInformation("Image was not cached, we need to download it");
-                    InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
-                    _updatedImageAvailable = false;
-                    await wimCache.DownloadUpdateAsync();
-                    InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-                }
-
-                var scratchDir = MakeScratchDir();
-                if (!scratchDir.Success)
-                {
-                    return new StepResult(false,
-                        "Failed to create scratch directory. This could mean that the drive in the computer is faulty.");
-                }
-
-                //var copiedFilePath = await CopyWimToDrive(wimCache);
-                
-                using var wimHandle = WimgApi.CreateFile(wimCache.FilePath, WimFileAccess.Read,
-                    WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None);
-
-                // Always set a temporary path
-                WimgApi.SetTemporaryPath(wimHandle, scratchDir.Path);
-
-                // Register a method to be called while actions are performed by WIMGAPi for this .wim file
-                WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
-
-                try
-                {
-                    // Create OS-wide named object. (It will not use WaitOne/Release)
-                    using (Mutex myMutex = new Mutex(true, "Time", out var owned))
-                    {
-                        // Get a handle to a specific image inside of the .wim
-                        using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
-                        // Apply the image
-                        WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
-                    }
-                }
-                catch (OperationCanceledException ex)
-                {
-                    Logger.LogInformation("Operation was canceled, we must have an update");
-                }
-                catch (Win32Exception ex)
-                {
-                    Logger.LogError(ex, "Got error {ex} while applying windows", ex);
-                    return new StepResult(false, $"Got error {ex} while applying windows");
-                }
-                finally
-                {
-                    // Be sure to unregister the callback method
-                    WimgApi.UnregisterMessageCallback(wimHandle, ImageCallback);
+                    Message = "Reading image...";
+                    // Get a handle to a specific image inside of the .wim
+                    using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
+                    
+                    Message = "Starting to apply...";
+                    // Apply the image
+                    WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
                 }
             }
-            catch (Win32Exception e)
+            catch (OperationCanceledException ex)
             {
-                Logger.LogError(e, "Caught error while applying windows");
-                await InternetMan.WaitForInternetAsync(context);
-                wimCache.Delete(); //Delete and re-download it because we had an issue with it
+                Logger.LogInformation("Operation was canceled, we must have an update");
+                
+                InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
+                _updatedImageAvailable = false;
+                wimCache = WimMan.getInstance().GetCacherForModel();
+                await wimCache.DownloadUpdateAsync();
+                InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
                 return await Run(context, pauseToken, StepOperation);
             }
+            catch (Win32Exception ex)
+            {
+                Logger.LogError(ex, "Got error {ex} while applying windows", ex);
+                return new StepResult(false, "Got error while applying windows.\nThis usually is due to a bad or failing SSD.");
+            }
+            finally
+            {
+                // Be sure to unregister the callback method
+                WimgApi.UnregisterMessageCallback(wimHandle, ImageCallback);
+            }
 
-            //Get the latest cacher from WimMan in case the URL has changed
-            wimCache = WimMan.getInstance().GetCacherForModel();
-            if (wimCache.FileCached && !_updatedImageAvailable)
-                return new StepResult(true, "Successfully applied image to drive");
-
-            InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
-            _updatedImageAvailable = false;
-            await wimCache.DownloadUpdateAsync();
-            InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
-            return await Run(context, pauseToken, StepOperation);
+            return new StepResult(true, "Successfully applied image to drive");
         }
     }
 }
