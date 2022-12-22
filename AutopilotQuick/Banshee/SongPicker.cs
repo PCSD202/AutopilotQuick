@@ -64,6 +64,7 @@ public class SongPicker
     {
         var songsInDB = GetSongPlayDataFromDB().Select(x => x.Name).ToHashSet();
         var songsNotInDB = Songs.Where(x => !songsInDB.Contains(x));
+        
         using var db = new LiteDatabase(DBPath);
         // Get a collection (or create, if doesn't exist)
         var col = db.GetCollection<Song>("SongData");
@@ -76,6 +77,8 @@ public class SongPicker
             };
             col.Insert(newSongToAdd);
         }
+        
+        col.DeleteMany(x => !Songs.Contains(x.Name)); //Remove songs that are not in the list
     }
     
     private void UpdateSong(Song song)

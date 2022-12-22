@@ -137,7 +137,7 @@ namespace AutopilotQuick.LogMan
 
         public void SyncLogs()
         {
-            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var appFolder = App.GetExecutableFolder();
             var logFolder = $"{appFolder}/logs/";
             var client = Share.GetDirectoryClient(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
             client.CreateIfNotExists();

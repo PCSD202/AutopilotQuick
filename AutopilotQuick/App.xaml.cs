@@ -326,7 +326,7 @@ namespace AutopilotQuick
         public void SetupLoggingConfig()
         {
             ConfigurationItemFactory.Default.LayoutRenderers.RegisterDefinition("elapsedtime", typeof (ElapsedTimeLayoutRenderer));
-            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var appFolder = GetExecutableFolder();
             var LoggingConfig = new LoggingConfiguration();
             FileVersionInfo v = FileVersionInfo.GetVersionInfo(GetExecutablePath());
             var model = DeviceInfo.DeviceModel;
