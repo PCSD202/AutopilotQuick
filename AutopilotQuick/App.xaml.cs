@@ -1,4 +1,7 @@
-﻿using System;
+﻿#region
+
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -33,6 +36,8 @@ using ORMi;
 using Spectre.Console;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
+#endregion
+
 namespace AutopilotQuick
 {
     /// <summary>
@@ -49,7 +54,7 @@ namespace AutopilotQuick
         public static string SessionID = $"{Guid.NewGuid()}";
 
         private static string DataDir = GetRealExecutablePath();
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             AllocConsole();
             
@@ -86,9 +91,12 @@ namespace AutopilotQuick
             var s = Stopwatch.StartNew();
             Console.WriteLine("Starting up...");
             base.OnStartup(e);
-            
-            SetupLoggingConfig();
-            ServiceProvider = SetupAzureAppInsights();
+            var loggingTasks = new List<Task>()
+            {
+                Task.Run(SetupLoggingConfig),
+                Task.Run(() => { ServiceProvider = SetupAzureAppInsights(); })
+            };
+            await Task.WhenAll(loggingTasks);
             Console.WriteLine($"Startup took {s.Elapsed.Humanize()}.");
             s.Restart();
             var _logger = GetLogger<App>();
@@ -162,13 +170,13 @@ namespace AutopilotQuick
         }
 
         private static string Base64Encode(string plainText) {
-            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
-            return System.Convert.ToBase64String(plainTextBytes);
+            var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
         }
         
         private  static string Base64Decode(string base64EncodedData) {
-            var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
-            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
         private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)

@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region
+
+using System;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LazyCache;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
 using Newtonsoft.Json;
 using NLog;
 using shortid;
 using shortid.Configuration;
+
+#endregion
 
 namespace AutopilotQuick.DeviceID
 {

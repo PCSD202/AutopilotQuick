@@ -1,8 +1,12 @@
-﻿using System.Diagnostics;
+﻿#region
+
+using System.Diagnostics;
 using System.Text;
 using NLog;
 using NLog.Config;
 using NLog.LayoutRenderers;
+
+#endregion
 
 namespace AutopilotQuick;
 

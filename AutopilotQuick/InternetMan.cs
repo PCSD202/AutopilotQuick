@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region
+
+using System;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
@@ -12,7 +11,8 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using Octokit;
+
+#endregion
 
 namespace AutopilotQuick
 {
@@ -59,7 +59,7 @@ namespace AutopilotQuick
         }
         
         public static void WaitForInternet(UserDataContext context) {
-            Task task = Task.Run(async () => await InternetMan.WaitForInternetAsync(context));
+            Task task = Task.Run(async () => await WaitForInternetAsync(context));
             task.Wait();
         }
         
@@ -68,7 +68,7 @@ namespace AutopilotQuick
             
             using (App.GetTelemetryClient().StartOperation<RequestTelemetry>("Waiting for internet"))
             {
-                if (!InternetMan.GetInstance().IsConnected || !NetworkInterface.GetIsNetworkAvailable())
+                if (!GetInstance().IsConnected || !NetworkInterface.GetIsNetworkAvailable())
                 {
                     var progressController =
                         await context.DialogCoordinator.ShowProgressAsync(context, "Please wait...",

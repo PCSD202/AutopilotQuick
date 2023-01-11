@@ -1,15 +1,14 @@
-﻿using AutopilotQuick.WMI;
+﻿#region
+
+using System;
+using System.Threading.Tasks;
+using AutopilotQuick.WMI;
 using Newtonsoft.Json;
 using NLog;
 using ORMi;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using WimManDatabase = System.Collections.Generic.Dictionary<string, AutopilotQuick.WimManData>;
+
+#endregion
 
 namespace AutopilotQuick
 {

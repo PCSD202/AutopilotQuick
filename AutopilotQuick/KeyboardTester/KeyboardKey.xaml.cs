@@ -1,8 +1,11 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
+
+#endregion
 
 namespace AutopilotQuick.KeyboardTester;
 

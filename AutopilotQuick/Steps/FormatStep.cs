@@ -1,9 +1,9 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
@@ -14,8 +14,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using ORMi;
-using Polly;
-using Polly.Retry;
+
+#endregion
 
 namespace AutopilotQuick.Steps
 {

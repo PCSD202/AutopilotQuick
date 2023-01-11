@@ -1,15 +1,18 @@
-﻿using System;
-using System.Diagnostics;
+﻿#region
+
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Humanizer;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using Nito.AsyncEx;
 using RoboSharp;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 
@@ -58,7 +61,7 @@ Write-Host $ISO;
     {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Finding environment disk"))
         {
-            var EnvironmentDrive = Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
+            var EnvironmentDrive = Registry.GetValue("HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control", "PEBootRamdiskSourceDrive", null);
             if (EnvironmentDrive is not null)
             {
                 var EDriveStr = Convert.ToString(EnvironmentDrive);

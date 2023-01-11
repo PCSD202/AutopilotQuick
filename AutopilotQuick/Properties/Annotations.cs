@@ -22,7 +22,12 @@ SOFTWARE. */
 
 #nullable disable
 
+#region
+
 using System;
+
+#endregion
+
 // ReSharper disable UnusedType.Global
 
 #pragma warning disable 1591

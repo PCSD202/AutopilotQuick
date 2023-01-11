@@ -1,6 +1,11 @@
-﻿using AQ.DeviceInfo.WMI;
+﻿#region
+
+using System.Runtime.InteropServices;
+using AQ.DeviceInfo.WMI;
 using LazyCache;
 using ORMi;
+
+#endregion
 
 namespace AQ.DeviceInfo;
 
@@ -62,7 +67,7 @@ public static class DeviceInfo
                 var batteryList = result.ToList();
                 return batteryList.Any() ? batteryList.First() : null;
             }
-            catch (System.Runtime.InteropServices.COMException e)
+            catch (COMException e)
             {
                 return null;
             }
@@ -80,7 +85,7 @@ public static class DeviceInfo
                 var batteryList = BSD.ToList();
                 return batteryList.Any() ? batteryList.First() : null;
             }
-            catch (System.Runtime.InteropServices.COMException e)
+            catch (COMException e)
             {
                 return null;
             }
@@ -99,7 +104,7 @@ public static class DeviceInfo
                 var batteryList = BFCC.ToList();
                 return batteryList.Any() ? batteryList.First() : null;
             }
-            catch (System.Runtime.InteropServices.COMException e)
+            catch (COMException e)
             {
                 return null;
             }

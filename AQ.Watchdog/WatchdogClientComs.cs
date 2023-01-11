@@ -1,6 +1,10 @@
-﻿using AQ.Watchdog.Commands;
+﻿#region
+
+using AQ.Watchdog.Commands;
 using Newtonsoft.Json;
 using ZetaIpc.Runtime.Client;
+
+#endregion
 
 namespace AQ.Watchdog;
 

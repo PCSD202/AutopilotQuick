@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿#region
+
+using System.IO;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -11,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using Polly;
 using Polly.Timeout;
+
+#endregion
 
 namespace AutopilotQuick.Steps
 {

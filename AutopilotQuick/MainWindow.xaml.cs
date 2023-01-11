@@ -1,22 +1,21 @@
-﻿using MahApps.Metro.Controls.Dialogs;
+﻿#region
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using Humanizer;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Diagnostics;
-using PgpCore;
+using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
 using AQ.Watchdog;
@@ -28,18 +27,21 @@ using AutopilotQuick.LogMan;
 using AutopilotQuick.SnakeGame;
 using AutopilotQuick.WMI;
 using ControlzEx.Theming;
+using Humanizer;
 using Humanizer.Localisation;
 using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
 using MahApps.Metro.SimpleChildWindow;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NHotkey.Wpf;
 using Nito.AsyncEx;
 using ORMi;
-using Application = System.Windows.Application;
-using KeyEventArgs = System.Windows.Input.KeyEventArgs;
-using NHotkey.Wpf;
+using PgpCore;
+
+#endregion
 
 namespace AutopilotQuick
 {
@@ -103,8 +105,8 @@ namespace AutopilotQuick
                         "CustomTheme",
                         BaseColor,
                         "CustomAccent",
-                        System.Windows.Media.Color.FromArgb(255,229,20,0),
-                        new SolidColorBrush(System.Windows.Media.Color.FromArgb(255,140,0,0)),
+                        Color.FromArgb(255,229,20,0),
+                        new SolidColorBrush(Color.FromArgb(255,140,0,0)),
                         true,
                         false);
                     ThemeManager.Current.ChangeTheme(this, newTheme2);
@@ -201,9 +203,14 @@ namespace AutopilotQuick
                             this.ToggleFlyout(0);
                         });
                     });
-                    HotkeyManager.Current.AddOrReplace("KillWatchdog", Key.D, ModifierKeys.Control, true, (o, args) =>
+                    HotkeyManager.Current.AddOrReplace("KillWatchdog", Key.D, ModifierKeys.Control | ModifierKeys.Shift, true, (o, args) =>
                     {
                         Watchdog.Instance.SendCommand(new CloseWatchdogCommand());
+                    });
+                    HotkeyManager.Current.AddOrReplace("ForceClose", Key.Q, ModifierKeys.Control | ModifierKeys.Shift , true, (o, args) =>
+                    {
+                        Watchdog.Instance.SendCommand(new CloseWatchdogCommand());
+                        Environment.Exit(0);
                     });
                     HotkeyManager.Current.AddOrReplace("Snake", Key.N, ModifierKeys.Control, true, (o, args) =>
                     {
@@ -470,7 +477,7 @@ namespace AutopilotQuick
             var DownloadProgress = await context.DialogCoordinator.ShowProgressAsync(context, $"Step 1/{maxStep} - Downloading", "Percent: 0% (0/0)", isCancelable: false, new MetroDialogSettings { AnimateHide = false });
             DownloadProgress.Maximum = 100;
             
-            var downloadPath = System.IO.Path.GetTempFileName();
+            var downloadPath = Path.GetTempFileName();
 
             try
             {
@@ -526,7 +533,7 @@ namespace AutopilotQuick
                 ShowErrorBox(e.Message);
             }
             
-            var downloadPathSignedHash = System.IO.Path.GetTempFileName();
+            var downloadPathSignedHash = Path.GetTempFileName();
             try
             {
                 DownloadProgress.SetTitle($"Step 2/{maxStep} - Downloading signature");
@@ -614,7 +621,7 @@ namespace AutopilotQuick
             DownloadProgress.SetIndeterminate();
             await context.WaitForDriveAsync(); //Wait for the drive to be present
             var UpdateFolder =
-                System.IO.Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
+                Path.Join(Directory.GetParent(Directory.GetParent(App.GetExecutablePath()).FullName).FullName,
                     "\\AutopilotQuick\\Update");
             //Clear out the update folder
             if (Directory.Exists(UpdateFolder))

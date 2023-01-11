@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,6 +16,8 @@ using MahApps.Metro.Controls;
 using MahApps.Metro.IconPacks;
 using PowerLineStatus = System.Windows.Forms.PowerLineStatus;
 using Timer = System.Threading.Timer;
+
+#endregion
 
 namespace AutopilotQuick;
 

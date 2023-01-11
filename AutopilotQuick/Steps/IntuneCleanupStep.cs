@@ -1,12 +1,6 @@
-﻿using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
+﻿#region
+
 using System.Threading.Tasks;
-using AutopilotQuick.WMI;
-using Azure.Identity;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -14,9 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
-using ORMi;
-using File = System.IO.File;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 

@@ -1,24 +1,23 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using NLog;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Downloader;
 using Humanizer;
 using Humanizer.Localisation;
-using MahApps.Metro.Controls.Dialogs;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using Polly;
+
+#endregion
 
 namespace AutopilotQuick;
 

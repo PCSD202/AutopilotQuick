@@ -1,7 +1,10 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using AutopilotQuick.DeviceID;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -9,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
 using RestSharp;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 
@@ -55,7 +60,7 @@ public class LogTakeHomeStep : StepBaseEx
         Progress = 50;
         var thingToSend = new TakeHomeLaptopRequest()
         {
-            DeviceID = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+            DeviceID = DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
             ServiceTag = GetServiceTag(pauseToken)
         };
         Message = "Sending message";

@@ -1,8 +1,12 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LiteDB;
+
+#endregion
 
 namespace AutopilotQuick.Banshee;
 

@@ -1,12 +1,15 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media.Imaging;
 using Humanizer;
 using MahApps.Metro.Controls;
+
+#endregion
 
 namespace AutopilotQuick; 
 

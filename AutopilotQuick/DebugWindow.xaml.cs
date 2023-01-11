@@ -1,11 +1,12 @@
-﻿using System.ComponentModel;
+﻿#region
+
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
 using AQ.DeviceInfo;
 using AutopilotQuick.Annotations;
 using AutopilotQuick.DeviceID;
-using AutopilotQuick.WMI;
-using ORMi;
+
+#endregion
 
 namespace AutopilotQuick;
 
