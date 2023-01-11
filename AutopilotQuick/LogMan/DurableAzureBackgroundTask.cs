@@ -199,7 +199,7 @@ namespace AutopilotQuick.LogMan
         public Dictionary<string, DateTime> GetLastModifiedForLocal()
         {
             var output = new Dictionary<string, DateTime>();
-            var appFolder = Path.GetDirectoryName(Environment.ProcessPath);
+            var appFolder = App.GetExecutableFolder();
             var logFolder = $"{appFolder}/logs/";
             var files = Directory.GetFiles(logFolder);
             foreach (var filePath in files)
