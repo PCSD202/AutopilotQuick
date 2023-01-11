@@ -19,6 +19,8 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using AQ.GroupManagementLibrary;
+using AQ.Watchdog;
+using AQ.Watchdog.Commands;
 using AutopilotQuick.Banshee;
 using AutopilotQuick.CookieEgg;
 using AutopilotQuick.KeyboardTester;
@@ -198,6 +200,10 @@ namespace AutopilotQuick
                         {
                             this.ToggleFlyout(0);
                         });
+                    });
+                    HotkeyManager.Current.AddOrReplace("KillWatchdog", Key.D, ModifierKeys.Control, true, (o, args) =>
+                    {
+                        Watchdog.Instance.SendCommand(new CloseWatchdogCommand());
                     });
                     HotkeyManager.Current.AddOrReplace("Snake", Key.N, ModifierKeys.Control, true, (o, args) =>
                     {
@@ -655,6 +661,8 @@ namespace AutopilotQuick
 
             DownloadProgress.SetTitle($"Step 6/{maxStep} - Copying files");
             DownloadProgress.SetMessage("Finishing up..");
+            
+            Watchdog.Instance.SendCommand(new CloseWatchdogCommand());
             
             Application.Current.Invoke(() =>
             {

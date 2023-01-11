@@ -1,8 +1,8 @@
 ﻿using CommandLine;
 
-namespace AutopilotQuick;
+namespace AQ.Watchdog;
 
-public class CommandLineOptions
+public class WatchdogCommandlineArgs
 {
     [Option('w', "watchdog", Required = false, HelpText = "Weather or not to start the watchdog server", Default = false)]
     public bool AmWatchdog { get; set; }
@@ -15,5 +15,4 @@ public class CommandLineOptions
     
     [Option('d', "data", Required = false, HelpText = "Sets the directory of the application data", Default = "")]
     public string DataLocation { get; set; }
-    
 }

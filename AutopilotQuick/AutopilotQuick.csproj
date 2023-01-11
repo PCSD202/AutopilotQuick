@@ -111,6 +111,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AQ.DeviceInfo\AQ.DeviceInfo.csproj" />
     <ProjectReference Include="..\AQ.GroupManagementLibrary\AQ.GroupManagementLibrary.csproj" />
+    <ProjectReference Include="..\AQ.Watchdog\AQ.Watchdog.csproj" />
   </ItemGroup>
 	
   <ItemGroup>

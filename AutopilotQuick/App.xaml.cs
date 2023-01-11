@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using AQ.DeviceInfo;
+using AQ.Watchdog;
 using AutopilotQuick.DeviceID;
 using AutopilotQuick.WMI;
 using CommandLine;
@@ -52,7 +53,8 @@ namespace AutopilotQuick
         {
             AllocConsole();
             
-            var args = e.Args.Select(x=>x.Replace("/", "--"));
+            var args = e.Args.Select(x=>x.Replace("/", "--")).ToArray();
+            
             Parser.Default.ParseArguments<CommandLineOptions>(args)
                 .WithParsed(o =>
                 {
@@ -80,6 +82,7 @@ namespace AutopilotQuick
                 Process.Start(start);
                 Environment.Exit(0);
             }
+
             var s = Stopwatch.StartNew();
             Console.WriteLine("Starting up...");
             base.OnStartup(e);
@@ -91,11 +94,11 @@ namespace AutopilotQuick
             var _logger = GetLogger<App>();
             _logger.LogInformation($"Started logging service in {s.Elapsed.Humanize()}");
             var telemetryClient = GetTelemetryClient();
-            
             LogManager.AutoShutdown = true;
-
-
-
+            
+            Watchdog.Instance.ConfigureLogger(GetLogger<Watchdog>()); //Configure logging
+            
+            Watchdog.Instance.HandleArgs(args);
             
             
             var mainWindow = new MainWindow();
