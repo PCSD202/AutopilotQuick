@@ -1,8 +1,8 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,6 +11,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using AutopilotQuick.Annotations;
 using Humanizer;
+
+#endregion
 
 namespace AutopilotQuick.CookieEgg;
 

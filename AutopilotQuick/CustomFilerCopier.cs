@@ -1,5 +1,9 @@
-﻿using System.IO;
+﻿#region
+
+using System.IO;
 using System.Threading.Tasks;
+
+#endregion
 
 namespace AutopilotQuick;
 

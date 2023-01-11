@@ -1,4 +1,8 @@
-﻿using ORMi;
+﻿#region
+
+using ORMi;
+
+#endregion
 
 namespace AQ.DeviceInfo.WMI;
 

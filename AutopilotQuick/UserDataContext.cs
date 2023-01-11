@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -20,6 +22,8 @@ using Octokit;
 using Octokit.Internal;
 using Polly;
 using Polly.Retry;
+
+#endregion
 
 namespace AutopilotQuick
 {
@@ -187,7 +191,9 @@ namespace AutopilotQuick
         private List<HotkeyListItem> _hotkeyList = new List<HotkeyListItem>()
         {
             new HotkeyListItem("Enable Developer mode", new HotKey(Key.F1), HotkeyType.Normal),
-            new HotkeyListItem("Kill watchdog", new HotKey(Key.D, ModifierKeys.Control), HotkeyType.Normal),
+            new HotkeyListItem("Force update", new HotKey(Key.U, ModifierKeys.Control | ModifierKeys.Shift), HotkeyType.Normal),
+            new HotkeyListItem("Kill watchdog", new HotKey(Key.D, ModifierKeys.Control | ModifierKeys.Shift), HotkeyType.Normal),
+            new HotkeyListItem("Force close", new HotKey(Key.Q, ModifierKeys.Control | ModifierKeys.Shift), HotkeyType.Normal),
             new HotkeyListItem("Open debug menu", new HotKey(Key.F7), HotkeyType.Normal),
             new HotkeyListItem("Toggle hotkey menu", new HotKey(Key.H, ModifierKeys.Control), HotkeyType.Normal),
             new HotkeyListItem("Enable takehome", new HotKey(Key.T, ModifierKeys.Control), HotkeyType.Normal),

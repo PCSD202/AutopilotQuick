@@ -1,9 +1,7 @@
-﻿using System.Linq;
+﻿#region
+
+using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Microsoft.ApplicationInsights;
@@ -11,9 +9,9 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Newtonsoft.Json;
-using Nito.AsyncEx;
 using File = System.IO.File;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+
+#endregion
 
 namespace AutopilotQuick;
 

@@ -1,4 +1,8 @@
-﻿using NAudio.Wave;
+﻿#region
+
+using NAudio.Wave;
+
+#endregion
 
 namespace AutopilotQuick.Banshee;
 

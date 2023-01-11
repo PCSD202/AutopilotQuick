@@ -1,10 +1,14 @@
-﻿using System.IO;
+﻿#region
+
+using System.IO;
 using System.Threading.Tasks;
 using AQ.GroupManagementLibrary;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 

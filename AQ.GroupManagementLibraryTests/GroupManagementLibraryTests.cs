@@ -1,6 +1,8 @@
-using System.Threading.Tasks;
+#region
+
 using AQ.GroupManagementLibrary;
-using Microsoft.Extensions.Logging.Abstractions;
+
+#endregion
 
 namespace AQ.GroupManagementLibraryTests;
 

@@ -1,4 +1,8 @@
-﻿using CommandLine;
+﻿#region
+
+using CommandLine;
+
+#endregion
 
 namespace AutopilotQuick;
 

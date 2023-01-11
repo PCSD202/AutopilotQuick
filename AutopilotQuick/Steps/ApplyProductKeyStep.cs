@@ -1,9 +1,13 @@
-﻿using System.Threading;
+﻿#region
+
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 

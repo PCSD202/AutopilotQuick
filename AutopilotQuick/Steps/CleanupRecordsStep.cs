@@ -1,18 +1,18 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
+using AutopilotQuick.DeviceID;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
-using Polly;
-using Polly.Retry;
 using RestSharp;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 
@@ -108,7 +108,7 @@ public class CleanupRecordsStep : StepBaseEx
         {
             DeleteAutopilot = context.TakeHomeToggleOn,
             DeleteIntune = true,
-            DeviceID = DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
+            DeviceID = DeviceIdentifierMan.getInstance().GetDeviceIdentifier(),
             Dry = false,
             ServiceTagToAudit = serviceTag
         };

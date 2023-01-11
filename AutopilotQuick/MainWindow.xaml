@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:AutopilotQuick"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:dialogs="http://metro.mahapps.com/winfx/xaml/controls"
-        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters" xmlns:notifications="clr-namespace:Notification.Wpf.Controls;assembly=Notification.Wpf"
+        xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" xmlns:converters="clr-namespace:AutopilotQuick.Converters"
         xmlns:stepDisplay="clr-namespace:AutopilotQuick.StepDisplay"
         mc:Ignorable="d"
         Loaded="MetroWindow_Loaded"

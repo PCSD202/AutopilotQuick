@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,10 +12,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using System.Xml.Serialization;
 using AutopilotQuick.Annotations;
 using NHotkey.Wpf;
 using Path = System.IO.Path;
+
+#endregion
 
 namespace AutopilotQuick.SnakeGame;
 
@@ -55,7 +60,7 @@ public partial class SnakeWindow : Window
     private List<SnakePart> snakeParts = new List<SnakePart>();
     private UIElement snakeFood = null;  
     private SolidColorBrush foodBrush = Brushes.Red;
-    private System.Windows.Threading.DispatcherTimer gameTickTimer = new System.Windows.Threading.DispatcherTimer();
+    private DispatcherTimer gameTickTimer = new DispatcherTimer();
     public ObservableCollection<SnakeHighscore> HighscoreList { get; set; } = new ObservableCollection<SnakeHighscore>();
     
     const int MaxHighscoreListEntryCount = 5;

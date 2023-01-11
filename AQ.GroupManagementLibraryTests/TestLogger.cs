@@ -1,5 +1,8 @@
-﻿using System;
+﻿#region
+
 using Microsoft.Extensions.Logging;
+
+#endregion
 
 namespace AQ.GroupManagementLibraryTests;
 

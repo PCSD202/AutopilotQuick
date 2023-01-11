@@ -1,11 +1,14 @@
-﻿using System.Diagnostics;
+﻿#region
+
+using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Windows;
 using Humanizer;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 

@@ -1,9 +1,10 @@
-﻿using System;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿#region
+
 using Microsoft.Extensions.Logging;
 using RestSharp;
 using RestSharp.Authenticators;
+
+#endregion
 
 namespace AQ.GroupManagementLibrary;
 

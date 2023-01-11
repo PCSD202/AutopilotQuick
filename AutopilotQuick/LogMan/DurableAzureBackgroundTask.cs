@@ -1,23 +1,23 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
+using AutopilotQuick.DeviceID;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
-using DiskQueue;
 using Humanizer;
 using LazyCache;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace AutopilotQuick.LogMan
 {
@@ -139,7 +139,7 @@ namespace AutopilotQuick.LogMan
         {
             var appFolder = App.GetExecutableFolder();
             var logFolder = $"{appFolder}/logs/";
-            var client = Share.GetDirectoryClient(DeviceID.DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
+            var client = Share.GetDirectoryClient(DeviceIdentifierMan.getInstance().GetDeviceIdentifier());
             client.CreateIfNotExists();
             foreach (var update in ComputeFilesToUpload())
             {

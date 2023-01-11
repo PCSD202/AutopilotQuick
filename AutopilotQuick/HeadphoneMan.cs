@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿#region
+
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Documents;
 using AutopilotQuick.Banshee;
 using Humanizer;
 using NAudio.CoreAudioApi;
-using Octokit;
+
+#endregion
 
 namespace AutopilotQuick;
 

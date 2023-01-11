@@ -1,10 +1,14 @@
 ﻿
+#region
+
 using System;
 using System.Windows.Forms;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Timer = System.Threading.Timer;
+
+#endregion
 
 namespace AutopilotQuick
 {

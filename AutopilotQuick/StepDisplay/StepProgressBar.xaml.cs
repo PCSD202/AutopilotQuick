@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
+﻿#region
+
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using AutopilotQuick.Annotations;
 using AutopilotQuick.Steps;
-using CommunityToolkit.Mvvm.ComponentModel;
-using MahApps.Metro.Controls;
 
+#endregion
 
 namespace AutopilotQuick.StepDisplay;
 

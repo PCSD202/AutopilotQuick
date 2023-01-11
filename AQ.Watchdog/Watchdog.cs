@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
-using System.Text;
-using System.Text.Unicode;
+﻿#region
+
+using System.Diagnostics;
 using AQ.Watchdog.Commands;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using ZetaIpc.Runtime.Client;
-using ZetaIpc.Runtime.Server;
+
+#endregion
 
 namespace AQ.Watchdog;
 

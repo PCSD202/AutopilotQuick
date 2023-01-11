@@ -1,5 +1,6 @@
-﻿using System;
-using System.IO;
+﻿#region
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AQ.GroupManagementLibrary;
@@ -8,6 +9,8 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
+
+#endregion
 
 namespace AutopilotQuick.Steps;
 

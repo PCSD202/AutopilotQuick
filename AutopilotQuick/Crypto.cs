@@ -1,8 +1,11 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Windows.Documents;
+
+#endregion
 
 namespace AutopilotQuick;
 

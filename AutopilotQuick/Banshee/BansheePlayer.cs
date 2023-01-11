@@ -1,11 +1,12 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Humanizer;
-using LazyCache;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -14,6 +15,8 @@ using NLayer.NAudioSupport;
 using Notification.Wpf;
 using RandN;
 using RandN.Distributions;
+
+#endregion
 
 namespace AutopilotQuick.Banshee;
 

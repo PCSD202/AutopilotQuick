@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region
+
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using AutopilotQuick.WMI;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 
-using ORMi;
+#endregion
 
 namespace AutopilotQuick.Steps
 {

@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region
+
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AQ.DeviceInfo;
-using AutopilotQuick.WMI;
-using Humanizer;
 using LazyCache;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
-using NLog;
-using ORMi;
 using Polly;
 using Polly.Retry;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+
+#endregion
 
 namespace AutopilotQuick.Steps
 {
@@ -153,7 +149,7 @@ namespace AutopilotQuick.Steps
                 retry.Execute(() => { File.WriteAllText(diskpartScriptPath, Script); });
 
                 //Shutdown diskpart if it is already open
-                var processes = System.Diagnostics.Process.GetProcessesByName("diskpart");
+                var processes = Process.GetProcessesByName("diskpart");
                 foreach (var process in processes)
                 {
                     process.WaitForExit(10000);
