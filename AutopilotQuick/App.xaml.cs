@@ -103,10 +103,14 @@ namespace AutopilotQuick
             _logger.LogInformation($"Started logging service in {s.Elapsed.Humanize()}");
             var telemetryClient = GetTelemetryClient();
             LogManager.AutoShutdown = true;
-            
+
+
+#if PUBLISH
             Watchdog.Instance.ConfigureLogger(GetLogger<Watchdog>()); //Configure logging
             
             Watchdog.Instance.HandleArgs(args);
+#endif
+            
             
             
             var mainWindow = new MainWindow();
@@ -128,8 +132,10 @@ namespace AutopilotQuick
             Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             mainWindow.Show();
+            
         }
 
+        
         private static string CopySelfToRamdisk()
         {
             var ramDiskFolderPath = @"X:\AQ";
@@ -169,12 +175,12 @@ namespace AutopilotQuick
             return aqRamdiskPath;
         }
 
-        private static string Base64Encode(string plainText) {
+        public static string Base64Encode(string plainText) {
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);
         }
         
-        private  static string Base64Decode(string base64EncodedData) {
+        public static string Base64Decode(string base64EncodedData) {
             var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
             return Encoding.UTF8.GetString(base64EncodedBytes);
         }

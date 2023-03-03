@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Humanizer;
@@ -186,8 +188,213 @@ namespace AutopilotQuick.Steps
             }
         }
         
+        
+
+        private async Task<string> WriteTestFile(string Destination, double TestFileSizeBytes)
+        {
+
+            int targetLineSize = (int)1.Megabytes().Bytes;
+            ulong counter = 0;
+            var bandwidth = new Bandwidth();
+            //Lets generate a text file on the flash drive with some dummy data in it and then collect the hash
+            var hasher = MD5.Create();
+            using (FileStream outFile = File.Create(Destination, (int)4.Kilobytes().Bytes,  FileOptions.SequentialScan))
+            using (CryptoStream crypto = new CryptoStream(outFile, hasher, CryptoStreamMode.Write))
+            using (StreamWriter writer = new StreamWriter(crypto, Encoding.UTF8, (int)1.Megabytes().Bytes, false))
+            {
+                DateTime LastUpdate = DateTime.MinValue;
+                
+                foreach (var stringToWrite in Enumerable.Repeat(0, Int32.MaxValue)
+                             .Select(x=>
+                             {
+                                 var singleString = App.Base64Encode(Guid.NewGuid().ToString());
+                                 var stringSize = Encoding.UTF8.GetByteCount(singleString);
+
+                                 var repeatsNeeded = targetLineSize / stringSize;
+
+                                 return string.Join(singleString, new string[repeatsNeeded + 1]);
+                             }).TakeWhile(x=> outFile.Length < TestFileSizeBytes ))
+                {
+                    counter++;
+                    
+                    await writer.WriteLineAsync(stringToWrite.ToString());
+                    #region Fancy display
+
+                    bandwidth.CalculateSpeed(stringToWrite.ToString().Length * sizeof(char));
+                    var now = DateTime.UtcNow;
+                    if ((now - LastUpdate).TotalMilliseconds >= 50)
+                    {
+                        LastUpdate = now;
+                        var eta = "calculating...";
+                        if (bandwidth.AverageSpeed > 0)
+                        {
+                            eta = ((TestFileSizeBytes - outFile.Length) / bandwidth.AverageSpeed).Seconds()
+                                .Humanize(minUnit: TimeUnit.Second, precision: 2);
+                        }
+
+                        const int space = 4;
+                        var info = new List<KeyValuePair<string, string>>()
+                        {
+                            new("Time left:", eta),
+                            new("Written:",
+                                $"{outFile.Length.Bytes().Humanize("#.00")} of {TestFileSizeBytes.Bytes().Humanize("#.00")}"),
+                            new("Speed:",
+                                $"{bandwidth.Speed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {bandwidth.AverageSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                        };
+                        var longest = info.MaxBy(x => x.Key.Length).Key.Length - 1;
+                        var maxLength = longest + space;
+                        var sb = new StringBuilder();
+                        sb.AppendLine("Writing test file to drive");
+                        foreach (var pair in info)
+                        {
+                            var newKey = pair.Key.PadRight(maxLength + 2);
+
+                            if (pair.Key.Length == longest)
+                            {
+                                newKey = pair.Key.PadRight(maxLength);
+                            }
+
+                            sb.AppendLine($"{newKey} {pair.Value}");
+                        }
+
+
+                        var tempProgress = (outFile.Length / TestFileSizeBytes) * 100;
+                        Progress = tempProgress / 2;
+
+                        var builtMessage = sb.ToString();
+                        if (builtMessage != Message)
+                        {
+                            Message = builtMessage;
+                        }
+                    }
+
+                    #endregion
+
+                }
+            }
+            
+            Logger.LogInformation($"Wrote {counter} lines");
+            // at this point the streams are closed so the hash is ready
+            string hash = BitConverter.ToString(hasher.Hash).Replace("-", "").ToLowerInvariant();
+            return hash;
+        }
+
+        private async Task<string> ReadTestFile(string Source, double FileSize)
+        {
+            var bandwidth = new Bandwidth();
+            byte[] buffer = new byte[1024 * 1024]; // 1MB buffer
+            DateTime LastUpdate = DateTime.MinValue;
+            var hasher = MD5.Create();
+            
+            using (FileStream source = new FileStream(Source, FileMode.Open, FileAccess.Read))
+            using (CryptoStream dest = new CryptoStream(Stream.Null, hasher, CryptoStreamMode.Write))
+            {
+                var fileLength = source.Length;
+                long totalBytes = 0;
+                var currentBlockSize = 0;
+
+                while ((currentBlockSize = source.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    totalBytes += currentBlockSize;
+                    double percentage = (double)totalBytes * 100.0 / fileLength;
+
+                    #region Fancy display
+
+                    bandwidth.CalculateSpeed(currentBlockSize);
+                    var now = DateTime.UtcNow;
+                    if ((now - LastUpdate).TotalMilliseconds >= 20)
+                    {
+                        LastUpdate = now;
+                        var eta = "calculating...";
+                        if (bandwidth.AverageSpeed > 0)
+                        {
+                            eta = ((FileSize - totalBytes) / bandwidth.AverageSpeed).Seconds()
+                                .Humanize(minUnit: TimeUnit.Second, precision: 2);
+                        }
+
+                        const int space = 4;
+                        var info = new List<KeyValuePair<string, string>>()
+                        {
+                            new("Time left:", eta),
+                            new("Read:",
+                                $"{totalBytes.Bytes().Humanize("#.00")} of {fileLength.Bytes().Humanize("#.00")}"),
+                            new("Speed:",
+                                $"{bandwidth.Speed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {bandwidth.AverageSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                        };
+                        var longest = info.MaxBy(x => x.Key.Length).Key.Length - 1;
+                        var maxLength = longest + space;
+                        var sb = new StringBuilder();
+                        sb.AppendLine("Reading test file from drive");
+                        foreach (var pair in info)
+                        {
+                            var newKey = pair.Key.PadRight(maxLength + 2);
+
+                            if (pair.Key.Length == longest)
+                            {
+                                newKey = pair.Key.PadRight(maxLength);
+                            }
+
+                            sb.AppendLine($"{newKey} {pair.Value}");
+                        }
+
+                        
+                        Progress = percentage  / 2 + 50;
+
+                        var builtMessage = sb.ToString();
+                        if (builtMessage != Message)
+                        {
+                            Message = builtMessage;
+                        }
+                    }
+
+                    #endregion
+                    
+                    await dest.WriteAsync(buffer, 0, currentBlockSize);
+                }
+            }
+            // at this point the streams are closed so the hash is ready
+            string hash = BitConverter.ToString(hasher.Hash).Replace("-", "").ToLowerInvariant();
+            return hash;
+        }
+
+        public async Task<bool> TestWindowsDrive()
+        {
+            Title = "Testing SSD";
+            Progress = 0;
+            var TestFileSizeBytes = 1.Gigabytes().Bytes;
+            var Drive = @"W:\";
+
+            //First lets make sure that the W drive exists.
+            if (!Directory.Exists(Drive))
+            {
+                Logger.LogWarning($"The {Drive} drive does not exist");
+                return false;
+            }
+
+            var DestinationFile = Path.Join(Drive, "test.txt");
+
+
+            try
+            {
+                var correctHash = await WriteTestFile(DestinationFile, TestFileSizeBytes);
+                Logger.LogInformation($"Correct hash: {correctHash}");
+
+                var readHash = await ReadTestFile(DestinationFile, TestFileSizeBytes);
+                Logger.LogInformation(
+                    $"Correct hash: '{correctHash}', Read hash: '{readHash}', equal? {correctHash == readHash}");
+                File.Delete(DestinationFile); //Remove file because we're done with it
+                return correctHash == readHash;
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Got error {e} while testing SSD. Assumed bad.", e);
+                return false;
+            }
+        }
+        
         public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
         {
+            InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
             if (!InternetMan.GetInstance().IsConnected)
             {
                 InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
@@ -198,6 +405,7 @@ namespace AutopilotQuick.Steps
             }
 
             var wimCache = WimMan.getInstance().GetCacherForModel();
+            
             if (!IsEnabled)
             {
                 Title = "Apply image - DISABLED";
@@ -255,22 +463,19 @@ namespace AutopilotQuick.Steps
 
             // Register a method to be called while actions are performed by WIMGAPi for this .wim file
             WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
-
+            
             try
             {
-                // Create OS-wide named object. (It will not use WaitOne/Release)
-                using (Mutex myMutex = new Mutex(true, "Time", out var owned))
-                {
-                    Message = "Reading image...";
-                    // Get a handle to a specific image inside of the .wim
-                    await context.WaitForDriveAsync();
-                    using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
-                    
-                    Message = "Starting to apply...";
-                    // Apply the image
-                    await context.WaitForDriveAsync();
-                    WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
-                }
+                Message = "Reading image...";
+                // Get a handle to a specific image inside of the .wim
+                await context.WaitForDriveAsync();
+                using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
+                
+                Message = "Starting to apply...";
+                // Apply the image
+                await context.WaitForDriveAsync();
+                using Mutex myMutex = new Mutex(true, "Time", out var owned);
+                WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
             }
             catch (OperationCanceledException ex)
             {
@@ -280,18 +485,25 @@ namespace AutopilotQuick.Steps
                 _updatedImageAvailable = false;
                 wimCache = WimMan.getInstance().GetCacherForModel();
                 await wimCache.DownloadUpdateAsync();
-                InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable;
+                
                 return await Run(context, pauseToken, StepOperation);
             }
             catch (Win32Exception ex)
             {
                 Logger.LogError(ex, "Got error {ex} while applying windows", ex);
-                if (!context.DrivePresent())
+                
+                //Test the SSD by writing a file to it
+                Title = "Testing SSD";
+                Message = $"Had a Win32Exception while imaging the drive. Testing to see whether SSD is at fault.";
+
+                var driveGood = await TestWindowsDrive();
+                if (driveGood)
                 {
-                    await context.WaitForDriveAsync();
+                    //Delete the image so it will re-download it next time
+                    WimMan.getInstance().GetCacherForModel().Delete();
                     return await Run(context, pauseToken, StepOperation);
                 }
-                return new StepResult(false, "Got error while applying windows.\nThis usually is due to a bad or failing SSD. It can also be caused by a loose USB connection.");
+                return new StepResult(false, "Got error while applying windows.\nThis is due to a bad or failing SSD.");
             }
             finally
             {
