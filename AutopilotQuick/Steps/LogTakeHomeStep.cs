@@ -5,12 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AutopilotQuick.DeviceID;
+using Humanizer;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
+using Polly;
 using RestSharp;
 
 #endregion
@@ -69,7 +71,14 @@ public class LogTakeHomeStep : StepBaseEx
         var client = new RestClient(logInfo.Url);
         var request = new RestRequest().AddHeader("x-functions-key", logInfo.ApiKey).AddJsonBody(thingToSend);
         await InternetMan.WaitForInternetAsync(context);
-        var response = await client.PostAsync(request);
+        var retryPolicy = Policy.Handle<System.Net.Sockets.SocketException>().WaitAndRetryForeverAsync(retryAttempt => 5.Seconds(), onRetry: (exception, retryCount, c) =>
+        {
+            // Add logic to be executed before each retry, such as logging
+            Logger.LogError(exception, "Failed to log take home. Attempts: {attempts}", retryCount);
+            Message = $"Failed to log take home. Retrying in 5 seconds. Attempt: {retryCount}";
+        });
+        var response = await retryPolicy.ExecuteAsync(async () => await client.PostAsync(request));
+        
         if (response.IsSuccessful)
         {
             App.GetTelemetryClient().TrackEvent("TakeHome", new Dictionary<string, string>(){{"ServiceTag", GetServiceTag(pauseToken)}});
