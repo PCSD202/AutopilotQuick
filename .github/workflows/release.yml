@@ -28,15 +28,11 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      - name: "Get Previous tag"
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@master"
-
       - name: Install dependencies
         run: dotnet restore "AutopilotQuick\AutopilotQuick.csproj"
       - name: Publish
         run: |
-          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ steps.previoustag.outputs.tag }}.0
+          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ github.ref_name }}.0
       - name: Relocate
         run: |
           mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick.exe
@@ -63,15 +59,14 @@ jobs:
         uses: ncipollo/release-action@v1.12.0
         with:
           tag: ${{ github.ref }}
-          release_name: ${{ github.ref }}
           omitBody: true
           skipIfReleaseExists: true
           artifacts: "../AutopilotQuick.zip,../AutopilotQuick.zip.sha256.pgp"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2.5.0
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
