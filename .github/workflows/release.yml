@@ -44,7 +44,7 @@ jobs:
         run: |
           7z a ..\AutopilotQuick.zip ..\AutopilotQuick.exe -mx=0
       - name: Sign
-        uses: carbonneuron/GHActionSignHash@v4
+        uses: carbonneuron/GHActionSignHash@v5
         env: 
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         id: sign
