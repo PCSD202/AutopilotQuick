@@ -14,29 +14,25 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.3.0
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.15
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
-
-      - name: "Get Previous tag"
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@master"
 
       - name: Install dependencies
         run: dotnet restore "AutopilotQuick\AutopilotQuick.csproj"
       - name: Publish
         run: |
-          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ steps.previoustag.outputs.tag }}.0
+          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ github.ref_name }}.0
       - name: Relocate
         run: |
           mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick.exe
@@ -44,7 +40,7 @@ jobs:
         run: |
           7z a ..\AutopilotQuick.zip ..\AutopilotQuick.exe -mx=0
       - name: Sign
-        uses: carbonneuron/GHActionSignHash@v4
+        uses: carbonneuron/GHActionSignHash@v5
         env: 
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         id: sign
@@ -60,40 +56,17 @@ jobs:
           echo "${{ steps.sign.outputs.encrypted-text }}" > ../AutopilotQuick.zip.sha256.pgp
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1.1.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        uses: ncipollo/release-action@v1.12.0
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload capture zip
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ..\AutopilotQuick.zip
-          asset_name: AutopilotQuick.zip
-          asset_content_type: application/zip
-
-      - name: Upload capture zip signature
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ..\AutopilotQuick.zip.sha256.pgp
-          asset_name: AutopilotQuick.zip.sha256.pgp
-          asset_content_type: text/plain
+          tag: ${{ github.ref }}
+          omitBody: true
+          skipIfReleaseExists: true
+          artifacts: "../AutopilotQuick.zip,../AutopilotQuick.zip.sha256.pgp"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2.5.0
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
