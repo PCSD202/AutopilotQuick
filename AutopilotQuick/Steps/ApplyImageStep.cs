@@ -68,17 +68,8 @@ namespace AutopilotQuick.Steps
                     // Get the message as a WimMessageProgress object
                     WimMessageProgress progressMessage = (WimMessageProgress)message;
                     
-                    
-                    
-                    if (progressMessage.EstimatedTimeRemaining != TimeSpan.Zero)
-                    {
-                        Message = $"Applying image {progressMessage.PercentComplete}%\nETA: {progressMessage.EstimatedTimeRemaining.Humanize(2, minUnit: TimeUnit.Second)}";
-                    }
-                    else
-                    {
-                        Message = $"Applying image {progressMessage.PercentComplete}%";
-                    }
-                    
+                    Message = $"Applying image {progressMessage.PercentComplete}%";
+
                     // Print the progress
                     Progress = progressMessage.PercentComplete;
 
@@ -474,7 +465,6 @@ namespace AutopilotQuick.Steps
                 Message = "Starting to apply...";
                 // Apply the image
                 await context.WaitForDriveAsync();
-                using Mutex myMutex = new Mutex(true, "Time", out var owned);
                 WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
             }
             catch (OperationCanceledException ex)
