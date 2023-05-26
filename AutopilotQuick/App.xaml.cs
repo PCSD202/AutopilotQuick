@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -132,7 +135,6 @@ namespace AutopilotQuick
             Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             mainWindow.Show();
-            
         }
 
         
@@ -263,6 +265,7 @@ namespace AutopilotQuick
                 telemetry.Context.GlobalProperties["DriveModel"] = bootDrive.Model;
                 telemetry.Context.GlobalProperties["Drive"] = JsonConvert.SerializeObject(bootDrive);
                 telemetry.Context.GlobalProperties["BatteryHealthPercent"] = $"{DeviceInfo.BatteryHealth}";
+                telemetry.Context.GlobalProperties["LocalIP"] = GetLocalIPAddress();
                 telemetry.Context.Component.Version = version;
                 telemetry.Context.Session.Id = SessionID;
             }
@@ -392,6 +395,22 @@ namespace AutopilotQuick
         public static string GetExecutableFolder()
         {
             return Path.GetDirectoryName(GetExecutablePath());
+        }
+        
+        public static string GetLocalIPAddress()
+        {
+            if (!NetworkInterface.GetIsNetworkAvailable()) return "Not connected";
+            
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+
+            return "Not connected";
         }
         
         [DllImport("kernel32.dll", SetLastError = true)]
