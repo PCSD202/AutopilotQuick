@@ -1,5 +1,5 @@
 ﻿dotnet restore "AutopilotQuick\AutopilotQuick.csproj"
-dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=DevProfile -p:AssemblyVersion=1.0.0
+dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=DevProfile -p:AssemblyVersion=6.6.7
 
 
 $autopilotQuickPath = Get-PSDrive -PSProvider FileSystem | Where-Object {$_.Name -ne 'C'} | ForEach-Object {
