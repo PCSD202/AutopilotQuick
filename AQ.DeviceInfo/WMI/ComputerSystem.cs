@@ -10,4 +10,7 @@ namespace AQ.DeviceInfo.WMI;
 public class ComputerSystem : WMIInstance
 {
     public string Model { get; set; }
+    
+    [WMIProperty(Name = "SystemSKUNumber")]
+    public string SystemSKUNumber { get; set; }
 }
