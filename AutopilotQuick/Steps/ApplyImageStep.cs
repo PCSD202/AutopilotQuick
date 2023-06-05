@@ -460,12 +460,13 @@ namespace AutopilotQuick.Steps
                 Message = "Reading image...";
                 // Get a handle to a specific image inside of the .wim
                 await context.WaitForDriveAsync();
-                using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
-                
-                Message = "Starting to apply...";
-                // Apply the image
-                await context.WaitForDriveAsync();
-                WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                using (var imageHandle = WimgApi.LoadImage(wimHandle, 1))
+                {
+                    Message = "Starting to apply...";
+                    // Apply the image
+                    await context.WaitForDriveAsync();
+                    WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                }
             }
             catch (OperationCanceledException ex)
             {
@@ -482,17 +483,6 @@ namespace AutopilotQuick.Steps
             {
                 Logger.LogError(ex, "Got error {ex} while applying windows", ex);
                 
-                //Test the SSD by writing a file to it
-                Title = "Testing SSD";
-                Message = $"Had a Win32Exception while imaging the drive. Testing to see whether SSD is at fault.";
-
-                var driveGood = await TestWindowsDrive();
-                if (driveGood)
-                {
-                    //Delete the image so it will re-download it next time
-                    WimMan.getInstance().GetCacherForModel().Delete();
-                    return await Run(context, pauseToken, StepOperation);
-                }
                 return new StepResult(false, "Got error while applying windows.\nThis is due to a bad or failing SSD.");
             }
             finally

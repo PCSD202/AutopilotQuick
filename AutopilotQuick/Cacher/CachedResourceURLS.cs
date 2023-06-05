@@ -36,7 +36,9 @@ namespace AutopilotQuick
         public static readonly CachedResourceData AzureLogSettings = new CachedResourceData( "AzureLogSettings.json");
         public static readonly CachedResourceData GithubCreds = new CachedResourceData( "GithubCreds.json");
         public static readonly CachedResourceData HardwareTester = new CachedResourceData( "HardwareTester/HardwareTester.exe", "HardwareTester.exe");
-        public static readonly CachedResourceData DellBiosCatalogConfig = new CachedResourceData( "Bios/DellBiosCatalogSettings.json", "DellBiosCatalogSettings.json");
+        public static readonly CachedResourceData DellBiosCatalog = new CachedResourceData( "Bios/CatalogPC.json", "CatalogPC.json");
+        public static readonly CachedResourceData Flash64W = new CachedResourceData( "Bios/Flash64W.exe", "Flash64W.exe");
+        public static readonly CachedResourceData BiosPassword = new CachedResourceData( "Bios/BiosPassword.txt", "BiosPassword.txt");
     }
 }
 

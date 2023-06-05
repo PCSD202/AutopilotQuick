@@ -116,6 +116,8 @@ public static class DeviceInfo
     public static string BiosVersion => Win32_Bios.BIOSVersion;
     
     public static string DeviceModel => Win32_ComputerSystem.Model;
+
+    public static string SystemSKUNumber => Win32_ComputerSystem.SystemSKUNumber;
     
     public static uint BatteryHealth
     {

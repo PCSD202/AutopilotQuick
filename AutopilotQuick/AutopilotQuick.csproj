@@ -36,6 +36,8 @@
 	  <EmbeddedResource Include="ElevatorWaitingMusicEgg\Music\Elevator Music.mp3" />
 	  <None Remove="ElevatorWaitingMusicEgg\Music\Portal.mp3" />
 	  <EmbeddedResource Include="ElevatorWaitingMusicEgg\Music\Portal.mp3" />
+	  <None Remove="Resources\Invoke-BiosUpdate.ppkg" />
+	  <EmbeddedResource Include="Resources\Invoke-BiosUpdate.ppkg" />
 	</ItemGroup>
 	
   <ItemGroup>
