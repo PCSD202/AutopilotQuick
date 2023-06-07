@@ -460,17 +460,15 @@ namespace AutopilotQuick.Steps
                 Message = "Reading image...";
                 // Get a handle to a specific image inside of the .wim
                 await context.WaitForDriveAsync();
-                using (var imageHandle = WimgApi.LoadImage(wimHandle, 1))
-                {
-                    Message = "Starting to apply...";
-                    // Apply the image
-                    await context.WaitForDriveAsync();
-                    WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
-                }
+                using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
+                Message = "Starting to apply...";
+                // Apply the image
+                await context.WaitForDriveAsync();
+                WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
             }
             catch (OperationCanceledException ex)
             {
-                wimHandle.Close();
+                if(!wimHandle.IsClosed) {wimHandle.Close();}
                 Logger.LogInformation("Operation was canceled, we must have an update");
                 
                 InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
@@ -482,16 +480,27 @@ namespace AutopilotQuick.Steps
             }
             catch (Win32Exception ex)
             {
-                wimHandle.Close();
+                if(!wimHandle.IsClosed) {wimHandle.Close();}
                 Logger.LogError(ex, "Got error {ex} while applying windows", ex);
                 
                 return new StepResult(false, "Got error while applying windows.\nThis is due to a bad or failing SSD.");
             }
             finally
             {
-                wimHandle.Close();
-                // Be sure to unregister the callback method
-                WimgApi.UnregisterMessageCallback(wimHandle, ImageCallback);
+                try
+                {
+                    // Be sure to unregister the callback method
+                    WimgApi.UnregisterMessageCallback(wimHandle, ImageCallback);
+                    if (!wimHandle.IsClosed)
+                    {
+                        wimHandle.Close();
+                    }
+                }
+                catch (Exception)
+                {
+                    Logger.LogWarning("Failed to unregister message callback. Maybe WimHandle is already disposed? WimHandle Closed: {closed}", wimHandle.IsClosed);
+                }
+                
             }
 
             return new StepResult(true, "Successfully applied image to drive");
