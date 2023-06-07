@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Downloader;
 using Humanizer;
 using Humanizer.Localisation;
 using Microsoft.ApplicationInsights;
@@ -161,17 +160,19 @@ public class Cacher
                     Directory.CreateDirectory(tempDir);
                 }
 
-                var downloader = DownloadBuilder.New()
-                    .WithUrl(FileURL)
-                    .WithFileLocation(FilePath)
-                    .WithConfiguration(new DownloadConfiguration()
-                    {
-                        MaximumBytesPerSecond = long.MaxValue,
-                        CheckDiskSizeBeforeDownload = true,
-                        BufferBlockSize = 256 * 1024,
-                        MaxTryAgainOnFailover = int.MaxValue,
-                    })
-                    .Build();
+                //var downloader = DownloadBuilder.New()
+                //    .WithUrl(FileURL)
+                //    .WithFileLocation(FilePath)
+                //    .WithConfiguration(new DownloadConfiguration()
+                //    {
+                //        MaximumBytesPerSecond = long.MaxValue,
+                //        CheckDiskSizeBeforeDownload = true,
+                //        BufferBlockSize = 256 * 1024,
+                //        MaxTryAgainOnFailover = int.MaxValue,
+                //        OnTheFlyDownload = false,
+                //        TempDirectory = tempDir,
+                //    })
+                //    .Build();
                 
 
                 _logger.LogInformation($"Started downloading update for {FileURL}");
@@ -179,59 +180,71 @@ public class Cacher
                     $"Downloading updated {FileName}", "Downloading updated file");
                 updateWindow.SetIndeterminate();
                 updateWindow.Maximum = 100;
-                SetCachedFileLastModified(DateTime.MinValue); //Set it to the lowest value so if we were to crash, it will re-download
-                
-                DateTime LastUpdate = DateTime.MinValue;
-                downloader.DownloadProgressChanged += (sender, args) =>
+                SetCachedFileLastModified(DateTime
+                    .MinValue); //Set it to the lowest value so if we were to crash, it will re-download
+                var rPolicy = Policy
+                    .Handle<Exception>().WaitAndRetryForeverAsync(attempt=>5.Seconds(), onRetry: (exception, calculatedWaitDuration) => // Capture some info for logging!
+                    {
+                        _logger.LogError(exception, "Downloader failed with error: {outcome}", exception);
+                        updateWindow.SetMessage($"Download failed, retrying in 5 seconds...");
+                    });
+                var response = rPolicy.ExecuteAsync(async context =>
                 {
-                    var now = DateTime.UtcNow;
-                    if (!((now - LastUpdate).TotalMilliseconds >= 50)) return;
-                    LastUpdate = now;
-                    var eta = "calculating...";
-                    if (args.AverageBytesPerSecondSpeed > 0)
+                    var downloader = new HttpClientDownloadWithProgress(FileURL, FilePath);
+                    DateTime LastUpdate = DateTime.MinValue;
+                    downloader.ProgressChanged += (sender, args) =>
                     {
-                        eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) /
-                               args.AverageBytesPerSecondSpeed)
-                            .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2);
-                    }
-
-                    const int space = 4;
-                    var info = new List<KeyValuePair<string, string>>()
-                    {
-                        new("Time left:", eta),
-                        new("Transferred:",
-                            $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}"),
-                        new("Speed:",
-                            $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
-                    };
-                    var longest = info.MaxBy(x => x.Key.Length).Key.Length;
-                    var maxLength = longest + space;
-                    var sb = new StringBuilder();
-                    foreach (var pair in info)
-                    {
-                        var newKey = pair.Key.PadRight(maxLength + 2);
-
-                        if (pair.Key.Length == longest)
+                        var now = DateTime.UtcNow;
+                        if ((now - LastUpdate).TotalMilliseconds >= 50)
                         {
-                            newKey = pair.Key.PadRight(maxLength);
+                            LastUpdate = now;
+                            var eta = "calculating...";
+                            if (args.AverageBytesPerSecondSpeed > 0)
+                            {
+                                eta = ((args.TotalBytesToReceive - args.ReceivedBytesSize) /
+                                       args.AverageBytesPerSecondSpeed)
+                                    .Seconds().Humanize(minUnit: TimeUnit.Second, precision: 2);
+                            }
+
+                            const int space = 4;
+                            var info = new List<KeyValuePair<string, string>>()
+                            {
+                                new("Time left:", eta),
+                                new("Transferred:",
+                                    $"{args.ReceivedBytesSize.Bytes().Humanize("#.00")} of {args.TotalBytesToReceive.Bytes().Humanize("#.00")}"),
+                                new("Speed:",
+                                    $"{args.BytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")} (avg: {args.AverageBytesPerSecondSpeed.Bytes().Per(1.Seconds()).Humanize("#")})")
+                            };
+                            var longest = info.MaxBy(x => x.Key.Length).Key.Length;
+                            var maxLength = longest + space;
+                            var sb = new StringBuilder();
+                            foreach (var pair in info)
+                            {
+                                var newKey = pair.Key.PadRight(maxLength + 2);
+
+                                if (pair.Key.Length == longest)
+                                {
+                                    newKey = pair.Key.PadRight(maxLength);
+                                }
+
+                                sb.AppendLine($"{newKey} {pair.Value}");
+                            }
+
+                            updateWindow.SetProgress(args.ProgressPercentage);
+                            updateWindow.SetMessage(sb.ToString());
                         }
+                    };
+                    await downloader.StartDownload();
+                }, CancellationToken.None);
+                //downloader.DownloadFileCompleted += async (sender, args) =>
+                // {
+                //     if (args.Error is not null)
+                //     {
+                //         _logger.LogError(args.Error, "Got error {e} while downloading update", args.Error);
+                //     }
+                // };
 
-                        sb.AppendLine($"{newKey} {pair.Value}");
-                    }
-
-                    updateWindow.SetProgress(args.ProgressPercentage);
-                    updateWindow.SetMessage(sb.ToString());
-                };
-                
-                downloader.DownloadFileCompleted += async (sender, args) =>
-                {
-                    if (args.Error is not null)
-                    {
-                        _logger.LogError(args.Error, "Got error {e} while downloading update", args.Error);
-                    }
-                };
-                await downloader.StartAsync();
-                
+                await response.WaitAsync(CancellationToken.None);
                 SetCachedFileLastModified(GetLastModifiedFromWeb());
                 await updateWindow.CloseAsync();
                 _logger.LogInformation($"Download complete for {FileURL}");
