@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -80,7 +81,7 @@ namespace AutopilotQuick
             }
         }
         
-        public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "http://www.gstatic.com/generate_204")
+        public static bool CheckForInternetConnection(int timeoutMs = 10000, string url = "https://nettools.psd202.org/AutopilotFast/InternetTest.txt", string CheckText = "If you can read this then you have internet")
         {
             try
             {
@@ -89,7 +90,17 @@ namespace AutopilotQuick
 #pragma warning restore SYSLIB0014
                 request.KeepAlive = false;
                 request.Timeout = timeoutMs;
-                using var response = (HttpWebResponse)request.GetResponse();
+                using (var response = (HttpWebResponse)request.GetResponse())
+                {
+                    // Read the response stream
+                    using (var stream = response.GetResponseStream())
+                    using (var reader = new StreamReader(stream))
+                    {
+                        string responseText = reader.ReadToEnd();
+                        // Check if the response contains the checkText
+                        return responseText.ToLower().Contains(CheckText.ToLower());
+                    }
+                }
                 return true;
             }
             catch
@@ -117,7 +128,7 @@ namespace AutopilotQuick
                 UpdateStatus();
                 return;
             } //No network available so don't even try
-            var internet = CheckForInternetConnection(1000, "https://www.google.com");
+            var internet = CheckForInternetConnection(1000);
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
