@@ -60,6 +60,8 @@ namespace AutopilotQuick
         protected override async void OnStartup(StartupEventArgs e)
         {
             AllocConsole();
+            // Read device ID to make sure it exists
+            var id = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
             
             var args = e.Args.Select(x=>x.Replace("/", "--")).ToArray();
             

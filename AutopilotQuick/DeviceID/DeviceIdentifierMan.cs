@@ -70,19 +70,17 @@ namespace AutopilotQuick.DeviceID
             {
                 return deviceID;
             }
-
-            if (ReadIDFromDisk() is null)
+            lock (instance)
             {
-                SetID(GenerateNewID());
-            }
-            else
-            {
+                if (ReadIDFromDisk() is null)
+                {
+                    SetID(GenerateNewID());
+                }
+                
                 cache.Add("DeviceID", ReadIDFromDisk());
+
+                return ReadIDFromDisk();
             }
-
-            return ReadIDFromDisk();
-
-
         }
     }
 }
