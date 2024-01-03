@@ -85,10 +85,11 @@ namespace AutopilotQuick
             new LogTakeHomeStep(),
             //new BiosUpdateStep(), //Disabled because it prompts for password and tasks a while
             new InstallHardwareTester(),
+            new InstallDotNetStep(),
             new ApplyDellBiosSettingsStep(),
             new ApplyWifiStep(),
             new MakeDiskBootableStep(),
-            new RemoveUnattendXMLStep(),
+            //new RemoveUnattendXMLStep(),
             new SharedPCGroupStep(),
             new MakeSureAutopilotSyncedStep(),
             new ApplyAutopilotConfigurationStep(),
