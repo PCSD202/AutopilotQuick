@@ -128,7 +128,7 @@ namespace AutopilotQuick
                 UpdateStatus();
                 return;
             } //No network available so don't even try
-            var internet = CheckForInternetConnection(1000);
+            var internet = CheckForInternetConnection(2000);
             if (internet && !IsConnected)
             {
                 App.GetTelemetryClient().TrackEvent("InternetAvailable");
