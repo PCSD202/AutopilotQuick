@@ -445,6 +445,7 @@ namespace AutopilotQuick
 
         public async Task Update(bool force = false)
         {
+            using var lockAsync = await Cacher.GetCacherMutex().LockAsync(); //We need to lock cacher so it doesn't try to download an update
             var version = new Version();
             var latestVersion = new Version();
             try
@@ -654,6 +655,7 @@ namespace AutopilotQuick
                     {
                         await Task.Factory.StartNew(async ()=>
                         {
+                            lockAsync.Dispose();
                             await Update();
                         }, TaskCreationOptions.LongRunning);
                     }
