@@ -136,6 +136,11 @@ public class Cacher
 
     private static readonly AsyncLock _mutex = new AsyncLock();
 
+    public static AsyncLock GetCacherMutex()
+    {
+        return _mutex;
+    }
+    
     /// <summary>
     /// Downloads the latest file with progress reports
     /// </summary>
