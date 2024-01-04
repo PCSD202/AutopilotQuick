@@ -443,7 +443,7 @@ namespace AutopilotQuick
             }
         }
 
-        public async Task Update(bool force = true)
+        public async Task Update(bool force = false)
         {
             using var lockAsync = await Cacher.GetCacherMutex("Yes, I know what I am doing and this method will release the lock when it is taken. And I understand that if the lock is not released cacher will no longer be able to download anything.", true).LockAsync(); //We need to lock cacher so it doesn't try to download an update
             var version = new Version();
