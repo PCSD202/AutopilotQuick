@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -136,8 +137,18 @@ public class Cacher
 
     private static readonly AsyncLock _mutex = new AsyncLock();
 
-    public static AsyncLock GetCacherMutex()
+    public static AsyncLock GetCacherMutex(string password, bool ImSureINeedThis)
     {
+        if (password !=
+            "Yes, I know what I am doing and this method will release the lock when it is taken. And I understand that if the lock is not released cacher will no longer be able to download anything.")
+        {
+            throw new ArgumentException("Please make sure you know what you are doing before getting this mutex", nameof(password));
+        }
+
+        if (!ImSureINeedThis)
+        {
+            throw new ArgumentException("This is a very unsafe method, only do it if you know what you're doing", nameof(ImSureINeedThis));
+        }
         return _mutex;
     }
     
