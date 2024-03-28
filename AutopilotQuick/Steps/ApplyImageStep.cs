@@ -438,13 +438,14 @@ namespace AutopilotQuick.Steps
 
             Message = "Opening image...";
             await context.WaitForDriveAsync();
-            var handleResult = GetWimHandle(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.None);
-            if (!handleResult.Success)
+            var handleResult = GetWimHandle(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.Lzms);
+            while (!handleResult.Success)
             {
                 //Something must be wrong with our image. Lets delete it and re-download it
                 InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable; //Unsubscribe
                 _updatedImageAvailable = false;
                 await wimCache.DownloadUpdateAsync();
+                handleResult = GetWimHandle(wimCache.FilePath, WimFileAccess.Read, WimCreationDisposition.OpenExisting, WimCreateFileOptions.None, WimCompressionType.Lzms);
                 InternetMan.GetInstance().InternetBecameAvailable += TaskManager_InternetBecameAvailable; //Resubscribe
             }
             using var wimHandle = handleResult.Handle;
@@ -464,7 +465,7 @@ namespace AutopilotQuick.Steps
                 Message = "Starting to apply...";
                 // Apply the image
                 await context.WaitForDriveAsync();
-                WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.None);
+                WimgApi.ApplyImage(imageHandle, "W:\\", WimApplyImageOptions.Index);
             }
             catch (OperationCanceledException ex)
             {

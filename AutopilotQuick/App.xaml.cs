@@ -60,8 +60,6 @@ namespace AutopilotQuick
         protected override async void OnStartup(StartupEventArgs e)
         {
             AllocConsole();
-            // Read device ID to make sure it exists
-            var id = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
             
             var args = e.Args.Select(x=>x.Replace("/", "--")).ToArray();
             
@@ -78,7 +76,10 @@ namespace AutopilotQuick
                         DataDir = Base64Decode(o.DataLocation);
                     }
                 });
-
+            
+            // Read device ID to make sure it exists
+            var id = DeviceIdentifierMan.getInstance().GetDeviceIdentifier();
+            
             if (RunningOnWinPE() && Path.GetPathRoot(GetRealExecutablePath()).ToLower() != @"x:\")
             {
                 //We must be on the flash drive
