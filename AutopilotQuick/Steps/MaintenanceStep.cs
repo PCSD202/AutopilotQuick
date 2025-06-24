@@ -37,6 +37,8 @@ public class MaintenanceStep : StepBaseEx
 
         return false;
     }
+
+    
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
     {
         Title = "AQ Maintenance";
@@ -55,6 +57,8 @@ public class MaintenanceStep : StepBaseEx
             }
             catch (IOException e) { }
         }
+
+        await WimMan.getInstance().DeleteUnusedWims();
 
         return new StepResult(true, $"Deleted {deletedCount} of {scriptFiles.Count} script files.");
     }
