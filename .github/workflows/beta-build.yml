@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -24,7 +24,7 @@ jobs:
         uses: "WyriHaximus/github-action-get-previous-tag@master"
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
 
@@ -43,7 +43,7 @@ jobs:
           7z a AutopilotQuick-beta.zip ..\AutopilotQuick-Beta.exe -mx=9    
       
       - name: Upload beta zip
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: AutopilotQuick-Beta
           path: AutopilotQuick-Beta.zip
