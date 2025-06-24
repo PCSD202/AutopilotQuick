@@ -84,5 +84,13 @@ namespace AutopilotQuick
             }
 
         }
+        
+        public int GetImageIndexForModel(string? model = null)
+        {
+            model ??= ModelName;
+            var wimManData = GetWimManData();
+            return wimManData.TryGetValue(model, out var value) ? value.Index : wimManData["default"].Index;
+
+        }
     }
 }

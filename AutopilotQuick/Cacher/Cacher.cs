@@ -130,6 +130,7 @@ public class Cacher
         {
             Task task = Task.Run(async () => await DownloadUpdateAsync());
             DownloadUpdateTask = task;
+            task.Start();
             task.Wait();
         }
     }

@@ -170,8 +170,17 @@ namespace AutopilotQuick.Steps
         {
             try
             {
-                var handle = WimgApi.CreateFile(path, desiredAccess, creationDisposition, options, compressionType);
-                return new WimHandleResult(true, handle);
+                if (path.EndsWith("esd"))
+                {
+                    var handle = WimgApi.CreateFile(path, desiredAccess, creationDisposition, (WimCreateFileOptions)((uint)options | 0x20000000u), compressionType);
+                    return new WimHandleResult(true, handle);
+                }
+                else
+                {
+                    var handle = WimgApi.CreateFile(path, desiredAccess, creationDisposition, options, compressionType);
+                    return new WimHandleResult(true, handle);
+                }
+                
             }
             catch (Win32Exception)
             {
@@ -396,10 +405,11 @@ namespace AutopilotQuick.Steps
             }
 
             var wimCache = WimMan.getInstance().GetCacherForModel();
+            var wimIndex = WimMan.getInstance().GetImageIndexForModel();
             
             if (!IsEnabled)
             {
-                Title = "Apply image - DISABLED";
+                Title = $"Apply image - DISABLED - {wimIndex}";
                 Message = "Will continue after 5 seconds";
                 if (!wimCache.FileCached || !wimCache.IsUpToDate)
                 {
@@ -461,7 +471,7 @@ namespace AutopilotQuick.Steps
                 Message = "Reading image...";
                 // Get a handle to a specific image inside of the .wim
                 await context.WaitForDriveAsync();
-                using var imageHandle = WimgApi.LoadImage(wimHandle, 1);
+                using var imageHandle = WimgApi.LoadImage(wimHandle, wimIndex);
                 Message = "Starting to apply...";
                 // Apply the image
                 await context.WaitForDriveAsync();

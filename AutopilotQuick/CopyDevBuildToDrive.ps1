@@ -16,4 +16,4 @@ if($null -eq $autopilotQuickPath){
 
 
 
-Robocopy.exe "C:\Users\AMoore\source\repos\PCSD202\AutopilotQuick\AutopilotQuick\bin\Release\net6.0-windows\publish\" $autopilotQuickPath
+Robocopy.exe "P:\AutopilotQuick\AutopilotQuick\bin\Release\net6.0-windows\publish\" $autopilotQuickPath
