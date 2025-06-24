@@ -1,6 +1,8 @@
 ﻿#region
 
 using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using AutopilotQuick.WMI;
 using Newtonsoft.Json;
@@ -47,6 +49,40 @@ namespace AutopilotQuick
                 _configCacher.DownloadUpdate();
             }
             return JsonConvert.DeserializeObject<WimManDatabase>(_configCacher.ReadAllText());
+        }
+        
+        public async Task DeleteUnusedWims()
+        {
+            var wimDatabase = GetWimManData();
+            var acceptableWims = wimDatabase.Select(x => x.Value.Name);
+            var AllWims = Directory.GetFiles(Cacher.BaseDir, "*.wim", SearchOption.AllDirectories);
+            var AllEsd = Directory.GetFiles(Cacher.BaseDir, "*.esd", SearchOption.AllDirectories);
+        
+            var wimsToDelete = AllWims.Where(x => !acceptableWims.Contains(Path.GetFileName(x))).ToList();
+            var esdsToDelete = AllEsd.Where(x => !acceptableWims.Contains(Path.GetFileName(x))).ToList();
+            foreach (var wim in wimsToDelete)
+            {
+                try
+                {
+                    File.Delete(wim);
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine("Failed to delete wim {wim}", wim);
+                }
+            }
+        
+            foreach (var esd in esdsToDelete)
+            {
+                try
+                {
+                    File.Delete(esd);
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine("Failed to delete esd {esd}", esd);
+                }
+            }
         }
 
         public void Preload() {
