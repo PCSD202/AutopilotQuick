@@ -302,7 +302,15 @@ namespace AutopilotQuick
                 var credCacher = new Cacher(CachedResourceUris.GithubCreds, this);
                 if (!credCacher.FileCached || !credCacher.IsUpToDate)
                 {
-                    credCacher.DownloadUpdate();
+                    try
+                    {
+                        credCacher.DownloadUpdate();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                    
                 }
 
                 var creds = JsonConvert.DeserializeObject<GithubCreds>(credCacher.ReadAllText()); 
