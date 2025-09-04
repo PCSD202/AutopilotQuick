@@ -465,7 +465,7 @@ namespace AutopilotQuick.Steps
 
             // Register a method to be called while actions are performed by WIMGAPi for this .wim file
             WimgApi.RegisterMessageCallback(wimHandle, ImageCallback);
-            
+
             try
             {
                 Message = "Reading image...";
@@ -479,14 +479,33 @@ namespace AutopilotQuick.Steps
             }
             catch (OperationCanceledException ex)
             {
-                if(!wimHandle.IsClosed) {wimHandle.Close();}
+                if (!wimHandle.IsClosed)
+                {
+                    wimHandle.Close();
+                }
+
                 Logger.LogInformation("Operation was canceled, we must have an update");
-                
+
                 InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
                 _updatedImageAvailable = false;
                 wimCache = WimMan.getInstance().GetCacherForModel();
                 await wimCache.DownloadUpdateAsync();
+
+                return await Run(context, pauseToken, StepOperation);
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                if (!wimHandle.IsClosed)
+                {
+                    wimHandle.Close();
+                }
                 
+                Logger.LogInformation("Index out of range, we must have an update");
+
+                InternetMan.GetInstance().InternetBecameAvailable -= TaskManager_InternetBecameAvailable;
+                _updatedImageAvailable = false;
+                wimCache = WimMan.getInstance().GetCacherForModel();
+                await wimCache.DownloadUpdateAsync();
                 return await Run(context, pauseToken, StepOperation);
             }
             catch (Win32Exception ex)
