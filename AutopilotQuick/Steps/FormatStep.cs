@@ -31,7 +31,9 @@ namespace AutopilotQuick.Steps
             try
             {
                 WMIHelper helper = new WMIHelper("root\\CimV2");
-                DiskDrive diskToSelect = helper.Query<DiskDrive>().First(x => x.InterfaceType != "USB" && x.MediaLoaded);
+                DiskDrive diskToSelect = helper.Query<DiskDrive>()
+                    .OrderByDescending(x=>x.Size)
+                    .First(x => x.InterfaceType != "USB" && x.MediaLoaded);
                 t.Telemetry.Properties["Drive"] = JsonConvert.SerializeObject(diskToSelect);
                 Logger.LogInformation("Identified drive {@drive} to format", diskToSelect);
                 App.telemetryClient.TrackEvent("DriveToFormatIdentified", new Dictionary<string, string>()
