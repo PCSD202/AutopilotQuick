@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,12 +32,18 @@ jobs:
       - name: Package app
         shell: pwsh
         run: Compress-Archive -LiteralPath artifacts/release/app/AutopilotQuick.exe -DestinationPath artifacts/release/AutopilotQuick.zip -CompressionLevel NoCompression
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install signing dependencies
+        working-directory: .github/scripts
+        run: npm ci --ignore-scripts --omit=dev
       - name: Sign and verify release hash
         shell: pwsh
         env:
           AQ_SIGNING_KEY: ${{ secrets.PRIVATE_KEY }}
           AQ_SIGNING_PASSPHRASE: ${{ secrets.PASSPHRASE }}
-        run: ./.github/scripts/SignRelease.ps1 -ArchivePath artifacts/release/AutopilotQuick.zip
+        run: node .github/scripts/sign-release.mjs artifacts/release/AutopilotQuick.zip
       - name: Publish administrator tool
         run: dotnet publish AQ.SecretArchive.Tool/AQ.SecretArchive.Tool.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/release/tool
       - name: Package administrator tool

@@ -1,0 +1,6 @@
+{
+  "name": "autopilotquick-release-signing",
+  "private": true,
+  "type": "module",
+  "dependencies": { "openpgp": "6.3.2" }
+}
