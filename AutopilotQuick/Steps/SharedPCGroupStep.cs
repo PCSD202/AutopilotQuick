@@ -47,13 +47,7 @@ public class SharedPCGroupStep : StepBaseEx
         Message = "Getting client";
         IsIndeterminate = true;
         
-        var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
-        if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
-        {
-            await Task.Run(async ()=>await groupManConfigCache.DownloadUpdateAsync());
-        }
-
-        MainWindow.GroupManConfig config = JsonConvert.DeserializeObject<MainWindow.GroupManConfig>(await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+        var config = AppSecrets.ReadJson<MainWindow.GroupManConfig>(SecretNames.GroupMan);
         var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
         Message = "Figuring out if I am already a SharedPC...";
         var amIMember = await client.IsSharedPCMember(GetServiceTag(pauseToken));

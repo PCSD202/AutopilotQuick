@@ -773,15 +773,7 @@ namespace AutopilotQuick
         public record struct GroupManConfig(string APIKEY, string URL);
         public async void UpdateSharedPCBoxWhenInternet()
         {
-            var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
-            if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
-            {
-                await Task.Run(async () => await groupManConfigCache.DownloadUpdateAsync());
-            }
-
-            GroupManConfig config =
-                JsonConvert.DeserializeObject<GroupManConfig>(
-                    await File.ReadAllTextAsync(groupManConfigCache.FilePath));
+            var config = AppSecrets.ReadJson<GroupManConfig>(SecretNames.GroupMan);
             var client =
                 new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
 

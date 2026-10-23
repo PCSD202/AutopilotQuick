@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System.Linq;
 using System.Net;
@@ -17,10 +17,9 @@ namespace AutopilotQuick;
 
 public static class GraphHelper
 {
-    public record struct AppToken(string AppID, string AppSecret, string TenantID, bool Encrypted = true);
+    public record struct AppToken(string AppID, string AppSecret, string TenantID, bool Encrypted = false);
     
     
-    private static string Password = "REMOVED_SECRET";
     
     
     public static async Task<WindowsAutopilotDeviceIdentity?> GetWindowsAutopilotDevice(string Serial, GraphServiceClient client, ILogger? Logger = null)
@@ -77,63 +76,17 @@ public static class GraphHelper
         }
 
     }
-    public static AppToken Decrypt(AppToken encryptedAppToken)
+    public static Task<AppToken> GetGraphCreds(UserDataContext context)
     {
-        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Decrypting AppToken"))
-        {
-            var decryptedTenantId = AESThenHMAC.SimpleDecryptWithPassword(encryptedAppToken.TenantID, Password);
-            var decryptedClientId = AESThenHMAC.SimpleDecryptWithPassword(encryptedAppToken.AppID, Password);
-            var decryptedClientSecret = AESThenHMAC.SimpleDecryptWithPassword(encryptedAppToken.AppSecret, Password);
-            return new AppToken()
-            {
-                TenantID = decryptedTenantId,
-                AppID = decryptedClientId,
-                AppSecret = decryptedClientSecret,
-                Encrypted = false
-            };
-        }
-    }
-    
-    public static AppToken Encrypt(AppToken unencryptedAppToken)
-    {
-        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Encrypting AppToken"))
-        {
-            var encryptedTenantId = AESThenHMAC.SimpleEncryptWithPassword(unencryptedAppToken.TenantID, Password);
-            var encryptedClientId = AESThenHMAC.SimpleEncryptWithPassword(unencryptedAppToken.AppID, Password);
-            var encryptedClientSecret = AESThenHMAC.SimpleEncryptWithPassword(unencryptedAppToken.AppSecret, Password);
-            return new AppToken()
-            {
-                TenantID = encryptedTenantId,
-                AppID = encryptedClientId,
-                AppSecret = encryptedClientSecret
-            };
-        }
+        return Task.FromResult(AppSecrets.ReadJson<AppToken>(SecretNames.Graph));
     }
 
-    public static async Task<AppToken> GetGraphCreds(UserDataContext context)
-    {
-        using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Getting Graph Creds"))
-        {
-            var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeConfig, context);
-
-            if (!(takehomeCredsCacher.FileCached && takehomeCredsCacher.IsUpToDate))
-            {
-                takehomeCredsCacher.DownloadUpdate();
-            }
-
-            AppToken encryptedAppToken =
-                JsonConvert.DeserializeObject<AppToken>(await File.ReadAllTextAsync(takehomeCredsCacher.FilePath));
-            AppToken decryptedAppToken = Decrypt(encryptedAppToken);
-            return decryptedAppToken;
-        }
-    }
-    
     public static GraphServiceClient ConnectToMSGraph(AppToken AppCreds) {
         using (var t = App.telemetryClient.StartOperation<RequestTelemetry>("Connecting to MSGraph"))
         {
             if (AppCreds.Encrypted == true)
             {
-                AppCreds = Decrypt(AppCreds);
+                throw new System.IO.InvalidDataException("Graph credentials must be plaintext inside the encrypted archive.");
             }
 
             // using Azure.Identity;

@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Diagnostics;
@@ -28,16 +28,6 @@ public class BiosUpdateStep : StepBaseEx
     
     public override bool IsCritical() => false;
 
-    private async Task<string> GetBiosPassword(UserDataContext context)
-    {
-        var biosPasswordCacher = new Cacher(CachedResourceUris.BiosPassword, context);
-        if (!biosPasswordCacher.FileCached || (InternetMan.GetInstance().IsConnected && !biosPasswordCacher.IsUpToDate))
-        {
-            await biosPasswordCacher.DownloadUpdateAsync();
-        }
-
-        return await biosPasswordCacher.ReadAllTextAsync();
-    }
     
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)
     {
@@ -100,15 +90,7 @@ public class BiosUpdateStep : StepBaseEx
         
         Message = "Updating bios...";
 
-        var DismTempDir = Path.Combine(Path.GetDirectoryName(App.GetExecutablePath()), "Cache", "TempDism");
-        await context.WaitForDriveAsync(); //Wait for the drive to be present
-        Directory.CreateDirectory(DismTempDir);
-        await using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutopilotQuick.Resources.Invoke-BiosUpdate.ppkg");
-        await using var file = new FileStream(Path.Combine(DismTempDir, "Invoke-BiosUpdate.ppkg"), FileMode.Create, FileAccess.Write);
-        await context.WaitForDriveAsync(); //Wait for the drive to be present
-        await resource.CopyToAsync(file);
-
-        var output = await InvokePowershellScriptAndGetResultAsync(@$"DISM /Image=W:\ /Add-ProvisioningPackage /PackagePath:{Path.Combine(DismTempDir, "Invoke-BiosUpdate.ppkg")}", CancellationToken.None);
+        var output = await SecretProvisioningPackage.ApplyAsync(this, SecretNames.BiosUpdatePackage);
         Logger.LogDebug("Apply bios package step: {output}", output);
 
         var biosLocation = Path.Join("W:\\", "BiosUpdate");

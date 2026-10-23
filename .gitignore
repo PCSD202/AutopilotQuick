@@ -361,3 +361,23 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local secret archives, plaintext staging, and credential files
+*.aqsecrets
+secret-staging/
+secret-extracted/
+GroupMan.json
+TakehomeCreds.json
+TakehomeLoggerInfo.json
+Takehome.json
+AzureLogSettings.json
+AppInsights.json
+GithubCreds.json
+BiosPassword.txt
+DellBiosSettings.zip
+*.ppkg
+
+# Private staging and public release notes
+EncryptionStaging/
+!docs/releases/
+!docs/releases/*.md

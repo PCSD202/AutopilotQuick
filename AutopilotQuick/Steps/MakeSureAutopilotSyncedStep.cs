@@ -153,13 +153,7 @@ public class MakeSureAutopilotSyncedStep : StepBaseEx
             }
         }
 
-        var groupManConfigCache = new Cacher(CachedResourceUris.GroupManConfig, context);
-        if (!groupManConfigCache.IsUpToDate || !groupManConfigCache.FileCached)
-        {
-            await Task.Run(async () => await groupManConfigCache.DownloadUpdateAsync());
-        }
-
-        var config = JsonConvert.DeserializeObject<MainWindow.GroupManConfig>(await groupManConfigCache.ReadAllTextAsync());
+        var config = AppSecrets.ReadJson<MainWindow.GroupManConfig>(SecretNames.GroupMan);
         var client = new GroupManagementClient(App.GetLogger<GroupManagementClient>(), config.APIKEY, config.URL);
         var exists = await client.CheckAutopilotProfileExists(GetServiceTag(pauseToken));
         if (exists is not { Exists: true })

@@ -94,12 +94,37 @@ namespace AutopilotQuick
                 Environment.Exit(0);
             }
 
+            SetupLoggingConfig();
+#if PUBLISH
+            // The watchdog only needs local logging. Its server loop must start
+            // before unlocking secrets, and must never open the unlock window.
+            Watchdog.Instance.ConfigureLogger(new NLogLoggerFactory().CreateLogger<Watchdog>());
+            Watchdog.Instance.HandleArgs(args);
+            if (Watchdog.Instance.IsServer)
+            {
+                Shutdown(1); // HandleArgs returns for a server only if it failed.
+                return;
+            }
+#endif
+
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var unlockWindow = new SecretUnlockWindow();
+            unlockWindow.ShowDialog();
+            if (!unlockWindow.Unlocked)
+            {
+#if PUBLISH
+                Watchdog.Instance.SendCommand(new AQ.Watchdog.Commands.DisableWatchdogCommand());
+                Watchdog.Instance.SendCommand(new AQ.Watchdog.Commands.CloseWatchdogCommand());
+#endif
+                Shutdown(1);
+                return;
+            }
+
             var s = Stopwatch.StartNew();
             Console.WriteLine("Starting up...");
             base.OnStartup(e);
             var loggingTasks = new List<Task>()
             {
-                Task.Run(SetupLoggingConfig),
                 Task.Run(() => { ServiceProvider = SetupAzureAppInsights(); })
             };
             await Task.WhenAll(loggingTasks);
@@ -111,25 +136,19 @@ namespace AutopilotQuick
             LogManager.AutoShutdown = true;
 
 
-#if PUBLISH
-            Watchdog.Instance.ConfigureLogger(GetLogger<Watchdog>()); //Configure logging
-            
-            Watchdog.Instance.HandleArgs(args);
-#endif
-            
-            
-            
             var mainWindow = new MainWindow();
             
             this.MainWindow = mainWindow;
             mainWindow.Closed += (sender, args2) =>
             {
+                AppSecrets.Clear();
                 FlushTelemetry();
                 Environment.Exit(0);
             };
 
             Current.Exit += (sender, args) =>
             {
+                AppSecrets.Clear();
                 FlushTelemetry();
                 MainWindow.Close();
                 LogManager.Shutdown();
@@ -282,7 +301,7 @@ namespace AutopilotQuick
 
             var options = new ApplicationInsightsServiceOptions()
             {
-                ConnectionString = "REMOVED_SECRET",
+                ConnectionString = AppSecrets.ReadJson<AutopilotQuick.LogMan.LogSettings>(SecretNames.AppInsights).ConnectionString,
                 EnableDependencyTrackingTelemetryModule = false,
                 EnablePerformanceCounterCollectionModule = false,
                 EnableAdaptiveSampling = false,

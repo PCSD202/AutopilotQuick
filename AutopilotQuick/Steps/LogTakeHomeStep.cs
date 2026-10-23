@@ -50,14 +50,7 @@ public class LogTakeHomeStep : StepBaseEx
         Message = "Loading credentials";
         IsIndeterminate = false;
         Progress = 0;
-        var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeLoggerConfig, context);
-        if (!takehomeCredsCacher.FileCached || !takehomeCredsCacher.IsUpToDate)
-        {
-            await takehomeCredsCacher.DownloadUpdateAsync();
-        }
-
-        var logInfo =
-            JsonConvert.DeserializeObject<TakeHomeLaptopLoggerInfo>(await File.ReadAllTextAsync(takehomeCredsCacher.FilePath));
+        var logInfo = AppSecrets.ReadJson<TakeHomeLaptopLoggerInfo>(SecretNames.TakeHomeLogger);
 
         Progress = 50;
         var thingToSend = new TakeHomeLaptopRequest()

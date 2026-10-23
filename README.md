@@ -2,7 +2,9 @@
 Autopilot Quick is a tool we use to image laptops (and other devices) in PSD202. It formats the largest drive, applies windows, and sets the bios settings.
 
 ## How to use?
-This application is very specific to PSD202, this code is open source to basically show off how to do imaging.
+This application is very specific to PSD202. The source is public; deployment credentials and provisioning packages are kept in a separate encrypted archive.
+
+Credentials and provisioning packages are loaded from a password-encrypted archive at startup. See [the migration and archive tool guide](docs/secret-archive.md) before deploying this version.
 
 **Requirements**:
 - Be connected to the district intranet

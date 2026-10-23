@@ -6,44 +6,38 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    permissions:
-        issues: write
-        pull-requests: write
-        contents: write
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: "Get Previous tag"
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@master"
-
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
+      - name: Read latest version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = git describe --tags --abbrev=0
+          if ($LASTEXITCODE -ne 0 -or $tag -notmatch '^v?(\d+)\.(\d+)\.(\d+)$') {
+            throw 'Cannot determine the latest release version.'
+          }
+          "assembly=$($Matches[1]).$($Matches[2]).$($Matches[3]).1" >> $env:GITHUB_OUTPUT
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x'
-
-      - name: Install dependencies
-        run: dotnet restore "AutopilotQuick\AutopilotQuick.csproj"
-
+          dotnet-version: |
+            6.0.x
+            10.0.x
       - name: Publish
+        run: dotnet publish AutopilotQuick/AutopilotQuick.csproj -p:PublishProfile=DevProfile -p:AssemblyVersion=${{ steps.version.outputs.assembly }} --output artifacts/beta/app
+      - name: Package
+        shell: pwsh
         run: |
-          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=DevProfile -p:AssemblyVersion=${{ steps.previoustag.outputs.tag }}.1
-
-      - name: Relocate
-        run: |
-          mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick-Beta.exe
-      - name: Zip
-        run: |
-          7z a AutopilotQuick-beta.zip ..\AutopilotQuick-Beta.exe -mx=9    
-      
-      - name: Upload beta zip
-        uses: actions/upload-artifact@v4
+          Copy-Item -LiteralPath artifacts/beta/app/AutopilotQuick.exe -Destination artifacts/beta/AutopilotQuick-Beta.exe
+          Compress-Archive -LiteralPath artifacts/beta/AutopilotQuick-Beta.exe -DestinationPath artifacts/beta/AutopilotQuick-Beta.zip
+      - uses: actions/upload-artifact@v4
         with:
           name: AutopilotQuick-Beta
-          path: AutopilotQuick-Beta.zip
+          path: artifacts/beta/AutopilotQuick-Beta.zip

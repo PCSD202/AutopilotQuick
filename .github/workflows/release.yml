@@ -1,72 +1,51 @@
-name: goreleaser
+name: Release
 
 on:
   push:
     tags:
       - "*"
 
+permissions:
+  contents: write
+
 jobs:
-  goreleaser:
-    permissions:
-        issues: write
-        pull-requests: write
-        contents: write
+  release:
     runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.15
-
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
-
-      - name: Install dependencies
-        run: dotnet restore "AutopilotQuick\AutopilotQuick.csproj"
-      - name: Publish
+          dotnet-version: |
+            6.0.x
+            10.0.x
+      - name: Read release version
+        id: version
+        shell: pwsh
         run: |
-          dotnet publish "AutopilotQuick\AutopilotQuick.csproj" -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ github.ref_name }}.0
-      - name: Relocate
-        run: |
-          mv AutopilotQuick\\bin\\Release\\net6.0-windows\\publish\\AutopilotQuick.exe ..\AutopilotQuick.exe
-      - name: Zip
-        run: |
-          7z a ..\AutopilotQuick.zip ..\AutopilotQuick.exe -mx=0
-      - name: Sign
-        uses: carbonneuron/GHActionSignHash@v5
-        env: 
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        id: sign
-        with:
-          path: ../AutopilotQuick.zip
-          key: ${{ secrets.PRIVATE_KEY }}
-          privateKey: ${{ secrets.PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-
-      - name: Output Signature
-        shell: bash
-        run: |
-          echo "${{ steps.sign.outputs.encrypted-text }}" > ../AutopilotQuick.zip.sha256.pgp
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1.12.0
-        with:
-          tag: ${{ github.ref }}
-          omitBody: true
-          skipIfReleaseExists: true
-          artifacts: "../AutopilotQuick.zip,../AutopilotQuick.zip.sha256.pgp"
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: latest
-          args: release --clean
+          if ($env:GITHUB_REF_NAME -notmatch '^v?(\d+)\.(\d+)\.(\d+)$') {
+            throw 'Release tags must be major.minor.patch or vmajor.minor.patch.'
+          }
+          "assembly=$($Matches[1]).$($Matches[2]).$($Matches[3]).0" >> $env:GITHUB_OUTPUT
+      - name: Publish app
+        run: dotnet publish AutopilotQuick/AutopilotQuick.csproj -p:PublishProfile=PubProfile -p:AssemblyVersion=${{ steps.version.outputs.assembly }} -p:FileVersion=${{ steps.version.outputs.assembly }} --output artifacts/release/app
+      - name: Package app
+        shell: pwsh
+        run: Compress-Archive -LiteralPath artifacts/release/app/AutopilotQuick.exe -DestinationPath artifacts/release/AutopilotQuick.zip -CompressionLevel NoCompression
+      - name: Sign and verify release hash
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AQ_SIGNING_KEY: ${{ secrets.PRIVATE_KEY }}
+          AQ_SIGNING_PASSPHRASE: ${{ secrets.PASSPHRASE }}
+        run: ./.github/scripts/SignRelease.ps1 -ArchivePath artifacts/release/AutopilotQuick.zip
+      - name: Publish administrator tool
+        run: dotnet publish AQ.SecretArchive.Tool/AQ.SecretArchive.Tool.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/release/tool
+      - name: Package administrator tool
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/release/tool/* -DestinationPath artifacts/release/AQ.SecretArchive.Tool.zip
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME artifacts/release/AutopilotQuick.zip artifacts/release/AutopilotQuick.zip.sha256.pgp artifacts/release/AQ.SecretArchive.Tool.zip --verify-tag --title $env:GITHUB_REF_NAME --notes-file docs/releases/v2.0.0.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

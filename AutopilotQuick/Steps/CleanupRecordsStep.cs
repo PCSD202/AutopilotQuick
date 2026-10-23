@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -45,27 +45,9 @@ public class CleanupRecordsStep : StepBaseEx
         public string Url { get; set; }
     }
     
-    public async Task<TakeHomeInfo> GetAPIInfo(UserDataContext context)
+    public Task<TakeHomeInfo> GetAPIInfo(UserDataContext context)
     {
-        var takehomeCredsCacher = new Cacher(CachedResourceUris.TakeHomeCredConfig, context);
-        if (!takehomeCredsCacher.FileCached || !takehomeCredsCacher.IsUpToDate)
-        {
-            await takehomeCredsCacher.DownloadUpdateAsync();
-        }
-
-        try
-        {
-            var info = JsonConvert.DeserializeObject<TakeHomeInfo>(await takehomeCredsCacher.ReadAllTextAsync());
-            if (info is not null) return info;
-            takehomeCredsCacher.Delete(); //Force it to redownload
-            return await GetAPIInfo(context);
-        }
-        catch (JsonException e)
-        {
-            takehomeCredsCacher.Delete(); //Force it to redownload
-            return await GetAPIInfo(context);
-        }
-        
+        return Task.FromResult(AppSecrets.ReadJson<TakeHomeInfo>(SecretNames.TakeHome));
     }
 
     public override async Task<StepResult> Run(UserDataContext context, PauseToken pauseToken, IOperationHolder<RequestTelemetry> StepOperation)

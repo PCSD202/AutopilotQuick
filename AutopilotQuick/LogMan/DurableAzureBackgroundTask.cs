@@ -32,7 +32,6 @@ namespace AutopilotQuick.LogMan
         private static readonly ILogger Logger = App.GetLogger<DurableAzureBackgroundTask>();
         
         public ShareClient? Share;
-        public Cacher AzureLogSettingsCache;
         
         IAppCache cache = new CachingService();
         
@@ -59,11 +58,7 @@ namespace AutopilotQuick.LogMan
                 return ConnectionString;
             }
             
-            if (!(AzureLogSettingsCache.FileCached && AzureLogSettingsCache.IsUpToDate))
-            {
-                AzureLogSettingsCache.DownloadUpdate();
-            }
-            var data = JsonConvert.DeserializeObject<LogSettings>(File.ReadAllText(AzureLogSettingsCache.FilePath));
+            var data = AppSecrets.ReadJson<LogSettings>(SecretNames.AzureLogs);
             cache.Add("ConnectionString", data?.ConnectionString ?? string.Empty);
             return cache.Get<string>("ConnectionString");
         }
@@ -85,7 +80,6 @@ namespace AutopilotQuick.LogMan
                 var tClient = App.GetTelemetryClient();
                 tClient.TrackEvent("LogUploadServiceStarted");
                 Logger.LogInformation("Log upload service started");
-                AzureLogSettingsCache = new Cacher(CachedResourceUris.AzureLogSettings, context);
                 
                 // Instantiate a ShareClient which will be used to create and manipulate the file share
                 if (InternetMan.GetInstance().IsConnected)

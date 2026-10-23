@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -287,8 +287,6 @@ namespace AutopilotQuick
             await messageBox.CloseAsync();
         }
 
-        private record GithubCreds(string ClientID, string ClientSecret);
-
         public MainWindow MainWindow { get; }
         public void RefreshLatestVersion()
         {
@@ -299,23 +297,8 @@ namespace AutopilotQuick
             try
             {
                 RetryPolicy retry = Policy.Handle<AggregateException>().WaitAndRetry(5, retryAttempt => 5.Seconds());
-                var credCacher = new Cacher(CachedResourceUris.GithubCreds, this);
-                if (!credCacher.FileCached || !credCacher.IsUpToDate)
-                {
-                    try
-                    {
-                        credCacher.DownloadUpdate();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                    
-                }
-
-                var creds = JsonConvert.DeserializeObject<GithubCreds>(credCacher.ReadAllText()); 
-                
-                GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version), new InMemoryCredentialStore(new Credentials(creds.ClientID,creds.ClientSecret, AuthenticationType.Basic)));
+                // Public release metadata and assets do not require a GitHub credential.
+                GitHubClient client = new GitHubClient(new ProductHeaderValue("AutopilotQuick", Version));
                 Release latest = new Release();
                 var result = retry.ExecuteAndCapture<Release>(() => client.Repository.Release.GetLatest("PCSD202", "AutopilotQuick").Result);
                 if (result.Outcome == OutcomeType.Successful)
@@ -325,7 +308,7 @@ namespace AutopilotQuick
                     if (latest.Assets.Any(x => x.Name == "AutopilotQuick.zip.sha256.pgp"))
                         LatestReleaseAssetSignedHashURL = latest.Assets.First(x => x.Name == "AutopilotQuick.zip.sha256.pgp").BrowserDownloadUrl;
 
-                    LatestVersion = $"{latest.TagName}";
+                    LatestVersion = latest.TagName.TrimStart('v', 'V');
                     OnPropertyChanged(nameof(LatestVersion));
                     OnPropertyChanged(nameof(LatestReleaseAssetSignedHashURL));
                     OnPropertyChanged(nameof(LatestReleaseAssetURL));
