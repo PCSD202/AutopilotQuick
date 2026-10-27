@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -73,10 +74,9 @@ namespace AutopilotQuick.Steps
 
                 if (context.TakeHomeToggleOn)
                 {
-                    var password = AppSecrets.ReadText(SecretNames.BiosPassword).TrimEnd('\r', '\n');
-                    // Pass the script through stdin, never the existing helper that writes/logs script contents.
-                    return await RunBiosScriptAsync(dellBiosSettingsDir,
-                        "& .\\cctk.exe '--setuppwd=' " + Quote("--valsetuppwd=" + password) + "; exit $LASTEXITCODE");
+                    Message = "Removing BIOS setup password for take-home";
+                    return await RunBiosProcessAsync(DellBiosCommand.ClearSetupPassword(
+                        dellBiosSettingsDir, AppSecrets.ReadText(SecretNames.BiosPassword)));
                 }
 
                 Message = $"This device is a {model}, applying bios settings";
@@ -91,30 +91,38 @@ namespace AutopilotQuick.Steps
 
         private static string Quote(string text) => "'" + text.Replace("'", "''") + "'";
 
-        private async Task<StepResult> RunBiosScriptAsync(string workingDirectory, string script)
+        private Task<StepResult> RunBiosScriptAsync(string workingDirectory, string script) =>
+            RunBiosProcessAsync(new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command -")
+            {
+                WorkingDirectory = workingDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            }, script);
+
+        private async Task<StepResult> RunBiosProcessAsync(ProcessStartInfo startInfo, string? script = null)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(1));
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo("powershell.exe", "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command -")
-                {
-                    WorkingDirectory = workingDirectory,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }
-            };
+            using var process = new Process { StartInfo = startInfo };
             process.OutputDataReceived += (_, _) => { };
             process.ErrorDataReceived += (_, _) => { };
-            process.Start();
+            try { process.Start(); }
+            catch (Win32Exception ex)
+            {
+                Logger.LogWarning("Could not start BIOS settings process. Windows error code {Code}", ex.NativeErrorCode);
+                return new StepResult(false, $"Could not start BIOS settings (Windows error {ex.NativeErrorCode}). Check the Dell bundle's executable and WinPE dependencies.");
+            }
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             try
             {
-                await process.StandardInput.WriteLineAsync(script);
-                process.StandardInput.Close();
+                if (script is not null)
+                {
+                    await process.StandardInput.WriteLineAsync(script);
+                    process.StandardInput.Close();
+                }
                 await process.WaitForExitAsync(timeout.Token);
             }
             catch (OperationCanceledException)
@@ -130,7 +138,8 @@ namespace AutopilotQuick.Steps
             Message = "Done";
             Progress = 100;
             return new StepResult(process.ExitCode == 0,
-                process.ExitCode == 0 ? "Successfully applied bios settings" : "BIOS settings failed.");
+                process.ExitCode == 0 ? "Successfully applied bios settings" :
+                    $"BIOS settings failed (exit code {process.ExitCode}). Check the device's current BIOS password and the Dell bundle's WinPE drivers/dependencies.");
         }
     }
 }
