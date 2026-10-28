@@ -17,7 +17,9 @@ internal static class DellBiosCommand
         };
         // PowerShell 5.1 can strip embedded quotes and change non-ASCII stdin.
         // Pass native arguments directly; never put the password in a script or log.
-        startInfo.ArgumentList.Add("--setuppwd=");
+        // Dell requires one blank space to remove the password. An empty value
+        // can be rejected with exit code 106 (invalid option argument).
+        startInfo.ArgumentList.Add("--setuppwd= ");
         startInfo.ArgumentList.Add("--valsetuppwd=" + password.TrimEnd('\r', '\n'));
         return startInfo;
     }

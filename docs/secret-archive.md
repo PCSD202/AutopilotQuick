@@ -40,6 +40,10 @@ Changing repository visibility does not change nettools access. Before making it
 
 Review the provisioning packages and scripts for embedded retired credentials, logging, and persisted files. Packages can intentionally provision settings into the installed OS; archive encryption does not hide those settings from administrators of that OS. Dell CCTK requires a password argument when clearing the BIOS password, so it can be observed by privileged local process inspection. Take-home mode invokes CCTK directly with separate native arguments to preserve the exact password, including quotes and non-ASCII characters. The app suppresses command output and never stores the password or a containing script in its normal cache or telemetry. BIOS failures report the numeric process exit code; launch failures report a Windows error code. Preserve that code when reporting a failed imaging run, without sharing passwords or full commands.
 
+## BIOS settings in take-home mode
+
+Take-home BIOS password removal passes a single blank space as the new setup password, as required by Dell's CLI reference; a zero-length argument can produce CCTK exit code 106 (invalid argument). The app preserves that space through native argument passing and still stops on a failed command. See [Dell's CCTK error codes](https://www.dell.com/support/kbdoc/en-us/000146881/dell-client-configuration-toolkit-cctk-error-codes) and the [setup password reference, page 85](https://www.manualshelf.com/manual/dell/command-configure-4-1/reference-guide-english/page-85.html).
+
 ## Create, inspect, extract, and change passwords
 
 These commands run from the repository root and use example paths; select your own protected staging location:

@@ -67,7 +67,7 @@ public class FakeCctk {
     [TestCase("synthetic&|!%$", "synthetic&|!%$")]
     [TestCase("synthetic\\\"quote\\", "synthetic\\\"quote\\")]
     [TestCase(" synthetic \r\n", " synthetic ")]
-    public async Task NativeToolReceivesExactPasswordAndEmptyReplacement(string input, string expected)
+    public async Task NativeToolReceivesExactPasswordAndSingleSpaceReplacement(string input, string expected)
     {
         using var process = Process.Start(DellBiosCommand.ClearSetupPassword(_directory, input))!;
         var output = process.StandardOutput.ReadToEndAsync();
@@ -81,7 +81,8 @@ public class FakeCctk {
         }
         Assert.That(await errors, Is.Empty);
         var actual = Encoding.UTF8.GetString(Convert.FromBase64String((await output).Trim()));
-        Assert.That(actual, Is.EqualTo("--setuppwd=\n--valsetuppwd=" + expected));
+        Assert.That(actual, Is.EqualTo("--setuppwd= \n--valsetuppwd=" + expected),
+            "Dell requires a single blank space, not a zero-length replacement password.");
         Assert.That(process.ExitCode, Is.EqualTo(42), "The fake tool's nonzero exit code must be preserved.");
     }
 

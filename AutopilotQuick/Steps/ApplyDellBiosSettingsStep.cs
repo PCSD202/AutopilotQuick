@@ -139,6 +139,7 @@ namespace AutopilotQuick.Steps
             Progress = 100;
             return new StepResult(process.ExitCode == 0,
                 process.ExitCode == 0 ? "Successfully applied bios settings" :
+                process.ExitCode == 106 ? "BIOS settings failed (exit code 106). Dell CCTK rejected a command argument." :
                     $"BIOS settings failed (exit code {process.ExitCode}). Check the device's current BIOS password and the Dell bundle's WinPE drivers/dependencies.");
         }
     }
