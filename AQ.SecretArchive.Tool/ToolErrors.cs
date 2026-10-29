@@ -8,6 +8,7 @@ public static class ToolErrors
     public static string Describe(Exception error) => error switch
     {
         ToolOperationException => error.Message,
+        ArchiveIntegrityException => error.Message,
         UnauthorizedAccessException => "Access denied. Check permissions on the source and output folder.",
         DirectoryNotFoundException => "A directory was not found. Check the source and output parent folder.",
         FileNotFoundException => "A file was not found. Check the archive path and source files.",

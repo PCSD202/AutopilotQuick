@@ -56,13 +56,7 @@ public static class SecretArchive
     public static ArchiveContents Decrypt(ReadOnlySpan<byte> blob, ReadOnlySpan<char> password)
     {
         ValidatePassword(password);
-        if (blob.Length < HeaderBytes + TagBytes || blob.Length > MaximumBlobBytes ||
-            !blob[..8].SequenceEqual(Magic))
-            throw new InvalidDataException("Unsupported or invalid secret archive.");
-        // Pin the KDF cost for this version so an unauthenticated header cannot cause unbounded work.
-        if (BinaryPrimitives.ReadInt32LittleEndian(blob.Slice(8, 4)) != Iterations ||
-            BinaryPrimitives.ReadInt32LittleEndian(blob.Slice(12, 4)) != blob.Length - HeaderBytes - TagBytes)
-            throw new InvalidDataException("Invalid secret archive header.");
+        ValidateBlob(blob);
         var key = Rfc2898DeriveBytes.Pbkdf2(password, blob.Slice(16, 16), Iterations, HashAlgorithmName.SHA256, 32);
         var plaintext = new byte[blob.Length - HeaderBytes - TagBytes];
         try
@@ -85,6 +79,18 @@ public static class SecretArchive
             CryptographicOperations.ZeroMemory(key);
             CryptographicOperations.ZeroMemory(plaintext);
         }
+    }
+
+    /// <summary>Check the public version, limits and exact length without a password. This does not authenticate the archive.</summary>
+    public static void ValidateBlob(ReadOnlySpan<byte> blob)
+    {
+        if (blob.Length < HeaderBytes + TagBytes || blob.Length > MaximumBlobBytes ||
+            !blob[..8].SequenceEqual(Magic))
+            throw new InvalidDataException("Unsupported or invalid secret archive.");
+        // Pin the KDF cost for this version so an unauthenticated header cannot cause unbounded work.
+        if (BinaryPrimitives.ReadInt32LittleEndian(blob.Slice(8, 4)) != Iterations ||
+            BinaryPrimitives.ReadInt32LittleEndian(blob.Slice(12, 4)) != blob.Length - HeaderBytes - TagBytes)
+            throw new InvalidDataException("Invalid secret archive header.");
     }
 
     /// <summary>Read a bounded ZIP into memory; reject unsafe names, collisions, and misleading lengths.</summary>

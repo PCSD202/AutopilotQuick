@@ -71,11 +71,44 @@ public static class ArchiveFiles
 
     public static ArchiveContents Unlock(string path)
     {
-        using var file = File.OpenRead(path);
-        var blob = SecretArchive.ReadBlob(file);
+        var blob = ReadVerified(path, out _);
         var password = PasswordPrompt.Read();
         try { return SecretArchive.Decrypt(blob, password); }
         finally { Array.Clear(password); }
+    }
+
+    public static byte[] ReadVerified(string path, out bool hasChecksum)
+    {
+        using var file = File.OpenRead(path);
+        var blob = SecretArchive.ReadBlob(file);
+        byte[]? checksum = null;
+        hasChecksum = File.Exists(path + ArchiveIntegrity.Suffix);
+        if (hasChecksum)
+        {
+            using var sidecar = File.OpenRead(path + ArchiveIntegrity.Suffix);
+            checksum = ArchiveIntegrity.ReadChecksum(sidecar);
+        }
+        ArchiveIntegrity.Verify(blob, checksum);
+        return blob;
+    }
+
+    public static void ValidateNewArchive(string path)
+    {
+        ValidateNewFile(path);
+        ValidateNewFile(path + ArchiveIntegrity.Suffix);
+    }
+
+    public static void WriteNewArchive(string path, byte[] blob)
+    {
+        ValidateNewArchive(path);
+        var checksumPath = path + ArchiveIntegrity.Suffix;
+        WriteNew(checksumPath, ArchiveIntegrity.CreateChecksum(blob));
+        try { WriteNew(path, blob); }
+        catch
+        {
+            File.Delete(checksumPath); // Only the sidecar created by this operation is removed.
+            throw;
+        }
     }
 
     public static void ValidateNewFile(string path)

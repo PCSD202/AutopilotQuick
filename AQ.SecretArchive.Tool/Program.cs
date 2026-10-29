@@ -16,6 +16,8 @@ public static class Program
             config.AddCommand<ListCommand>("list").WithDescription("Unlock and list filenames without showing values.");
             config.AddCommand<ExtractCommand>("extract").WithDescription("Unlock into a NEW private plaintext folder.");
             config.AddCommand<RekeyCommand>("rekey").WithDescription("Write a new archive with a new password.");
+            config.AddCommand<VerifyCommand>("verify").WithDescription("Check the archive length and optional SHA-256 checksum without a password.");
+            config.AddCommand<ChecksumCommand>("checksum").WithDescription("Authenticate an existing archive and add a new SHA-256 sidecar without re-encrypting it.");
             config.SetExceptionHandler((error, _) =>
             {
                 // Exception details can contain secret JSON, paths, or values. Never echo them.

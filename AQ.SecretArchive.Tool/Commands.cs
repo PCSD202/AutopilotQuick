@@ -43,12 +43,12 @@ public sealed class CreateCommand : Command<CreateSettings>
         var output = Path.GetFullPath(settings.Output);
         if (output.StartsWith(Path.TrimEndingDirectorySeparator(source) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new ToolOperationException("Output must be outside the source folder.");
-        ArchiveFiles.ValidateNewFile(output);
+        ArchiveFiles.ValidateNewArchive(output);
         using var contents = ArchiveFiles.PackFolder(source);
         var password = PasswordPrompt.Read(confirm: true);
-        try { ArchiveFiles.WriteNew(output, SecretArchive.Encrypt(contents, password)); }
+        try { ArchiveFiles.WriteNewArchive(output, SecretArchive.Encrypt(contents, password)); }
         finally { Array.Clear(password); }
-        AnsiConsole.WriteLine("Encrypted archive created. Source files were preserved.");
+        AnsiConsole.WriteLine("Encrypted archive and .sha256 checksum created. Deploy both files. Source files were preserved.");
         return 0;
     }
 }
@@ -75,12 +75,43 @@ public sealed class RekeyCommand : Command<RekeySettings>
 {
     public override int Execute(CommandContext context, RekeySettings settings, CancellationToken cancellationToken)
     {
-        ArchiveFiles.ValidateNewFile(settings.Output);
+        ArchiveFiles.ValidateNewArchive(settings.Output);
         using var contents = ArchiveFiles.Unlock(settings.Archive);
         var password = PasswordPrompt.Read(confirm: true);
-        try { ArchiveFiles.WriteNew(settings.Output, SecretArchive.Encrypt(contents, password)); }
+        try { ArchiveFiles.WriteNewArchive(settings.Output, SecretArchive.Encrypt(contents, password)); }
         finally { Array.Clear(password); }
-        AnsiConsole.WriteLine("New archive created. The old archive still uses the old password.");
+        AnsiConsole.WriteLine("New archive and .sha256 checksum created. Deploy both files. The old archive still uses the old password.");
+        return 0;
+    }
+}
+
+public sealed class VerifyCommand : Command<ArchiveSettings>
+{
+    public override int Execute(CommandContext context, ArchiveSettings settings, CancellationToken cancellationToken)
+    {
+        ArchiveFiles.ReadVerified(settings.Archive, out var hasChecksum);
+        AnsiConsole.WriteLine(hasChecksum
+            ? "Archive length and SHA-256 checksum verified without a password. Use list to authenticate and inspect its contents."
+            : "Legacy archive length and header passed; no .sha256 checksum found. Use list to authenticate it, then checksum to add integrity checking.");
+        return 0;
+    }
+}
+
+public sealed class ChecksumCommand : Command<ArchiveSettings>
+{
+    public override int Execute(CommandContext context, ArchiveSettings settings, CancellationToken cancellationToken)
+    {
+        var path = settings.Archive + ArchiveIntegrity.Suffix;
+        ArchiveFiles.ValidateNewFile(path);
+        var blob = ArchiveFiles.ReadVerified(settings.Archive, out _);
+        var password = PasswordPrompt.Read();
+        try
+        {
+            using var contents = SecretArchive.Decrypt(blob, password);
+            ArchiveFiles.WriteNew(path, ArchiveIntegrity.CreateChecksum(blob));
+        }
+        finally { Array.Clear(password); }
+        AnsiConsole.WriteLine("Archive authenticated and .sha256 checksum created. The encrypted archive was preserved. Deploy both files.");
         return 0;
     }
 }

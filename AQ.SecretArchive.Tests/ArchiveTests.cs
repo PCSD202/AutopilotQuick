@@ -188,11 +188,15 @@ public class ArchiveTests
         if (Environment.GetEnvironmentVariable("AQ_TEST_WRITE_FIXTURE") == "1")
         {
             using var input = Sample();
-            File.WriteAllBytes(path!, SecretArchive.Encrypt(input, Password));
+            var blob = SecretArchive.Encrypt(input, Password);
+            File.WriteAllBytes(path!, blob);
+            File.WriteAllBytes(path! + ArchiveIntegrity.Suffix, ArchiveIntegrity.CreateChecksum(blob));
         }
         else
         {
-            using var input = SecretArchive.Decrypt(File.ReadAllBytes(path!), Password);
+            var blob = File.ReadAllBytes(path!);
+            ArchiveIntegrity.Verify(blob, File.ReadAllBytes(path! + ArchiveIntegrity.Suffix));
+            using var input = SecretArchive.Decrypt(blob, Password);
             Assert.That(input.ReadText("credentials.json"), Is.EqualTo("synthetic-secret λ 🐈"));
         }
     }

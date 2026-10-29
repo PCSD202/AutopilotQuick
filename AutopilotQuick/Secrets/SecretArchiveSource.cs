@@ -39,10 +39,18 @@ public sealed class SecretArchiveSource
             var cached = await Task.Run(() =>
             {
                 using var file = File.OpenRead(_cachePath);
-                return SecretArchive.ReadBlob(file);
+                var blob = SecretArchive.ReadBlob(file);
+                byte[]? checksum = null;
+                if (File.Exists(_cachePath + ArchiveIntegrity.Suffix))
+                {
+                    using var sidecar = File.OpenRead(_cachePath + ArchiveIntegrity.Suffix);
+                    checksum = ArchiveIntegrity.ReadChecksum(sidecar);
+                }
+                ArchiveIntegrity.Verify(blob, checksum);
+                return new LoadedSecretArchive(blob, false, checksum);
             }, token);
             token.ThrowIfCancellationRequested();
-            return new LoadedSecretArchive(cached, false);
+            return cached;
         }
 
         while (true)
@@ -86,7 +94,14 @@ public sealed class SecretArchiveSource
                     buffer.Write(chunk, 0, count);
                 }
                 token.ThrowIfCancellationRequested();
-                return new LoadedSecretArchive(buffer.ToArray(), true);
+                if (response.Content.Headers.ContentLength is long expectedLength && buffer.Length != expectedLength)
+                    throw new ArchiveIntegrityException("The encrypted bundle download is incomplete. Retry the download.");
+                var blob = buffer.ToArray();
+                ArchiveIntegrity.Verify(blob);
+                progress.Report("Checking the encrypted bundle's integrity...");
+                var checksum = await DownloadChecksumAsync(token);
+                ArchiveIntegrity.Verify(blob, checksum);
+                return new LoadedSecretArchive(blob, true, checksum);
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException || (ex is OperationCanceledException && !token.IsCancellationRequested))
             {
@@ -95,9 +110,66 @@ public sealed class SecretArchiveSource
             }
         }
     }
+
+    private async Task<byte[]?> DownloadChecksumAsync(CancellationToken token)
+    {
+        var address = new UriBuilder(_address) { Path = _address.AbsolutePath + ArchiveIntegrity.Suffix }.Uri;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        using var response = await _client.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+        // Only a missing sidecar means legacy support. Other failures must not silently disable checking.
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        if (response.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500)
+            throw new HttpRequestException("Checksum server is temporarily unavailable.");
+        if (!response.IsSuccessStatusCode)
+            throw new ArchiveSourceException($"Checksum server returned HTTP {(int)response.StatusCode}. Check access to Secrets.aqsecrets.sha256, then retry.");
+        if (response.Content.Headers.ContentLength > ArchiveIntegrity.MaximumChecksumBytes)
+            throw new ArchiveIntegrityException("The bundle checksum file exceeds the supported size limit.");
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+        using var buffer = new MemoryStream();
+        var bytes = new byte[ArchiveIntegrity.MaximumChecksumBytes + 1];
+        int count;
+        while ((count = await stream.ReadAsync(bytes.AsMemory(0, bytes.Length - (int)buffer.Length), timeout.Token)) > 0)
+        {
+            buffer.Write(bytes, 0, count);
+            if (buffer.Length > ArchiveIntegrity.MaximumChecksumBytes)
+                throw new ArchiveIntegrityException("The bundle checksum file exceeds the supported size limit.");
+        }
+        if (response.Content.Headers.ContentLength is long expectedLength && buffer.Length != expectedLength)
+            throw new ArchiveIntegrityException("The bundle checksum download is incomplete. Retry the download.");
+        var checksum = buffer.ToArray();
+        ArchiveIntegrity.ParseChecksum(checksum);
+        return checksum;
+    }
+
+    /// <summary>Call only after successful decryption and app configuration validation. Never cache an unverified download.</summary>
+    public async Task CacheValidatedAsync(LoadedSecretArchive archive, CancellationToken token)
+    {
+        ArchiveIntegrity.Verify(archive.Blob, archive.Checksum);
+        if (!archive.Downloaded && archive.Checksum is not null) return;
+        // Seed an offline checksum for legacy archives only after their AES-GCM authentication succeeded.
+        var checksum = archive.Checksum ?? ArchiveIntegrity.CreateChecksum(archive.Blob);
+        Directory.CreateDirectory(Path.GetDirectoryName(_cachePath)!);
+        var temporary = _cachePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        var temporaryChecksum = temporary + ArchiveIntegrity.Suffix;
+        try
+        {
+            await File.WriteAllBytesAsync(temporaryChecksum, checksum, token);
+            if (archive.Downloaded) await File.WriteAllBytesAsync(temporary, archive.Blob, token);
+            token.ThrowIfCancellationRequested();
+            // Each rename is atomic. An interruption between them fails closed with a mismatched checksum at next startup.
+            if (archive.Downloaded) File.Move(temporary, _cachePath, true);
+            File.Move(temporaryChecksum, _cachePath + ArchiveIntegrity.Suffix, true);
+        }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+            if (File.Exists(temporaryChecksum)) File.Delete(temporaryChecksum);
+        }
+    }
 }
 
-public sealed record LoadedSecretArchive(byte[] Blob, bool Downloaded);
+public sealed record LoadedSecretArchive(byte[] Blob, bool Downloaded, byte[]? Checksum = null);
 public sealed class ArchiveSourceException : Exception
 {
     public ArchiveSourceException(string message) : base(message) { }

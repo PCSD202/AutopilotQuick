@@ -16,6 +16,7 @@ public partial class SecretUnlockWindow : Window
     private readonly string _cachePath = Path.Combine(App.GetExecutableFolder(), "Cache", "Secrets.aqsecrets");
     private CancellationTokenSource? _loading;
     private LoadedSecretArchive? _archive;
+    private SecretArchiveSource? _source;
     public bool Unlocked { get; private set; }
 
     public SecretUnlockWindow()
@@ -38,6 +39,7 @@ public partial class SecretUnlockWindow : Window
         using var loading = CancellationTokenSource.CreateLinkedTokenSource(_cancel.Token);
         _loading = loading;
         _archive = null;
+        _source = null;
         var loadingFinished = false;
         Unlock.IsEnabled = false;
         Passphrase.IsEnabled = false;
@@ -58,7 +60,10 @@ public partial class SecretUnlockWindow : Window
             var archive = await source.LoadAsync(DownloadLatest.IsChecked == true, progress, loading.Token);
             loading.Token.ThrowIfCancellationRequested();
             _archive = archive;
-            Status.Text = archive.Downloaded ? "Bundle downloaded. Enter the passphrase to unlock." : "Cached bundle ready. Enter the passphrase to unlock.";
+            _source = source;
+            Status.Text = archive.Checksum is not null
+                ? "Bundle integrity verified. Enter the passphrase to unlock."
+                : "Legacy bundle length checked; no checksum available. Enter the passphrase to authenticate it.";
             Passphrase.IsEnabled = true;
             Unlock.IsEnabled = true;
             Passphrase.Focus();
@@ -67,6 +72,11 @@ public partial class SecretUnlockWindow : Window
         catch (ArchiveSourceException ex)
         {
             if (!loading.IsCancellationRequested) Status.Text = ex.Message;
+        }
+        catch (ArchiveIntegrityException ex)
+        {
+            if (!loading.IsCancellationRequested)
+                Status.Text = ex.Message + " Select Download latest bundle and retry.";
         }
         catch (Exception)
         {
@@ -98,7 +108,11 @@ public partial class SecretUnlockWindow : Window
             {
                 _cancel.Token.ThrowIfCancellationRequested();
                 AppSecrets.Validate(contents);
-                if (archive.Downloaded) await CacheAsync(archive.Blob);
+                try { await _source!.CacheValidatedAsync(archive, _cancel.Token); }
+                catch (Exception ex) when (!archive.Downloaded && (ex is IOException or UnauthorizedAccessException))
+                {
+                    // A read-only legacy cache can still unlock; saving an optional baseline checksum is best effort.
+                }
                 _cancel.Token.ThrowIfCancellationRequested();
                 AppSecrets.Initialize(contents);
                 Unlocked = true;
@@ -107,6 +121,20 @@ public partial class SecretUnlockWindow : Window
             finally { if (!Unlocked) contents.Dispose(); }
         }
         catch (OperationCanceledException) { }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            Status.Text = archive.Checksum is not null
+                ? "The bundle matches its checksum, but this passphrase could not unlock it. Check the passphrase for this bundle; select Download latest bundle if the password changed."
+                : "Incorrect passphrase or damaged legacy bundle. Select Download latest bundle to get a fresh copy.";
+        }
+        catch (IOException)
+        {
+            Status.Text = "Could not validate or save the unlocked bundle. Check its configuration and the drive's available space and permissions.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Status.Text = "Could not save the encrypted bundle. Check the drive's permissions.";
+        }
         catch (Exception)
         {
             // Never show parser/HTTP/crypto exception details or passphrase values.
@@ -137,18 +165,5 @@ public partial class SecretUnlockWindow : Window
             return SecretArchive.Decrypt(blob, chars);
         }
         finally { Array.Clear(chars, 0, chars.Length); Marshal.ZeroFreeGlobalAllocUnicode(pointer); }
-    }
-
-    private async Task CacheAsync(byte[] blob)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(_cachePath)!);
-        var temporary = _cachePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        try
-        {
-            await File.WriteAllBytesAsync(temporary, blob, _cancel.Token);
-            _cancel.Token.ThrowIfCancellationRequested();
-            File.Move(temporary, _cachePath, true);
-        }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 }

@@ -12,6 +12,7 @@ Publishes a fresh development build and copies it to an AutopilotQuick imaging d
 Automatic selection requires one volume labeled OSDCloud or OSDCloudUSB.
 Existing Cache, logs, Update, and device identity files are preserved.
 Only an explicitly supplied encrypted archive is copied; no plaintext staging files are copied.
+An accompanying .sha256 file is verified and copied when present; legacy archives are supported.
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
@@ -56,20 +57,37 @@ if ([string]::Equals($destination, $repositoryPath, [StringComparison]::OrdinalI
 }
 
 $archive = $null
+$archiveChecksum = $null
+$archiveHash = $null
 if (-not [string]::IsNullOrWhiteSpace($SecretsArchivePath)) {
     $archive = (Resolve-Path -LiteralPath $SecretsArchivePath).ProviderPath
     if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) { throw 'Secrets archive must be a file.' }
     if ([IO.Path]::GetExtension($archive) -ine '.aqsecrets') { throw 'Secrets archive must have the .aqsecrets extension.' }
-    # Check the public format marker only; never decrypt secrets during deployment.
+    # Check the public header and exact length; never decrypt secrets during deployment.
     $archiveStream = [IO.File]::OpenRead($archive)
     try {
-        $header = New-Object byte[] 8
-        if ($archiveStream.Length -lt 60 -or $archiveStream.Read($header, 0, 8) -ne 8 -or
-            [Text.Encoding]::ASCII.GetString($header) -ne 'AQSECR01') {
-            throw 'The supplied file is not an AQ secret archive.'
+        $header = New-Object byte[] 16
+        if ($archiveStream.Length -lt 60 -or $archiveStream.Length -gt (272 * 1024 * 1024) -or
+            $archiveStream.Read($header, 0, 16) -ne 16 -or
+            [Text.Encoding]::ASCII.GetString($header, 0, 8) -ne 'AQSECR01' -or
+            [BitConverter]::ToInt32($header, 8) -ne 600000 -or
+            [BitConverter]::ToInt32($header, 12) -ne ($archiveStream.Length - 60)) {
+            throw 'The supplied AQ secret archive is incomplete or has an invalid header.'
         }
     }
     finally { $archiveStream.Dispose() }
+    $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+    $checksumPath = $archive + '.sha256'
+    if (Test-Path -LiteralPath $checksumPath) {
+        if (-not (Test-Path -LiteralPath $checksumPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $checksumPath).Length -gt 128) {
+            throw 'The supplied archive checksum file is invalid.'
+        }
+        $archiveChecksum = [IO.File]::ReadAllText($checksumPath, [Text.Encoding]::ASCII).Trim()
+        if ($archiveChecksum -notmatch '\A[0-9a-fA-F]{64}\z' -or $archiveChecksum -ine $archiveHash) {
+            throw 'The supplied encrypted archive does not match its .sha256 checksum. Use a matching pair.'
+        }
+    }
 }
 
 Get-Command dotnet -ErrorAction Stop | Out-Null
@@ -107,13 +125,29 @@ if ($archive) {
         $temporaryArchive = Join-Path $cacheDirectory ('Secrets.' + [Guid]::NewGuid().ToString('N') + '.tmp')
         try {
             Copy-Item -LiteralPath $archive -Destination $temporaryArchive
-            if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne
-                (Get-FileHash -LiteralPath $temporaryArchive -Algorithm SHA256).Hash) {
+            if ($archiveHash -ne (Get-FileHash -LiteralPath $temporaryArchive -Algorithm SHA256).Hash) {
                 throw 'Encrypted archive verification failed; the previous archive was preserved.'
             }
             Move-Item -LiteralPath $temporaryArchive -Destination $archiveDestination -Force
         }
         finally { if (Test-Path -LiteralPath $temporaryArchive) { Remove-Item -LiteralPath $temporaryArchive } }
+    }
+    if ($archiveHash -ne (Get-FileHash -LiteralPath $archiveDestination -Algorithm SHA256).Hash) {
+        throw 'The encrypted archive changed during deployment. Retry with a matching archive and checksum.'
+    }
+    $checksumDestination = $archiveDestination + '.sha256'
+    if ($archiveChecksum) {
+        $temporaryChecksum = $checksumDestination + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'
+        try {
+            [IO.File]::WriteAllText($temporaryChecksum, $archiveChecksum + "`n", [Text.Encoding]::ASCII)
+            Move-Item -LiteralPath $temporaryChecksum -Destination $checksumDestination -Force
+        }
+        finally { if (Test-Path -LiteralPath $temporaryChecksum) { Remove-Item -LiteralPath $temporaryChecksum } }
+        Write-Host 'Matching SHA-256 checksum copied for offline integrity checking.'
+    }
+    elseif (Test-Path -LiteralPath $checksumDestination) {
+        # An explicitly supplied legacy replacement must not inherit a checksum belonging to the old bundle.
+        Remove-Item -LiteralPath $checksumDestination
     }
     Write-Host 'Encrypted archive copied to Cache\Secrets.aqsecrets (used automatically at startup).'
 }
